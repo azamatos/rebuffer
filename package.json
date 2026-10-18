@@ -1,0 +1,61 @@
+{
+  "name": "rebuffer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Rebuffer: see how a video player survives a bad network. A real HLS player runs through a simulated network in your browser.",
+  "author": "Azamat Jorayev",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@10.30.1",
+  "scripts": {
+    "dev": "vite --port 4002 --strictPort",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 4012 --strictPort",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "size": "size-limit",
+    "media:encode": "node scripts/media/encode.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
+    "@tanstack/react-router": "^1.170.45",
+    "hls.js": "1.7.3",
+    "idb-keyval": "^6.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@size-limit/file": "^14.2.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "size-limit": "^14.2.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

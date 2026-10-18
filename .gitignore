@@ -1,0 +1,12 @@
+dist/
+node_modules/
+.env
+.env.*
+.DS_Store
+.lighthouseci/
+playwright-report/
+test-results/
+blob-report/
+.wrangler/
+# Encoded media and downloads never go into git (AGENTS.md rule 7)
+media/

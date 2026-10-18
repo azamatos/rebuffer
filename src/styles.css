@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource/space-mono/400.css";
+
+/* Tokens from the design proposal (docs/memory-bank/activeContext.md links the canvas). Dark only, like
+   azamatos.com. Chart and status colours were checked for contrast and colour-blind separation on
+   --color-surface. */
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-ground: #050607;
+  --color-surface: #101214;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.18);
+  --color-fg: #f2f4f5;
+  --color-fg-2: #a6adb3;
+  --color-fg-3: #7d858c;
+  --color-accent: #68edc0;
+  --color-accent-hover: #a6f4da;
+  --color-accent-ink: #03140e;
+
+  /* Chart series: each colour means one thing everywhere. */
+  --color-net: #3d85d1;
+  --color-estimate: #c8559a;
+  --color-onscreen: #1fae84;
+  --color-buffer: #9479e8;
+  /* Qualities, lowest to highest. */
+  --color-q0: #1b5f4c;
+  --color-q1: #237d64;
+  --color-q2: #2c9c7d;
+  --color-q3: #3fbd98;
+  --color-q4: #79e2bf;
+
+  /* Status: reserved for states, always with a shape and a word. */
+  --color-error: #e5484d;
+  --color-error-text: #ff8e91;
+  --color-warning: #f0a030;
+  --color-warning-text: #f5b85a;
+  --color-note: #8fa3b8;
+  --color-note-text: #b7c4d1;
+
+  --animate-cursor: cursor-blink 1.1s step-end 4;
+  @keyframes cursor-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-ground font-sans text-fg antialiased;
+  }
+  :focus-visible {
+    @apply rounded-md outline-2 outline-offset-3 outline-accent;
+  }
+  ::selection {
+    @apply bg-accent text-accent-ink;
+  }
+}
