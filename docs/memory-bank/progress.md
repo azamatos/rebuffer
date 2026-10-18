@@ -24,7 +24,9 @@ agents do most of the building and every milestone is shippable on its own.
 - [x] App shell: family wordmark, navigation, skip link, routes for every screen, not-found page (2026-10-18)
 - [x] Media script: encode *Tears of Steel* (ladder + "with problems" version + subtitles) (2026-10-18)
 - [ ] GitHub repo `azamatos/rebuffer` (owner creates it or says yes); rename the folder to `~/www/me/rebuffer`
-- [ ] R2 bucket on media.azamatos.com (owner), full encode and upload
+- [x] Full encode (2026-10-18): clean 912 MB (184 × 4 s segments per rung; our parser finds only two notes: no
+      I-frame playlists, one 2.05× ladder gap), problems version 1.0 GB (the planted mistakes found exactly)
+- [ ] R2 bucket on media.azamatos.com (owner) and upload
 - [ ] Cloudflare Pages project on rebuffer.azamatos.com, preview deploys per branch
 - [ ] shadcn/ui set up when the first component needs it
 
