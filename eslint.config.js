@@ -6,7 +6,16 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  { ignores: ["dist/", "media/", "playwright-report/", "test-results/", ".lighthouseci/"] },
+  {
+    ignores: [
+      "dist/",
+      "media/",
+      "playwright-report/",
+      "test-results/",
+      ".lighthouseci/",
+      ".claude/",
+    ],
+  },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   {
