@@ -17,10 +17,18 @@ export default defineConfig({
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
-  webServer: {
-    command: "pnpm build && pnpm preview",
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: "pnpm build && pnpm preview",
+      url: `http://localhost:${PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    // A second origin with deterministic files for the network shaper tests (tests/e2e/shaper.spec.ts).
+    {
+      command: "node tests/e2e/servers/files.mjs",
+      url: "http://localhost:4013/",
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });

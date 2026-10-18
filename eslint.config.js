@@ -21,8 +21,14 @@ export default defineConfig(
   },
   {
     files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/sw/**"],
     extends: [reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
     languageOptions: { globals: globals.browser },
+  },
+  // The Service Worker runs in its own global scope: no window, no document.
+  {
+    files: ["src/sw/**/*.ts"],
+    languageOptions: { globals: globals.serviceworker },
   },
   {
     files: ["**/*.{ts,tsx}"],
