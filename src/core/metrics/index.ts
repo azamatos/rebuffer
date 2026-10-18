@@ -1,6 +1,8 @@
 export {
   computeMetrics,
+  LATE_MS,
   topLevel,
+  type Honesty,
   type Interval,
   type RunMetrics,
   type ShownChange,

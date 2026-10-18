@@ -30,6 +30,17 @@ export interface RunMetrics {
   shown: ShownChange[];
   /** Median media length of the downloaded segments, seconds. */
   segmentS: number | undefined;
+  /** Whether the simulation held: downloads the visitor's real network delivered late. */
+  honesty: Honesty;
+}
+
+/** Requests count as late when the real network held them back by more than this. */
+export const LATE_MS = 50;
+
+export interface Honesty {
+  requests: number;
+  late: number;
+  worstLateMs: number;
 }
 
 /** From `t` on, `level` is on screen. */
@@ -83,6 +94,19 @@ export function computeMetrics(events: readonly RunEvent[]): RunMetrics {
     levels,
     shown,
     segmentS: median(eventsOfType(events, "segment").map((event) => event.mediaDuration)),
+    honesty: honesty(events),
+  };
+}
+
+/** The final lateness of each shaped request: its last event carries the total. */
+function honesty(events: readonly RunEvent[]): Honesty {
+  const lateById = new Map<string, number>();
+  for (const event of eventsOfType(events, "request")) lateById.set(event.id, event.lateMs);
+  const lates = [...lateById.values()];
+  return {
+    requests: lates.length,
+    late: lates.filter((lateMs) => lateMs > LATE_MS).length,
+    worstLateMs: lates.reduce((worst, lateMs) => Math.max(worst, lateMs), 0),
   };
 }
 

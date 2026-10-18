@@ -93,6 +93,38 @@ describe("computeMetrics on the tunnel run", () => {
   });
 });
 
+describe("honesty", () => {
+  const request = (id: string, t: number, lateMs: number): RunEvent => ({
+    type: "request",
+    t,
+    id,
+    url: `https://media.example/${id}.m4s`,
+    phase: "end",
+    bytes: 1000,
+    lateMs,
+  });
+
+  it("counts each request once, by its final lateness", () => {
+    const metrics = computeMetrics([
+      { ...request("a", 1, 0), phase: "start" } as RunEvent,
+      request("a", 2, 10),
+      { ...request("b", 2, 0), phase: "first-byte" } as RunEvent,
+      request("b", 3, 400),
+      request("c", 4, 51),
+      { type: "end", t: 5, reason: "complete" },
+    ]);
+    expect(metrics.honesty).toEqual({ requests: 3, late: 2, worstLateMs: 400 });
+  });
+
+  it("is clean when nothing was shaped", () => {
+    expect(computeMetrics([{ type: "end", t: 1, reason: "stopped" }]).honesty).toEqual({
+      requests: 0,
+      late: 0,
+      worstLateMs: 0,
+    });
+  });
+});
+
 describe("computeMetrics edge cases", () => {
   it("handles a run that never showed a frame", () => {
     const metrics = computeMetrics([

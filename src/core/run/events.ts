@@ -48,6 +48,19 @@ export type RunEvent =
       droppedFrames: number;
       position: number;
     }
+  /** One step of a download through the simulated network, as the Service Worker saw it. */
+  | {
+      type: "request";
+      t: number;
+      id: string;
+      url: string;
+      phase: "start" | "first-byte" | "end" | "abort" | "error";
+      /** Bytes released to the player so far. */
+      bytes: number;
+      totalBytes?: number;
+      /** How long the real network kept this request waiting while the simulated link was up. */
+      lateMs: number;
+    }
   | { type: "error"; t: number; fatal: boolean; message: string }
   | { type: "end"; t: number; reason: "complete" | "stopped" | "error" };
 

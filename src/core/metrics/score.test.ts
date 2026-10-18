@@ -25,6 +25,7 @@ function metrics(overrides: Partial<RunMetrics>): RunMetrics {
     levels: ladder,
     shown: [{ t: 0, level: 4 }],
     segmentS: 4,
+    honesty: { requests: 0, late: 0, worstLateMs: 0 },
     ...overrides,
   };
 }
