@@ -5,6 +5,7 @@
  *   node scripts/media/encode.mjs                 # the whole film, both versions
  *   node scripts/media/encode.mjs --duration 30   # a local test encode of the first 30 s (never upload it)
  *   node scripts/media/encode.mjs --only clean    # or --only problems
+ *   node scripts/media/encode.mjs --only polish   # only re-apply the master playlist fixes to existing output
  *
  * Output (git-ignored):
  *   media/out/tears-of-steel/clean/      fMP4 (CMAF) ladder, 4 s segments, separate audio, English WebVTT
@@ -49,12 +50,15 @@ const outRoot = join(root, args.duration ? "media/test-out" : "media/out", "tear
 const duration = args.duration ? Number(args.duration) : undefined;
 if (duration !== undefined && !(duration > 0)) throw new Error("--duration must be a positive number");
 
-await mkdir(sourceDir, { recursive: true });
-const film = await ensureFilm();
-const srt = await download(`${SOURCE_BASE}/${SUBTITLES}`, join(sourceDir, "TOS-en.srt"));
-
-if (args.only !== "problems") await encodeClean(film, srt);
-if (args.only !== "clean") await encodeProblems(film);
+if (args.only === "polish") {
+  for (const version of ["clean", "problems"]) await polishMaster(join(outRoot, version));
+} else {
+  await mkdir(sourceDir, { recursive: true });
+  const film = await ensureFilm();
+  const srt = await download(`${SOURCE_BASE}/${SUBTITLES}`, join(sourceDir, "TOS-en.srt"));
+  if (args.only !== "problems") await encodeClean(film, srt);
+  if (args.only !== "clean") await encodeProblems(film);
+}
 console.log(`\nDone: ${outRoot}`);
 
 // --- the clean version -----------------------------------------------------------------------
@@ -114,6 +118,7 @@ async function encodeClean(input, subtitles) {
   ]);
 
   await addSubtitles(out, subtitles);
+  await polishMaster(out);
 }
 
 /** Converts the official English .srt to WebVTT and adds it to the master playlist as a subtitle track. */
@@ -250,6 +255,28 @@ async function encodeProblems(input) {
     }
   }
   await writeFile(masterPath, lines.join("\n"));
+  await polishMaster(out);
+}
+
+/**
+ * Adds what ffmpeg leaves out of the master playlist, so the inspector's findings point only at the planted
+ * mistakes: EXT-X-INDEPENDENT-SEGMENTS (every segment starts with a keyframe) and FRAME-RATE on video variants.
+ * Safe to run twice.
+ */
+async function polishMaster(dir) {
+  const masterPath = join(dir, "master.m3u8");
+  if (!existsSync(masterPath)) return;
+  const lines = (await readFile(masterPath, "utf8")).split("\n");
+  const polished = lines.map((line) =>
+    line.startsWith("#EXT-X-STREAM-INF:") && line.includes("RESOLUTION=") && !line.includes("FRAME-RATE=")
+      ? line.replace(/(RESOLUTION=\d+x\d+)/, `$1,FRAME-RATE=${FPS.toFixed(3)}`)
+      : line,
+  );
+  if (!polished.includes("#EXT-X-INDEPENDENT-SEGMENTS")) {
+    const version = polished.findIndex((line) => line.startsWith("#EXT-X-VERSION"));
+    polished.splice(version + 1, 0, "#EXT-X-INDEPENDENT-SEGMENTS");
+  }
+  await writeFile(masterPath, polished.join("\n"));
 }
 
 // --- ffmpeg helpers ---------------------------------------------------------------------------

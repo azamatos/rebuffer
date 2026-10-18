@@ -9,6 +9,7 @@ which git ignores: media files never go into the repo (AGENTS.md rule 7).
 pnpm media:encode                 # the whole film: clean ladder + the version with problems (~1 GB)
 pnpm media:encode --duration 30   # a quick local test of the first 30 s, written to media/test-out/
 pnpm media:encode --only clean    # one version only (or --only problems)
+pnpm media:encode --only polish   # re-apply the master playlist fixes to existing output
 ```
 
 Needs ffmpeg 7+ and `unzip`. Set `MEDIA_DEBUG=1` to print every command. The first run downloads the 584 MB source film and the official English subtitles
