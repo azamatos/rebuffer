@@ -1,0 +1,132 @@
+# Product spec
+
+**Agreed 2026-10-18; only the app shell is built.** Screens follow the design proposal (canvas linked in
+`activeContext.md`), accepted on 2026-10-18. The app is Rebuffer, at rebuffer.azamatos.com. The header carries the
+family wordmark shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊`.
+
+## Words used here
+
+- **Stream:** an HLS multivariant ("master") playlist: the sample, a third-party sample, or a link the visitor pastes.
+- **Ladder:** the stream's qualities (renditions), each with a bitrate, resolution and codecs.
+- **Network:** bandwidth over time plus latency. A preset, a curve drawn in the editor, or an imported trace.
+- **Player setup:** the player (hls.js; Shaka later) and its settings. Presets plus custom values.
+- **Run:** one stream × network × player setup, played in real time. It produces an event log, metrics and a score.
+
+## The 30-second path
+
+The home page has one big action, **Try the tunnel**: the sample stream, the "Train through a tunnel" network,
+hls.js defaults. One press starts a run; the charts react within seconds; the report appears at the end
+(about 90 s). Everything else is optional.
+
+## Screens
+
+### Home
+
+- One-line pitch, **Try the tunnel**, and a three-step setup: Stream → Network → Player → **Run**.
+- Each step shows the current choice and opens its picker.
+- **Recent runs** (from IndexedDB) with score, network and date; open one to see its report.
+- Short "How it works" strip and a link to About.
+
+### Inspect (stream)
+
+- Input: paste any HLS link, paste playlist text, drop a `.m3u8` file, or pick a sample (ours, or public test
+  streams from Apple, Unified Streaming and Mux).
+- **Ladder table:** bandwidth and average bandwidth, resolution, frame rate, codecs decoded to plain words
+  (`avc1.640028` → "H.264 High, level 4.0"; `mp4a.40.2` → "AAC-LC"), and whether *this* browser can play it
+  (Media Capabilities: supported, smooth, power-efficient).
+- Audio and subtitle groups, I-frame playlists, encryption method, container (fMP4 or MPEG-TS).
+- **Per rendition:** VOD or live, target duration, segment count, total length, segment durations as a small
+  histogram, discontinuities.
+- **Measured bitrate:** fetch the first few segments of each rendition and compare the real bitrate with the
+  declared one.
+- **Warnings**, each with severity, the line it comes from, a plain explanation and the rule it breaks (RFC 8216
+  or Apple's HLS authoring spec). Examples: a segment longer than the target duration, missing `CODECS`,
+  declared bandwidth below the measured peak, a big gap between two rungs of the ladder.
+- **Run this stream** goes to Home with the stream chosen.
+- Blocked by CORS: a clear message ("this server doesn't let browsers read it") and the paste-text option.
+
+### Network
+
+- Presets as cards with a sparkline: Home fibre, Busy café Wi-Fi, 4G commute, Train through a tunnel, Rural 3G,
+  Lift (sudden drop), Evening congestion (our own synthetic curves).
+- **Recorded traces:** real 4G recordings (train, car, tram…) from the Irish 4G dataset, CC BY 4.0, with credit.
+- **Curve editor:** bandwidth (Mbps, log scale) over time. Add, move and delete points with the mouse **or the
+  keyboard** (arrows move the selected point, Tab between points, Delete removes). Step or linear between points.
+- The stream's ladder is drawn as horizontal lines over the curve, so you see where the network falls below each
+  quality.
+- Latency (RTT, ms) and run length. Import or export a trace as JSON or CSV.
+
+### Player setup
+
+- Player: hls.js (Shaka Player later).
+- Presets: **hls.js defaults**, **Low-memory TV** (small buffers, capped to the player size), **Quality first**,
+  **Fast start** (start at the lowest quality).
+- Advanced: start level, max buffer length, back buffer, ABR bandwidth factors, cap to player size. Each setting
+  has a one-line explanation and its default.
+
+### Run (live)
+
+- The video, with the current quality, resolution and bitrate over it.
+- **Live tiles:** time to first frame, stalls (count and seconds), average bitrate, quality switches.
+- **Charts on one shared time axis:**
+  1. Network: available bandwidth (area), the player's estimate (line) and the selected quality's bitrate (steps).
+  2. Buffer: seconds of video ahead (area), stalls as marked bands.
+  3. Requests: one bar per segment download, coloured by quality.
+- **Event log:** quality switches, stalls, abandoned downloads, errors; also announced in a polite live region.
+- Controls: Stop, Restart. The run ends at the end of the network curve or the video.
+- If the visitor's real network delivers a segment later than the simulation wanted, the run is marked
+  **"real network slower than simulated"** and the affected requests are flagged.
+
+### Report
+
+- **Score** (see Metrics) and tiles with one-line explanations.
+- The same three charts, static, zoomable, with notes the lab writes: "0:42–0:54: bandwidth fell below the
+  lowest quality (0.4 Mbps); the buffer ran out at 0:51; a stall of 2.1 s".
+- Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Export JSON**, **Copy link**
+  (the link carries the setup, not the results).
+
+### Compare (after the MVP)
+
+- Two saved runs side by side: metric tiles with differences, charts overlaid on one time axis.
+
+### About
+
+- How the simulation works and its limits; how each metric is computed; sources.
+- Credits: *Tears of Steel* and its licence; trace datasets if used; open-source libraries.
+- Link to the source code and to azamatos.com.
+
+## Metrics
+
+| Metric | Definition |
+|---|---|
+| Time to first frame | From pressing Run to the first rendered frame |
+| Stalls | Count and total seconds of playback waiting for data after the first frame (seeks excluded) |
+| Rebuffer ratio | Stall time ÷ (play time + stall time) |
+| Average bitrate | Time-weighted bitrate of the quality on screen |
+| Quality switches | Changes of the quality on screen; up and down counted separately |
+| Time at top quality | Share of play time at the highest quality that fits the player |
+| Wasted data | Bytes downloaded but never played (abandoned or replaced segments) |
+| Score | A published QoE model (proposal: the linear model from Yin et al., SIGCOMM 2015: bitrate utility minus penalties for switches, stalls and startup). The formula is shown in the report. |
+
+## Content and licences
+
+- **Sample:** the whole *Tears of Steel* (Blender Foundation, CC BY 3.0), re-encoded into a ladder but never cut:
+  its soundtrack is CC BY-ND. Runs use the first minutes. Shown with "(CC) Blender Foundation | mango.blender.org"
+  and "re-encoded for streaming".
+- A second version of the same film with a deliberately flawed playlist and ladder, for the inspector's findings.
+- **Recorded traces:** excerpts of the Irish 4G dataset (Raca et al., MMSys 2018, CC BY 4.0), converted, with
+  attribution on the Networks screen and the About page. Only datasets whose licence allows redistribution.
+- Third-party test streams appear only as labelled "try this" links that we don't host; they may disappear.
+- Never commercial content, other services' artwork, or a past client's name, design or code.
+
+## Privacy
+
+Stream links, setups and runs stay in the visitor's browser (IndexedDB). The only requests leave for the stream's
+own host and our static files. Analytics: Cloudflare Web Analytics, no cookies.
+
+## Accessibility
+
+- Every screen works with the keyboard alone, including the curve editor.
+- Every chart has a text alternative: a summary sentence and a data table.
+- Live updates go to a polite live region (switches and stalls only, not every number).
+- Contrast at least 4.5:1, visible focus, `prefers-reduced-motion` respected.
