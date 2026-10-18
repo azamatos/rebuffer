@@ -50,6 +50,18 @@ package sources, a scratch Playwright test). Items marked **open** wait for the 
 - **Honesty checks** (rule 2): every response records when its bytes arrived from the real network versus when the
   simulation released them. If the real network was late, the request and the run are flagged. Hidden tabs
   (throttled timers) are flagged too. Repeat runs of each preset in CI measure the spread that the README states.
+- **Built 2026-10-18** (`src/core/netsim`, `src/sw`, `tests/e2e/shaper.spec.ts`):
+  - A small Vite plugin bundles `src/sw/sw.ts` into one classic script at `/sw.js` (dev middleware and
+    `dist/sw.js`). It is 98 KB minified, mostly zod; `zod/mini` could shrink it.
+  - Sessions are keyed per tab. The page pings every 10 s (`keep-alive`) so the browser doesn't stop an idle worker.
+  - A shaped response resolves at the simulated first byte (after the RTT), so hls.js measures TTFB from the
+    simulation. `content-encoding` and the compressed `content-length` are dropped because the body arrives decoded.
+  - Redirects go back to the page as a 302 after one simulated RTT, so it follows them itself and keeps the right
+    final URL. WebKit only follows them when the redirect carries `Access-Control-Allow-Origin`.
+  - `end-session` stops shaping new requests; in-flight ones get what the link holds at once, then the rest at the
+    real network's speed.
+  - **Measured accuracy** (4 Mbps steps, RTT 100 ms, 1 MiB; Chromium, Firefox, WebKit): 3–24 ms behind the curve,
+    never ahead. Two parallel downloads each take twice as long, as they should.
 - **Known limits:** the first visit needs the SW to take control (`skipWaiting` + `clients.claim`, wait for
   `controllerchange`); a hard reload bypasses it, so the Run page checks for a controller first. Safari's native
   HLS can't be shaped, which is fine: the lab plays through hls.js (MSE or ManagedMediaSource) everywhere.
@@ -176,7 +188,12 @@ reference code is non-commercial research only, with patent notices.
 
 - Service Worker lifecycle quirks (first visit, hard reload, multiple tabs): gate runs on a controller, key sessions
   by client id, document it.
-- Real Safari behaviour of shaped responses: test by hand on the owner's Mac before launch.
+- Real Safari behaviour of shaped responses: test by hand on the owner's Mac before launch (streamed responses, CORS
+  on redirects, stream cancel on abort, idle-worker shutdown).
+- A cross-origin gzip-compressed response (some playlists) can't be detected by the worker: its forwarded size is the
+  compressed one while the simulation counts decoded bytes. Small for playlists; segments are never compressed.
+- An abort during the simulated RTT relies on `request.signal`; if an engine doesn't fire it, the request keeps its
+  share until the real fetch ends.
 - Timer clamping in hidden tabs: flag the run; pause the clock if the tab is hidden for long.
 - Streams without CORS can't be inspected or run: clear message, paste-text fallback for the inspector.
 - hls.js upgrades can change behaviour: version pinned and saved with every run.

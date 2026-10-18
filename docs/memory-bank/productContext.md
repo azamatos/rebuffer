@@ -47,7 +47,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 
 ### Network
 
-- Presets as cards with a sparkline: Home fibre, Busy café Wi-Fi, 4G commute, Train through a tunnel, Rural 3G,
+- Presets as cards with a sparkline (curves in `src/core/netsim/presets.ts`; the tunnel: 6 Mbps, 2.5 from 0:20, 1.2
+  from 0:30, nothing 0:42–0:54, a ramp back to 3 by 1:00 and to 6 by 1:03): Home fibre, Busy café Wi-Fi, 4G commute,
+  Train through a tunnel, Rural 3G,
   Lift (sudden drop), Evening congestion (our own synthetic curves).
 - **Recorded traces:** real 4G recordings (train, car, tram…) from the Irish 4G dataset, CC BY 4.0, with credit.
 - **Curve editor:** bandwidth (Mbps, log scale) over time. Add, move and delete points with the mouse **or the

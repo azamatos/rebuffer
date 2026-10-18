@@ -10,7 +10,7 @@ agents do most of the building and every milestone is shippable on its own.
 | Plan for a Smart TV app | done 2026-10-17, dropped 2026-10-18 |
 | Plan for the HLS network lab, design proposal | done 2026-10-18 |
 | M0 Decisions and setup | in progress (scaffold done 2026-10-18; repo, bucket and deploy wait for the owner) |
-| M1 Core modules | in progress (metrics, score and the hls.js adapter done 2026-10-18; parser and simulator being built) |
+| M1 Core modules | in progress (metrics, score, hls.js adapter, simulator and Service Worker done 2026-10-18; parser being built) |
 | M2 Live run | not started |
 | M3 Report, network editor, inspector | not started |
 | M4 Polish; MVP live | not started |
@@ -31,11 +31,13 @@ agents do most of the building and every milestone is shippable on its own.
 ## M1: core modules (target Nov 1)
 
 - [ ] Playlist parser, codec names, lint rules, with fixtures and tests
-- [ ] Network simulator: curve model, link scheduler, presets, Irish 4G trace converter, with tests
+- [x] Network simulator: curve model, link scheduler, presets, page↔worker protocol, client, with tests (2026-10-18)
+- [ ] Irish 4G trace converter
 - [x] Run event log; metrics and score from synthetic logs, with tests (2026-10-18)
 - [x] hls.js adapter (events from the player and the video element) and player presets (2026-10-18; end-to-end test in M2)
 - [ ] "What happened" notes and "try next" ideas (moved to M3, to tune on real runs)
-- [ ] Service Worker shaping proven by a Playwright test in Chromium, Firefox and WebKit
+- [x] Service Worker shaping proven by a Playwright test in Chromium, Firefox and WebKit: 3–24 ms behind the curve
+      (2026-10-18)
 
 Done when the core passes its tests and a 1 MB download through a known curve lands within tolerance in all three
 engines.
@@ -85,4 +87,5 @@ engines.
   stream link, public test streams, family wordmark). M0 scaffold built: tooling, app shell, tests (Vitest; 25
   Playwright checks with axe in 3 engines), CI, Lighthouse 98/100/100/100 locally, media script (test encodes
   verified: 4 s fMP4 ladder; the problems version cuts a 6.625 s segment under a 6 s target). M1 started: event log,
-  metrics, score, hls.js adapter.
+  metrics, score, hls.js adapter. Network simulator and Service Worker shaper built and merged (98 unit tests, 49
+  Playwright checks green).
