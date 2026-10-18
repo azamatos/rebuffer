@@ -138,6 +138,11 @@ reference code is non-commercial research only, with patent notices.
   target duration, missing `CODECS` or `RESOLUTION`, declared bandwidth below measured peak, missing `ENDLIST` on VOD,
   version too low for the tags used, mixed containers, no I-frame playlists.
 - Later: probe segments in a worker (keyframe at segment start, real codec vs declared) with a small TS/fMP4 reader.
+- **Built 2026-10-18** (`src/core/hls`, 193 tests). Decisions where the specs left room: any EXTINF or
+  TARGETDURATION makes a media playlist (as hls.js does); variables are substituted in URIs and quoted values only;
+  a `.ts` URI counts as MPEG-TS even under an EXT-X-MAP; `duplicate-variant-uri` only fires when the media groups
+  also match (Apple's examples reuse a video URI across audio groups); version rules cover RFC 8216 §7 only, not
+  rfc8216bis; Apple references carry no section names (not confirmed). Rule ids: `src/core/hls/lint.ts`.
 
 ## Media and content
 
@@ -167,7 +172,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli (`.size-limit.json`). The shell measured 84.8 KB on 2026-10-18, almost all React and TanStack Router; hls.js and uPlot load only on Run, Report and Inspect |
+| Home route JavaScript | ≤ 100 KB brotli (`.size-limit.json`). 85.4 KB on 2026-10-18, almost all React and TanStack Router. The Run screen is a lazy chunk (34 KB gzip) and hls.js another (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |

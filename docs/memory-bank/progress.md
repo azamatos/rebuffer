@@ -10,8 +10,8 @@ agents do most of the building and every milestone is shippable on its own.
 | Plan for a Smart TV app | done 2026-10-17, dropped 2026-10-18 |
 | Plan for the HLS network lab, design proposal | done 2026-10-18 |
 | M0 Decisions and setup | in progress (scaffold done 2026-10-18; repo, bucket and deploy wait for the owner) |
-| M1 Core modules | in progress (metrics, score, hls.js adapter, simulator and Service Worker done 2026-10-18; parser being built) |
-| M2 Live run | not started |
+| M1 Core modules | done 2026-10-18 (except the Irish 4G trace converter) |
+| M2 Live run | in progress (a real run works end to end; charts next) |
 | M3 Report, network editor, inspector | not started |
 | M4 Polish; MVP live | not started |
 | M5 Compare and launch | not started |
@@ -30,7 +30,8 @@ agents do most of the building and every milestone is shippable on its own.
 
 ## M1: core modules (target Nov 1)
 
-- [ ] Playlist parser, codec names, lint rules, with fixtures and tests
+- [x] Playlist parser, codec names, lint rules, with fixtures and tests (2026-10-18; 193 tests; checked on our
+      real encodes: the planted mistakes are found)
 - [x] Network simulator: curve model, link scheduler, presets, page↔worker protocol, client, with tests (2026-10-18)
 - [ ] Irish 4G trace converter
 - [x] Run event log; metrics and score from synthetic logs, with tests (2026-10-18)
@@ -44,9 +45,15 @@ engines.
 
 ## M2: live run (target Nov 8)
 
-- [ ] hls.js adapter and RunController; event log
-- [ ] Run screen: video, tiles, three charts on one time axis, event log, honesty checks
-- [ ] Keyboard-only Playwright test: Home → Try the tunnel (CI curve) → run finishes
+- [x] hls.js adapter and RunController; event log; setup in the URL (stream, network preset or compact curve,
+      player preset) (2026-10-18)
+- [x] Run screen, first version: setup, progress, video, live tiles, event log, score and honesty line
+      (2026-10-18)
+- [x] Playwright: a synthetic ffmpeg ladder plays through the shaper end to end in Chromium, Firefox and WebKit
+      (2026-10-18)
+- [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot)
+- [ ] Home setup (stream, network, player pickers) wired to the Run screen; Try the tunnel from Home
+- [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
 
 ## M3: report, network editor, inspector (target Nov 15)
 
@@ -88,4 +95,6 @@ engines.
   Playwright checks with axe in 3 engines), CI, Lighthouse 98/100/100/100 locally, media script (test encodes
   verified: 4 s fMP4 ladder; the problems version cuts a 6.625 s segment under a 6 s target). M1 started: event log,
   metrics, score, hls.js adapter. Network simulator and Service Worker shaper built and merged (98 unit tests, 49
-  Playwright checks green).
+  Playwright checks green). Playlist parser, codecs and lint rules merged (193 tests). Run controller and the first
+  Run screen built: a real hls.js run plays through the shaper in all three engines (301 unit tests, 56 Playwright
+  checks).

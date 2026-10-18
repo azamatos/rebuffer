@@ -19,7 +19,8 @@
   Cloudflare R2/Pages limits and video terms; prior art (the gap is real); name collisions.
 - Targets: MVP live by **Nov 22**, compare runs and the case study by **Dec 6** (`progress.md`).
 - Parked on 2026-10-18 (see `progress.md`, Later): subtitle sync tool, a player for your own films, encode comparer.
-- **Code exists since 2026-10-18:** a local git repo with the M0 scaffold (see `progress.md`). Nothing is deployed.
+- **Code exists since 2026-10-18:** a local git repo (no remote yet). M0 scaffold, M1 core modules, and the first
+  working Run screen: a real hls.js run plays through the simulated network end to end. Nothing is deployed.
 
 ## Decisions (settled 2026-10-18 unless marked open)
 
@@ -45,9 +46,12 @@
 
 ## Next step
 
-M0 is mostly done (see `progress.md`): the app shell, tooling, tests, CI and the media script exist and pass
-locally. Left for M0: the owner creates the GitHub repo and the R2 bucket; then connect Cloudflare Pages to the
-repo for rebuffer.azamatos.com and upload the full encode. Meanwhile M1 (core modules) can start.
+- **Owner:** create the GitHub repo `azamatos/rebuffer` (or say yes and an agent creates it), the R2 bucket on
+  media.azamatos.com, and a Cloudflare Pages project for rebuffer.azamatos.com. Then upload the full encode
+  (`scripts/media/README.md`).
+- **Agents (M2):** the Run screen's charts (uPlot, three charts on one time axis), Home setup pickers wired to the
+  Run screen, the keyboard-only Home → run test. Until our encode is uploaded, the default sample is Unified
+  Streaming's public *Tears of Steel* (`src/core/samples.ts`); switch the default to ours after the upload.
 
 ## Open questions
 
