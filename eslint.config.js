@@ -45,6 +45,11 @@ export default defineConfig(
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
+  // The router module defines route components next to the route tree; fast refresh doesn't apply to it.
+  {
+    files: ["src/router.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   // AGENTS.md rule 3: the core and the Service Worker stay framework-free.
   {
     files: ["src/core/**/*.ts", "src/sw/**/*.ts"],

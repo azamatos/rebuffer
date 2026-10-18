@@ -74,4 +74,6 @@ function serviceWorker(): Plugin {
 export default defineConfig({
   plugins: [react(), tailwindcss(), serviceWorker()],
   resolve: { alias },
+  // hls.js is one ~520 KB chunk, loaded only when a run starts; the home page budget lives in .size-limit.json.
+  build: { chunkSizeWarningLimit: 600 },
 });

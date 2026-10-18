@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 const pages = [
   { path: "/", heading: "See how a video player survives a bad network." },
-  { path: "/run", heading: "Run" },
+  { path: "/run", heading: /Train through a tunnel · hls\.js defaults/ },
   { path: "/inspect", heading: "Inspect a stream" },
   { path: "/networks", heading: "Networks" },
   { path: "/runs", heading: "Runs" },

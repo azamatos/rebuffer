@@ -1,8 +1,15 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
 import { PlannedPage } from "@/ui/pages/PlannedPage";
+import type { RunSearch } from "@/ui/pages/RunPage";
+
+// The Run screen brings hls.js, zod and the simulator client, so it loads only when opened.
+const RunPage = lazy(() =>
+  import("@/ui/pages/RunPage").then((module) => ({ default: module.RunPage })),
+);
 
 const title = (page: string) => ({ meta: [{ title: `${page} · Rebuffer` }] });
 
@@ -18,17 +25,32 @@ const homeRoute = createRoute({
   head: () => ({ meta: [{ title: "Rebuffer: see how a video player survives a bad network" }] }),
 });
 
+/** Keeps the string params the Run screen knows; anything else in the URL is ignored. */
+function runSearch(search: Record<string, unknown>): RunSearch {
+  const result: RunSearch = {};
+  for (const key of ["stream", "network", "curve", "player"] as const) {
+    const value = search[key];
+    if (typeof value === "string" && value !== "") result[key] = value;
+  }
+  return result;
+}
+
 const runRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/run",
   head: () => title("Run"),
-  component: () => (
-    <PlannedPage
-      title="Run"
-      summary="A real hls.js player plays the stream through the simulated network while live charts show the bandwidth, the quality it picks, the buffer and every stall."
-    />
-  ),
+  validateSearch: runSearch,
+  component: RunRoute,
 });
+
+function RunRoute() {
+  const search = runRoute.useSearch();
+  return (
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the lab…</p>}>
+      <RunPage search={search} />
+    </Suspense>
+  );
+}
 
 const runsRoute = createRoute({
   getParentRoute: () => rootRoute,

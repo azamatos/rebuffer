@@ -42,6 +42,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      # The end-to-end tests build a small synthetic HLS stream with ffmpeg.
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pnpm e2e
 
       - uses: actions/upload-artifact@v7

@@ -2,12 +2,23 @@
 //   GET /bytes/<size>      <size> deterministic bytes: byte i is i % 251, so a lost or reordered
 //                          chunk shows up in a checksum. Supports Range and HEAD.
 //   GET /redirect/<size>   302 to /bytes/<size>
+//   GET /hls/<path>        files of the synthetic test stream in media/e2e/ (tests/e2e/fixtures/make-stream.mjs)
 //   GET /                  "ok", for Playwright's readiness check
 // Every response allows any origin and is never cached, so each download really goes over the wire.
+import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
+import { extname, join, normalize, resolve } from "node:path";
 
 const PORT = Number(process.env.PORT ?? 4013);
 const MAX_SIZE = 64 * 1024 * 1024;
+const HLS_ROOT = resolve(import.meta.dirname, "../../../media/e2e");
+const HLS_TYPES = {
+  ".m3u8": "application/vnd.apple.mpegurl",
+  ".m4s": "video/iso.segment",
+  ".mp4": "video/mp4",
+  ".ts": "video/mp2t",
+  ".vtt": "text/vtt",
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,10 +72,34 @@ function sendBytes(request, response, size) {
   response.end(request.method === "HEAD" ? undefined : bytes(start, end));
 }
 
+async function sendHlsFile(response, path) {
+  const file = normalize(join(HLS_ROOT, path));
+  const type = HLS_TYPES[extname(file)];
+  if (!file.startsWith(HLS_ROOT + "/") || !type) {
+    response.writeHead(404, { ...corsHeaders, "Content-Type": "text/plain" }).end("Not found");
+    return;
+  }
+  try {
+    const body = await readFile(file);
+    response.writeHead(200, {
+      ...corsHeaders,
+      "Content-Type": type,
+      "Content-Length": body.length,
+    });
+    response.end(body);
+  } catch {
+    response.writeHead(404, { ...corsHeaders, "Content-Type": "text/plain" }).end("Not found");
+  }
+}
+
 const server = createServer((request, response) => {
   const url = new URL(request.url ?? "/", "http://localhost");
   if (request.method === "OPTIONS") {
     response.writeHead(204, { ...corsHeaders, "Access-Control-Allow-Methods": "GET, HEAD" }).end();
+    return;
+  }
+  if (url.pathname.startsWith("/hls/")) {
+    void sendHlsFile(response, url.pathname.slice("/hls/".length));
     return;
   }
   const match = /^\/(bytes|redirect)\/(\d+)$/.exec(url.pathname);
