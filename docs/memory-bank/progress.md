@@ -10,7 +10,7 @@ agents do most of the building and every milestone is shippable on its own.
 | Plan for a Smart TV app | done 2026-10-17, dropped 2026-10-18 |
 | Plan for the HLS network lab, design proposal | done 2026-10-18 |
 | M0 Decisions and setup | in progress (scaffold done 2026-10-18; repo, bucket and deploy wait for the owner) |
-| M1 Core modules | not started |
+| M1 Core modules | in progress (metrics, score and the hls.js adapter done 2026-10-18; parser and simulator being built) |
 | M2 Live run | not started |
 | M3 Report, network editor, inspector | not started |
 | M4 Polish; MVP live | not started |
@@ -32,7 +32,9 @@ agents do most of the building and every milestone is shippable on its own.
 
 - [ ] Playlist parser, codec names, lint rules, with fixtures and tests
 - [ ] Network simulator: curve model, link scheduler, presets, Irish 4G trace converter, with tests
-- [ ] Metrics, score, notes and ideas from synthetic logs, with tests
+- [x] Run event log; metrics and score from synthetic logs, with tests (2026-10-18)
+- [x] hls.js adapter (events from the player and the video element) and player presets (2026-10-18; end-to-end test in M2)
+- [ ] "What happened" notes and "try next" ideas (moved to M3, to tune on real runs)
 - [ ] Service Worker shaping proven by a Playwright test in Chromium, Firefox and WebKit
 
 Done when the core passes its tests and a 1 MB download through a known curve lands within tolerance in all three
@@ -81,4 +83,6 @@ engines.
   rewritten; design proposal published as a canvas (6 boards).
 - 2026-10-18: owner settled the decisions (Rebuffer at rebuffer.azamatos.com, media at media.azamatos.com, any
   stream link, public test streams, family wordmark). M0 scaffold built: tooling, app shell, tests (Vitest; 25
-  Playwright checks with axe in 3 engines), CI, Lighthouse 98/100/100/100 locally, media script.
+  Playwright checks with axe in 3 engines), CI, Lighthouse 98/100/100/100 locally, media script (test encodes
+  verified: 4 s fMP4 ladder; the problems version cuts a 6.625 s segment under a 6 s target). M1 started: event log,
+  metrics, score, hls.js adapter.
