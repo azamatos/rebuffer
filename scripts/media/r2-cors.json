@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": ["https://rebuffer.azamatos.com", "http://localhost:4002", "http://localhost:4012"],
+        "methods": ["GET", "HEAD"],
+        "headers": ["Range"]
+      },
+      "exposeHeaders": ["Content-Length", "Content-Range", "Accept-Ranges"],
+      "maxAgeSeconds": 86400
+    }
+  ]
+}
