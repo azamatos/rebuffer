@@ -10,3 +10,6 @@ blob-report/
 .wrangler/
 # Encoded media and downloads never go into git (AGENTS.md rule 7)
 /media/
+
+# Agent worktrees
+/.claude/worktrees/
