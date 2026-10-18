@@ -13,6 +13,9 @@ const originSchema = z.string().refine(
   { error: (issue) => `"${String(issue.input)}" isn't an origin like https://media.example.com.` },
 );
 
+/** Shape every origin except the page's own, so the app's code still loads at full speed. */
+export const ALL_OTHER_ORIGINS = "*";
+
 const sessionId = z.string().min(1);
 
 /** Page → Service Worker: shape this page's requests to these origins from `startAt` on. */
@@ -20,7 +23,8 @@ export const startSessionMessage = z.object({
   type: z.literal("start-session"),
   sessionId,
   curve: curveSchema,
-  origins: z.array(originSchema),
+  /** Origins to shape, or `ALL_OTHER_ORIGINS` for any stream host (segments often live on another host). */
+  origins: z.array(z.union([z.literal(ALL_OTHER_ORIGINS), originSchema])),
   /** Epoch milliseconds (`performance.timeOrigin + performance.now()`) at simulated time 0. */
   startAt: z.number(),
 });

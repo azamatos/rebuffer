@@ -271,6 +271,18 @@ test.describe("the network shaper", () => {
     expect(await eventsFor(page, url)).toEqual([]);
   });
 
+  test("with the wildcard, shapes every origin except the app's own", async ({ page }) => {
+    await startSession(page, ["*"]);
+    const remote = unique(`/bytes/${MIB}`, OTHER_ORIGIN);
+    const [result] = await download(page, [{ url: remote, via: "xhr" }]);
+    expectOnSchedule(result?.seconds ?? 0, expectedSeconds(MIB));
+
+    const own = new URL("/favicon.svg", page.url()).href;
+    const [app] = await download(page, [{ url: own, via: "fetch" }]);
+    expect(app?.seconds).toBeLessThan(0.1);
+    expect(await eventsFor(page, own)).toEqual([]);
+  });
+
   test("forwards Range requests", async ({ page }) => {
     await startSession(page, [FILES]);
     const [result] = await download(page, [

@@ -106,8 +106,9 @@ async function controllerFor(
 }
 
 /**
- * Starts shaping this page's requests to `origins` (like "https://media.azamatos.com") on the
- * simulated network `curve`. Resolves once the worker has the session.
+ * Starts shaping this page's requests to `origins` (like "https://media.azamatos.com", or
+ * `ALL_OTHER_ORIGINS` for every host but the app's own) on the simulated network `curve`.
+ * Resolves once the worker has the session.
  */
 export async function startShaping(
   curve: NetworkCurve,

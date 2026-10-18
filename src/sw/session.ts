@@ -8,7 +8,7 @@ import {
   supplyBytes,
   type Delivery,
 } from "@/core/netsim/link";
-import type { RequestPhase, WorkerMessage } from "@/core/netsim/protocol";
+import { ALL_OTHER_ORIGINS, type RequestPhase, type WorkerMessage } from "@/core/netsim/protocol";
 import { createByteQueue, type ByteQueue } from "./bytes";
 
 /** How often the link releases bytes. Short enough for smooth progress events, long enough to be cheap. */
@@ -305,7 +305,9 @@ export function createSession(options: SessionOptions): Session {
       if (ended) return false;
       if (request.method !== "GET" && request.method !== "HEAD") return false;
       if (request.mode !== "cors" && request.mode !== "same-origin") return false;
-      return origins.has(new URL(request.url).origin);
+      const origin = new URL(request.url).origin;
+      if (origins.has(ALL_OTHER_ORIGINS)) return origin !== self.location.origin;
+      return origins.has(origin);
     },
     respond,
     end() {
