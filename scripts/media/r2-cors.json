@@ -2,7 +2,7 @@
   "rules": [
     {
       "allowed": {
-        "origins": ["https://rebuffer.azamatos.com", "http://localhost:4002", "http://localhost:4012"],
+        "origins": ["*"],
         "methods": ["GET", "HEAD"],
         "headers": ["Range"]
       },

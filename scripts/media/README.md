@@ -23,20 +23,22 @@ from download.blender.org into `media/source/`.
 The film is re-encoded but never cut: its soundtrack is CC BY-ND. Test encodes made with `--duration` are for
 local checks only; never upload them.
 
-## Upload (the owner runs this)
+## Upload
 
-The bucket lives in Cloudflare R2 behind `media.azamatos.com`. Credentials stay on the owner's machine (an R2 API
-token configured as an rclone remote named `r2`); never paste them into chat or commit them.
+The bucket `azamatos-media` (Cloudflare R2) serves `media.azamatos.com`. The upload uses wrangler, so the owner's
+`wrangler login` is all it needs; no R2 token is created or stored.
 
 ```sh
-# once: allow the app's origins to read the files
-wrangler r2 bucket cors set <bucket> --file scripts/media/r2-cors.json
-
-# each upload: long cache, immutable (file names never change for a given encode)
-rclone copy media/out/tears-of-steel r2:<bucket>/tears-of-steel \
-  --header-upload "Cache-Control: public, max-age=31536000, immutable" \
-  --progress
+node scripts/media/upload.mjs --dry-run   # what would go where, with content types and cache headers
+node scripts/media/upload.mjs             # media/out/tears-of-steel → azamatos-media/tears-of-steel
 ```
 
-Re-encoding with different settings goes to a new folder name (for example `tears-of-steel-v2`), so cached files
+Segments are cached for a year (`immutable`), playlists for five minutes; master playlists go last. CORS lets any
+site read the files (GET and HEAD, `Range`), like public test streams; it's set once:
+
+```sh
+pnpm exec wrangler r2 bucket cors set azamatos-media --file scripts/media/r2-cors.json
+```
+
+Re-encoding with different settings goes to a new folder name (for example `tears-of-steel-v2`), so cached segments
 are never stale.
