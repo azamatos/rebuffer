@@ -20,7 +20,8 @@
 - Targets: MVP live by **Nov 22**, compare runs and the case study by **Dec 6** (`progress.md`).
 - Parked on 2026-10-18 (see `progress.md`, Later): subtitle sync tool, a player for your own films, encode comparer.
 - **Code exists since 2026-10-18; on GitHub since 2026-10-19** (github.com/azamatos/rebuffer, public). **Live at
-  https://rebuffer.pages.dev** (Cloudflare Pages, Git integration: pushes to main deploy). M0 scaffold, M1 core modules, and the first
+  https://rebuffer.azamatos.com** (Cloudflare Pages); sample media at https://media.azamatos.com (R2 + CDN cache).
+  Pushes don't deploy automatically yet (see Next step). M0 scaffold, M1 core modules, and the first
   working Run screen: a real hls.js run plays through the simulated network end to end. Nothing is deployed.
 
 ## Decisions (settled 2026-10-18 unless marked open)
@@ -47,14 +48,13 @@
 
 ## Next step
 
-- **Owner (Cloudflare dashboard; wrangler's login can't edit DNS or enable R2):**
-  1. Add the DNS record for rebuffer.azamatos.com: CNAME `rebuffer` → `rebuffer.pages.dev`, proxied (or use
-     "Activate domain" under Workers & Pages → rebuffer → Custom domains). The domain is already attached.
-  2. Enable R2 (R2 Object Storage → enable; free tier, may need a card). Then an agent creates the bucket,
-     connects media.azamatos.com, sets CORS and uploads the encode.
+- **Owner:** make pushes deploy. GitHub → Settings → Applications → Cloudflare Workers and Pages → Configure →
+  add azamatos/rebuffer. If pushes still don't deploy, recreate the `rebuffer` Pages project from the dashboard
+  (Create → Pages → Connect to Git; build `pnpm build`, output `dist`) and re-add rebuffer.azamatos.com. Until then
+  an agent deploys by hand: `POST /accounts/:id/pages/projects/rebuffer/deployments` with wrangler's OAuth token.
 - **Agents (M2):** the Run screen's charts (uPlot, three charts on one time axis), Home setup pickers wired to the
-  Run screen, the keyboard-only Home → run test. Until our encode is uploaded, the default sample is Unified
-  Streaming's public *Tears of Steel* (`src/core/samples.ts`); switch the default to ours after the upload.
+  Run screen, the keyboard-only Home → run test. Our *Tears of Steel* on media.azamatos.com is the default sample
+  since 2026-10-19 (`src/core/samples.ts`).
 
 ## Open questions
 

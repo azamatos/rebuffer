@@ -28,11 +28,16 @@ agents do most of the building and every milestone is shippable on its own.
 - [ ] Rename the folder to `~/www/me/rebuffer`
 - [x] Full encode (2026-10-18): clean 912 MB (184 × 4 s segments per rung; our parser finds only two notes: no
       I-frame playlists, one 2.05× ladder gap), problems version 1.0 GB (the planted mistakes found exactly)
-- [ ] R2: the owner enables R2 in the dashboard (wrangler can't); then an agent creates the bucket, connects
-      media.azamatos.com, sets CORS and uploads
+- [x] R2 bucket `azamatos-media` on media.azamatos.com (owner enabled R2, created the bucket and the cache rule
+      "media: cache segments and playlists"; r2.dev off). CORS open to any origin for GET/HEAD; all 1,740 files
+      uploaded and verified (2026-10-19). Cloudflare caches per Origin (R2 sends `Vary: Origin`), so the CORS header
+      survives caching
 - [x] Cloudflare Pages project `rebuffer` with Git integration (builds `pnpm build`, serves `dist`; every push to
       main deploys, other branches get previews), live at https://rebuffer.pages.dev (2026-10-19)
-- [ ] rebuffer.azamatos.com: the domain is attached but waits for its DNS record (owner; wrangler can't edit DNS)
+- [x] rebuffer.azamatos.com live (owner added the DNS record, 2026-10-19)
+- [ ] Automatic deploys on push: the project was created through the API and GitHub's webhook never fires
+      (test pushes 9e21ec4 and 65b65d7 didn't deploy). Owner: check the Cloudflare GitHub app's repo access, or
+      recreate the project from the dashboard. Until then deploys are triggered by hand through the API
 - [ ] shadcn/ui set up when the first component needs it
 
 ## M1: core modules (target Nov 1)
@@ -60,10 +65,12 @@ engines.
       (2026-10-18)
 - [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot)
 - [ ] Home setup (stream, network, player pickers) wired to the Run screen; Try the tunnel from Home
+- [ ] Report latency and bandwidth lateness separately ("your real latency is ~N ms, above the simulated 80 ms" vs
+      "your connection couldn't keep up"), measured in a warm-up before the run
 - [ ] Warm the stream before a run (playlists and first segments) and cache segments in the worker, so repeat runs
       match and a slow first byte doesn't count against the simulation. Found 2026-10-19 on the live site: Unified
       Streaming packages segments on demand, so all 17 downloads came late (worst 1.2 s) against an 80 ms RTT
-- [ ] Name levels by width class (1920×800 → 1080p) like the inspector, not by height
+- [x] Name levels by width class (1280×534 → 720p) like the inspector (2026-10-19)
 - [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
 
 ## M3: report, network editor, inspector (target Nov 15)
@@ -111,6 +118,9 @@ engines.
   Playwright checks green). Playlist parser, codecs and lint rules merged (193 tests). Run controller and the first
   Run screen built: a real hls.js run plays through the shaper in all three engines (301 unit tests, 56 Playwright
   checks).
-- 2026-10-19: deployed with Cloudflare Pages (Git integration) at https://rebuffer.pages.dev; a real run on the live
-  site works end to end. Pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
+- 2026-10-19: deployed with Cloudflare Pages at https://rebuffer.azamatos.com (custom domain live); media on R2 at
+  media.azamatos.com with CDN caching; our Tears of Steel is the default sample. Live runs of our film work; the
+  honesty check still flags downloads as late because this connection's real latency is above the simulated 80 ms
+  even from cache (cold: 34/34 late, worst 596 ms; warm: 20/41, worst 268 ms) → split latency from bandwidth
+  lateness in M2. Pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
   to drop private references from the docs (no commit had been published).

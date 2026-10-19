@@ -10,18 +10,29 @@ function ranges(...pairs: [number, number][]): TimeRangesLike {
 }
 
 describe("levelsFromHls", () => {
-  it("keeps index, bitrate and size, and names levels by height when unnamed", () => {
+  it("names sized levels by their 16:9 width class, like the inspector", () => {
     expect(
       levelsFromHls([
         { bitrate: 400_000, width: 426, height: 178, name: "" },
-        { bitrate: 5_000_000, width: 1920, height: 800, name: "1080p" },
-        { bitrate: 128_000, width: 0, height: 0 },
-      ]),
-    ).toEqual([
-      { index: 0, bitrate: 400_000, width: 426, height: 178, name: "178p" },
-      { index: 1, bitrate: 5_000_000, width: 1920, height: 800, name: "1080p" },
-      { index: 2, bitrate: 128_000, name: "Level 3" },
+        { bitrate: 2_800_000, width: 1280, height: 534, name: "534p" },
+        { bitrate: 5_000_000, width: 1920, height: 800 },
+      ]).map((level) => level.name),
+    ).toEqual(["240p", "720p", "1080p"]);
+  });
+
+  it("keeps index, bitrate and size", () => {
+    expect(levelsFromHls([{ bitrate: 400_000, width: 426, height: 178 }])).toEqual([
+      { index: 0, bitrate: 400_000, width: 426, height: 178, name: "240p" },
     ]);
+  });
+
+  it("keeps the NAME of a level without a size, or numbers it", () => {
+    expect(
+      levelsFromHls([
+        { bitrate: 128_000, width: 0, height: 0, name: "Audio" },
+        { bitrate: 64_000, width: 0, height: 0 },
+      ]).map((level) => level.name),
+    ).toEqual(["Audio", "Level 2"]);
   });
 });
 

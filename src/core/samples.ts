@@ -9,10 +9,26 @@ export interface SampleStream {
 }
 
 /**
- * Third-party streams allowed browser access (CORS) when checked on 2026-10-18; they have no guarantees and may
- * disappear. Ours join the list once the encodes are uploaded to media.azamatos.com.
+ * Ours first: Blender Studio's Tears of Steel (CC BY 3.0), encoded by scripts/media/encode.mjs and served from
+ * media.azamatos.com. The third-party streams allowed browser access (CORS) when checked on 2026-10-18; they have no
+ * guarantees and may disappear.
  */
 export const SAMPLE_STREAMS: readonly SampleStream[] = [
+  {
+    id: "tears-of-steel",
+    name: "Tears of Steel",
+    url: "https://media.azamatos.com/tears-of-steel/clean/master.m3u8",
+    description: "Five qualities from 240p to 1080p, fMP4, 4 s segments, English subtitles.",
+    host: "ours",
+  },
+  {
+    id: "tears-of-steel-problems",
+    name: "Tears of Steel, with problems",
+    url: "https://media.azamatos.com/tears-of-steel/problems/master.m3u8",
+    description:
+      "The same film with planted mistakes for the inspector: a segment over its target duration, an under-declared bandwidth, missing codecs.",
+    host: "ours",
+  },
   {
     id: "unified-tos",
     name: "Tears of Steel (Unified Streaming)",
