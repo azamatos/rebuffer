@@ -34,13 +34,34 @@ export interface RunMetrics {
   honesty: Honesty;
 }
 
-/** Requests count as late when the real network held them back by more than this. */
+/** Downloads count as late when the real network held their bytes back by more than this. */
 export const LATE_MS = 50;
+/** A download counts as started late past this: two of the shaper's 10 ms ticks, so its own rounding never counts. */
+export const LATE_FIRST_BYTE_MS = 20;
+/** Below this much busy time the real network's speed isn't worth stating. */
+const MIN_BUSY_S = 0.1;
 
+/** Where the visitor's real network or browser held the simulation back. */
 export interface Honesty {
+  /** Downloads through the simulated network. */
   requests: number;
-  late: number;
-  worstLateMs: number;
+  /** The real network answered slower than the simulated RTT, so downloads started late. */
+  latency: {
+    /** The stream's host and its latency measured before the run, ms (undefined if it didn't answer). */
+    host: string | undefined;
+    realMs: number | undefined;
+    late: number;
+    worstLateMs: number;
+  };
+  /** The real network couldn't keep up with the simulated bandwidth, so bytes arrived late mid-download. */
+  bandwidth: {
+    late: number;
+    worstLateMs: number;
+    /** What the real network delivered while it was downloading, bits per second. */
+    realBps: number | undefined;
+  };
+  /** Seconds the tab spent in the background, where browsers slow down timers. */
+  hiddenS: number;
 }
 
 /** From `t` on, `level` is on screen. */
@@ -94,20 +115,80 @@ export function computeMetrics(events: readonly RunEvent[]): RunMetrics {
     levels,
     shown,
     segmentS: median(eventsOfType(events, "segment").map((event) => event.mediaDuration)),
-    honesty: honesty(events),
+    honesty: honesty(events, endS),
   };
 }
 
-/** The final lateness of each shaped request: its last event carries the total. */
-function honesty(events: readonly RunEvent[]): Honesty {
-  const lateById = new Map<string, number>();
-  for (const event of eventsOfType(events, "request")) lateById.set(event.id, event.lateMs);
-  const lates = [...lateById.values()];
+type RequestEvent = Extract<RunEvent, { type: "request" }>;
+
+function honesty(events: readonly RunEvent[], endS: number): Honesty {
+  // Each shaped request's last event carries its final numbers.
+  const lastById = new Map<string, RequestEvent>();
+  for (const event of eventsOfType(events, "request")) lastById.set(event.id, event);
+  const requests = [...lastById.values()];
+  const check = eventsOfType(events, "network-check")[0];
   return {
-    requests: lates.length,
-    late: lates.filter((lateMs) => lateMs > LATE_MS).length,
+    requests: requests.length,
+    latency: {
+      host: check?.host,
+      realMs: check?.latencyMs,
+      ...lateness(
+        requests.map((request) => request.firstByteLateMs),
+        LATE_FIRST_BYTE_MS,
+      ),
+    },
+    bandwidth: {
+      ...lateness(
+        requests.map((request) => request.bodyLateMs),
+        LATE_MS,
+      ),
+      realBps: realBitrate(requests),
+    },
+    hiddenS: sum(hiddenIntervals(events, endS).map(length)),
+  };
+}
+
+function lateness(
+  lates: readonly number[],
+  thresholdMs: number,
+): { late: number; worstLateMs: number } {
+  return {
+    late: lates.filter((lateMs) => lateMs > thresholdMs).length,
     worstLateMs: lates.reduce((worst, lateMs) => Math.max(worst, lateMs), 0),
   };
+}
+
+/**
+ * The real network's speed: the bytes of finished downloads over the time it was busy with at least one of them,
+ * so downloads that overlapped share it instead of counting twice.
+ */
+function realBitrate(requests: readonly RequestEvent[]): number | undefined {
+  let bytes = 0;
+  const busy: Interval[] = [];
+  for (const request of requests) {
+    if (request.phase !== "end") continue;
+    if (request.realFirstByteAt === undefined || request.realEndAt === undefined) continue;
+    bytes += request.totalBytes ?? request.bytes;
+    busy.push({ start: request.realFirstByteAt, end: request.realEndAt });
+  }
+  const busyS = sum(union(busy).map(length));
+  return busyS >= MIN_BUSY_S ? (bytes * 8) / busyS : undefined;
+}
+
+/** When the tab was in the background; if it still is at the end, until the end. */
+function hiddenIntervals(events: readonly RunEvent[], endS: number): Interval[] {
+  const intervals: Interval[] = [];
+  let hiddenSince: number | undefined;
+  for (const event of eventsOfType(events, "visibility")) {
+    if (event.hidden) {
+      hiddenSince ??= event.t;
+    } else if (hiddenSince !== undefined) {
+      intervals.push({ start: hiddenSince, end: event.t });
+      hiddenSince = undefined;
+    }
+  }
+  if (hiddenSince !== undefined) intervals.push({ start: hiddenSince, end: endS });
+  return intervals.filter((interval) => interval.end > interval.start);
 }
 
 /** The level with the highest declared bitrate. */
@@ -188,6 +269,16 @@ function countSwitches(
     else if (to < from) down++;
   }
   return { up, down, total: up + down };
+}
+
+function union(intervals: readonly Interval[]): Interval[] {
+  const merged: Interval[] = [];
+  for (const interval of [...intervals].sort((a, b) => a.start - b.start)) {
+    const last = merged.at(-1);
+    if (last && interval.start <= last.end) last.end = Math.max(last.end, interval.end);
+    else merged.push({ ...interval });
+  }
+  return merged;
 }
 
 function subtract(whole: Interval, holes: readonly Interval[]): Interval[] {

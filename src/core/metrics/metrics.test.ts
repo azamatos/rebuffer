@@ -94,33 +94,90 @@ describe("computeMetrics on the tunnel run", () => {
 });
 
 describe("honesty", () => {
-  const request = (id: string, t: number, lateMs: number): RunEvent => ({
+  type Late = { firstByteLateMs?: number; bodyLateMs?: number };
+  const request = (
+    id: string,
+    t: number,
+    late: Late = {},
+  ): Extract<RunEvent, { type: "request" }> => ({
     type: "request",
     t,
     id,
     url: `https://media.example/${id}.m4s`,
     phase: "end",
     bytes: 1000,
-    lateMs,
+    firstByteLateMs: late.firstByteLateMs ?? 0,
+    bodyLateMs: late.bodyLateMs ?? 0,
   });
 
-  it("counts each request once, by its final lateness", () => {
-    const metrics = computeMetrics([
-      { ...request("a", 1, 0), phase: "start" } as RunEvent,
-      request("a", 2, 10),
-      { ...request("b", 2, 0), phase: "first-byte" } as RunEvent,
-      request("b", 3, 400),
-      request("c", 4, 51),
+  it("counts each request once, by its final lateness, and keeps latency apart from bandwidth", () => {
+    const { honesty } = computeMetrics([
+      {
+        type: "network-check",
+        t: 0,
+        host: "media.example",
+        latencyMs: 85,
+        samplesMs: [300, 85, 90, 80],
+      },
+      { ...request("a", 1), phase: "start" },
+      request("a", 2, { firstByteLateMs: 45, bodyLateMs: 10 }),
+      { ...request("b", 2, { firstByteLateMs: 15 }), phase: "first-byte" },
+      request("b", 3, { firstByteLateMs: 15, bodyLateMs: 400 }),
+      request("c", 4, { firstByteLateMs: 21, bodyLateMs: 51 }),
       { type: "end", t: 5, reason: "complete" },
     ]);
-    expect(metrics.honesty).toEqual({ requests: 3, late: 2, worstLateMs: 400 });
+    expect(honesty).toMatchObject({
+      requests: 3,
+      latency: { host: "media.example", realMs: 85, late: 2, worstLateMs: 45 },
+      bandwidth: { late: 2, worstLateMs: 400 },
+      hiddenS: 0,
+    });
+  });
+
+  it("measures the real network's speed over the time it was busy, once for overlapping downloads", () => {
+    const timed = (id: string, start: number, end: number, bytes: number): RunEvent => ({
+      ...request(id, end),
+      bytes,
+      totalBytes: bytes,
+      realFirstByteAt: start,
+      realEndAt: end,
+    });
+    const { honesty } = computeMetrics([
+      timed("a", 1, 2, 1_000_000),
+      timed("b", 1.5, 2.5, 1_000_000),
+      timed("c", 4, 4.5, 500_000),
+      // An abandoned download doesn't count: it never finished.
+      { ...timed("d", 5, 9, 4_000_000), phase: "abort" } as RunEvent,
+      { type: "end", t: 10, reason: "complete" },
+    ]);
+    // 2.5 MB over 1.5 s (1 to 2.5) plus 0.5 s (4 to 4.5): 10 Mbps.
+    expect(honesty.bandwidth.realBps).toBeCloseTo(10_000_000, 6);
+  });
+
+  it("doesn't state a speed from downloads that took no time", () => {
+    const { honesty } = computeMetrics([
+      { ...request("a", 1), realFirstByteAt: 1, realEndAt: 1.01 },
+      { type: "end", t: 2, reason: "complete" },
+    ]);
+    expect(honesty.bandwidth.realBps).toBeUndefined();
+  });
+
+  it("adds up the time the tab spent in the background", () => {
+    const { honesty } = computeMetrics([
+      { type: "visibility", t: 2, hidden: true },
+      { type: "visibility", t: 5, hidden: false },
+      { type: "visibility", t: 8, hidden: true },
+      { type: "end", t: 10, reason: "complete" },
+    ]);
+    expect(honesty.hiddenS).toBe(5);
   });
 
   it("is clean when nothing was shaped", () => {
     expect(computeMetrics([{ type: "end", t: 1, reason: "stopped" }]).honesty).toEqual({
       requests: 0,
-      late: 0,
-      worstLateMs: 0,
+      latency: { host: undefined, realMs: undefined, late: 0, worstLateMs: 0 },
+      bandwidth: { late: 0, worstLateMs: 0, realBps: undefined },
+      hiddenS: 0,
     });
   });
 });

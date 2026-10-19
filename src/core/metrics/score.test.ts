@@ -25,7 +25,12 @@ function metrics(overrides: Partial<RunMetrics>): RunMetrics {
     levels: ladder,
     shown: [{ t: 0, level: 4 }],
     segmentS: 4,
-    honesty: { requests: 0, late: 0, worstLateMs: 0 },
+    honesty: {
+      requests: 0,
+      latency: { host: undefined, realMs: undefined, late: 0, worstLateMs: 0 },
+      bandwidth: { late: 0, worstLateMs: 0, realBps: undefined },
+      hiddenS: 0,
+    },
     ...overrides,
   };
 }

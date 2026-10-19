@@ -59,8 +59,14 @@ export const requestEventMessage = z.object({
   bytes: z.number(),
   /** The response size, when the server said (Content-Length) or once it ended. */
   totalBytes: z.number().optional(),
-  /** How long the real network kept this request waiting while the simulated link was up. */
-  lateMs: z.number(),
+  /** How long the real network kept the first byte waiting past the simulated RTT (its latency was higher). */
+  firstByteLateMs: z.number(),
+  /** How long the real network kept later bytes waiting (it couldn't keep up with the simulated bandwidth). */
+  bodyLateMs: z.number(),
+  /** Simulated-clock seconds when the real server's response arrived, once it has. */
+  realFirstByteAt: z.number().optional(),
+  /** Simulated-clock seconds when the real server's last byte arrived, once it has. */
+  realEndAt: z.number().optional(),
 });
 
 export const sessionReadyMessage = z.object({ type: z.literal("session-ready"), sessionId });

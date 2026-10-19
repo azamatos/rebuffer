@@ -53,6 +53,9 @@ interface Shaped {
   hasBody: boolean;
   totalBytes: number | undefined;
   released: number;
+  /** Simulated-clock seconds when the real response arrived, and when its last byte did. */
+  realFirstByteAt: number | undefined;
+  realEndAt: number | undefined;
   responded: boolean;
   supplyDone: boolean;
   /** Off the link: the session ended, so bytes pass straight through. */
@@ -91,6 +94,10 @@ function streamWithController(onCancel: () => void): {
   if (!holder.controller) throw new Error("A stream didn't hand over its controller.");
   return { body, controller: holder.controller };
 }
+
+type Lateness = Pick<Delivery, "firstByteLateMs" | "bodyLateMs">;
+
+const ON_TIME: Lateness = { firstByteLateMs: 0, bodyLateMs: 0 };
 
 /** Reads the flag through a call: it changes while `pump` awaits, which narrowing can't see. */
 const isSettled = (shaped: Shaped) => shaped.settled;
@@ -138,8 +145,9 @@ export function createSession(options: SessionOptions): Session {
 
   const now = () => (performance.timeOrigin + performance.now() - options.startAt) / 1000;
 
-  function post(shaped: Shaped, phase: RequestPhase, at: number, lateMs: number): void {
+  function post(shaped: Shaped, phase: RequestPhase, at: number, lateness: Lateness): void {
     if (ended) return;
+    const { totalBytes, realFirstByteAt, realEndAt } = shaped;
     options.post({
       type: "request",
       sessionId: options.id,
@@ -148,8 +156,11 @@ export function createSession(options: SessionOptions): Session {
       phase,
       at,
       bytes: shaped.released,
-      ...(shaped.totalBytes === undefined ? {} : { totalBytes: shaped.totalBytes }),
-      lateMs,
+      ...(totalBytes === undefined ? {} : { totalBytes }),
+      firstByteLateMs: lateness.firstByteLateMs,
+      bodyLateMs: lateness.bodyLateMs,
+      ...(realFirstByteAt === undefined ? {} : { realFirstByteAt }),
+      ...(realEndAt === undefined ? {} : { realEndAt }),
     });
   }
 
@@ -177,20 +188,20 @@ export function createSession(options: SessionOptions): Session {
     const state = shaped.passthrough ? undefined : abortRequest(link, shaped.id);
     if (shaped.responded) shaped.controller.error(reason);
     else shaped.reject(reason);
-    post(shaped, phase, now(), state?.lateMs ?? 0);
+    post(shaped, phase, now(), state ?? ON_TIME);
   }
 
   function deliver(shaped: Shaped, delivery: Delivery): void {
     shaped.released = delivery.released;
     if (delivery.firstByteAt !== undefined) {
       respondNow(shaped);
-      post(shaped, "first-byte", delivery.firstByteAt, delivery.lateMs);
+      post(shaped, "first-byte", delivery.firstByteAt, delivery);
     }
     for (const chunk of shaped.queue.take(delivery.bytes)) shaped.controller.enqueue(chunk);
     if (delivery.doneAt !== undefined) {
       shaped.totalBytes = delivery.released;
       close(shaped);
-      post(shaped, "end", delivery.doneAt, delivery.lateMs);
+      post(shaped, "end", delivery.doneAt, delivery);
     }
   }
 
@@ -216,6 +227,7 @@ export function createSession(options: SessionOptions): Session {
   async function pump(shaped: Shaped, request: Request): Promise<void> {
     const response = await fetch(request, { signal: shaped.upstream.signal });
     if (shaped.settled) return;
+    shaped.realFirstByteAt = now();
     shaped.totalBytes = contentLength(response.headers);
     shaped.init = {
       status: response.status,
@@ -232,6 +244,7 @@ export function createSession(options: SessionOptions): Session {
     if (!shaped.hasBody || !response.body) {
       void response.body?.cancel();
       shaped.supplyDone = true;
+      shaped.realEndAt = shaped.realFirstByteAt;
       if (shaped.passthrough) {
         respondNow(shaped);
         close(shaped);
@@ -257,6 +270,7 @@ export function createSession(options: SessionOptions): Session {
       }
     }
     shaped.supplyDone = true;
+    shaped.realEndAt = now();
     if (shaped.passthrough) close(shaped);
     else finishSupply(link, shaped.id, total);
   }
@@ -284,13 +298,15 @@ export function createSession(options: SessionOptions): Session {
       hasBody: false,
       totalBytes: undefined,
       released: 0,
+      realFirstByteAt: undefined,
+      realEndAt: undefined,
       responded: false,
       supplyDone: false,
       passthrough: false,
       settled: false,
     };
     inFlight.set(id, shaped);
-    post(shaped, "start", startedAt, 0);
+    post(shaped, "start", startedAt, ON_TIME);
     request.signal.addEventListener("abort", abort, { once: true });
     pump(shaped, request).catch((error: unknown) => {
       stop(shaped, "error", error instanceof TypeError ? error : new TypeError(String(error)));

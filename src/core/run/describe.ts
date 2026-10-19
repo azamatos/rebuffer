@@ -1,4 +1,5 @@
-import { formatClock } from "@/core/format/time";
+import { formatClock, formatDuration } from "@/core/format/time";
+import { LATE_FIRST_BYTE_MS, type Honesty } from "@/core/metrics";
 import type { Level, RunEvent } from "./events";
 
 /** A level for people: "720p (2.8 Mbps)". */
@@ -96,4 +97,60 @@ export function describeEvents(events: readonly RunEvent[]): LogLine[] {
     }
   }
   return lines;
+}
+
+const formatMs = (ms: number) => formatDuration(ms / 1000);
+
+/**
+ * A heads-up from the check before the run, when the real network answers slower than the simulated RTT: the
+ * simulation can't start a download sooner than that. Undefined when there's nothing to say.
+ */
+export function describeNetworkCheck(
+  check: Extract<RunEvent, { type: "network-check" }> | undefined,
+  simulatedRttMs: number,
+): string | undefined {
+  if (check?.latencyMs === undefined || check.latencyMs <= simulatedRttMs + LATE_FIRST_BYTE_MS) {
+    return undefined;
+  }
+  return `Your real latency to ${check.host} is about ${Math.round(check.latencyMs)} ms, above the simulated ${simulatedRttMs} ms, so downloads can't start as soon as this network would start them. The result will say how much that mattered.`;
+}
+
+/**
+ * Says in plain words whether the simulation held (AGENTS.md rule 2): whether the real network answered slower
+ * than the simulated RTT, couldn't keep up with the simulated bandwidth, or the tab sat in the background.
+ */
+export function describeHonesty(honesty: Honesty, simulatedRttMs: number): string[] {
+  const { requests, latency, bandwidth, hiddenS } = honesty;
+  const sentences: string[] = [];
+  if (requests > 0 && latency.late === 0 && bandwidth.late === 0) {
+    sentences.push(
+      `Your connection kept up: all ${requests} downloads arrived before the simulation needed them.`,
+    );
+  }
+  if (latency.late > 0) {
+    const started = `${latency.late} of ${requests} downloads started late, by up to ${formatMs(latency.worstLateMs)}`;
+    sentences.push(
+      latency.realMs !== undefined && latency.realMs > simulatedRttMs
+        ? `${started}: your real latency to ${latency.host ?? "the stream's host"} is about ${Math.round(latency.realMs)} ms, above the simulated ${simulatedRttMs} ms.`
+        : `${started}: the real network was slower to answer than the simulated ${simulatedRttMs} ms.`,
+    );
+  }
+  if (bandwidth.late > 0) {
+    const delivered =
+      bandwidth.realBps === undefined
+        ? ""
+        : ` (it delivered about ${formatMbps(bandwidth.realBps)} while downloading)`;
+    sentences.push(
+      `${bandwidth.late} of ${requests} downloads arrived late, by up to ${formatMs(bandwidth.worstLateMs)}: the real network couldn't keep up with the simulated bandwidth${delivered}.`,
+      "This run is slower than the simulated network alone.",
+    );
+  } else if (latency.late > 0) {
+    sentences.push("Your connection kept up with the bandwidth.");
+  }
+  if (hiddenS > 0) {
+    sentences.push(
+      `The tab was in the background for ${formatDuration(hiddenS)}, where browsers slow down timers, so the player may have behaved differently than in a visible tab.`,
+    );
+  }
+  return sentences;
 }

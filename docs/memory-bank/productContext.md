@@ -77,8 +77,13 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   3. Requests: one bar per segment download, coloured by quality.
 - **Event log:** quality switches, stalls, abandoned downloads, errors; also announced in a polite live region.
 - Controls: Stop, Restart. The run ends at the end of the network curve or the video.
-- If the visitor's real network delivers a segment later than the simulation wanted, the run is marked
-  **"real network slower than simulated"** and the affected requests are flagged.
+- Before the run, a quick check measures the visitor's real latency to the stream's host. If it is above the
+  simulated RTT, the screen says so while the run plays: the simulation can't start a download sooner than the real
+  network answers.
+- At the end, the result says in plain words whether the simulation held, keeping the causes apart: downloads that
+  **started late** because the real latency is above the simulated one, downloads that **arrived late** because the
+  real network couldn't keep up with the simulated bandwidth (with the speed it managed), and time the tab spent in
+  the background.
 
 ### Report
 

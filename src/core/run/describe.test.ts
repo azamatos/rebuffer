@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Level, RunEvent } from "./events";
-import { describeEvents, formatMbps, levelLabel } from "./describe";
+import type { Honesty } from "@/core/metrics";
+import {
+  describeEvents,
+  describeHonesty,
+  describeNetworkCheck,
+  formatMbps,
+  levelLabel,
+} from "./describe";
 
 const levels: Level[] = [
   { index: 0, bitrate: 400_000, name: "240p" },
@@ -65,5 +72,96 @@ describe("describeEvents", () => {
       "Stopped: The stream couldn't be loaded.",
       "Run ended with an error.",
     ]);
+  });
+});
+
+describe("describeNetworkCheck", () => {
+  const check = (latencyMs: number | undefined): Extract<RunEvent, { type: "network-check" }> => ({
+    type: "network-check",
+    t: 0,
+    host: "media.azamatos.com",
+    latencyMs,
+    samplesMs: [],
+  });
+
+  it("warns when the real latency is above the simulated one", () => {
+    expect(describeNetworkCheck(check(85), 40)).toBe(
+      "Your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms, so downloads can't start as soon as this network would start them. The result will say how much that mattered.",
+    );
+  });
+
+  it("stays quiet within the shaper's own margin, and when there was no answer", () => {
+    expect(describeNetworkCheck(check(95), 80)).toBeUndefined();
+    expect(describeNetworkCheck(check(undefined), 80)).toBeUndefined();
+    expect(describeNetworkCheck(undefined, 80)).toBeUndefined();
+  });
+});
+
+describe("describeHonesty", () => {
+  const honesty = (overrides: {
+    latency?: Partial<Honesty["latency"]>;
+    bandwidth?: Partial<Honesty["bandwidth"]>;
+    hiddenS?: number;
+  }): Honesty => ({
+    requests: 41,
+    latency: {
+      host: "media.azamatos.com",
+      realMs: 85,
+      late: 0,
+      worstLateMs: 12,
+      ...overrides.latency,
+    },
+    bandwidth: { late: 0, worstLateMs: 0, realBps: 18_000_000, ...overrides.bandwidth },
+    hiddenS: overrides.hiddenS ?? 0,
+  });
+
+  it("says the connection kept up when nothing was late", () => {
+    expect(describeHonesty(honesty({}), 80)).toEqual([
+      "Your connection kept up: all 41 downloads arrived before the simulation needed them.",
+    ]);
+  });
+
+  it("puts a late start down to the real latency", () => {
+    expect(describeHonesty(honesty({ latency: { late: 38, worstLateMs: 52 } }), 40)).toEqual([
+      "38 of 41 downloads started late, by up to 52 ms: your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms.",
+      "Your connection kept up with the bandwidth.",
+    ]);
+  });
+
+  it("doesn't quote a measured latency that was below the simulated one", () => {
+    expect(
+      describeHonesty(honesty({ latency: { realMs: 30, late: 2, worstLateMs: 310 } }), 80)[0],
+    ).toBe(
+      "2 of 41 downloads started late, by up to 310 ms: the real network was slower to answer than the simulated 80 ms.",
+    );
+  });
+
+  it("puts late bytes down to the bandwidth, with the speed the real network managed", () => {
+    expect(describeHonesty(honesty({ bandwidth: { late: 7, worstLateMs: 1240 } }), 15)).toEqual([
+      "7 of 41 downloads arrived late, by up to 1.2 s: the real network couldn't keep up with the simulated bandwidth (it delivered about 18 Mbps while downloading).",
+      "This run is slower than the simulated network alone.",
+    ]);
+  });
+
+  it("names both, and a background tab", () => {
+    expect(
+      describeHonesty(
+        honesty({
+          latency: { late: 3, worstLateMs: 120 },
+          bandwidth: { late: 1, worstLateMs: 268, realBps: undefined },
+          hiddenS: 12,
+        }),
+        40,
+      ),
+    ).toEqual([
+      "3 of 41 downloads started late, by up to 120 ms: your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms.",
+      "1 of 41 downloads arrived late, by up to 268 ms: the real network couldn't keep up with the simulated bandwidth.",
+      "This run is slower than the simulated network alone.",
+      "The tab was in the background for 12 s, where browsers slow down timers, so the player may have behaved differently than in a visible tab.",
+    ]);
+  });
+
+  it("says nothing about downloads when there were none", () => {
+    expect(describeHonesty({ ...honesty({}), requests: 0 }, 80)).toEqual([]);
   });
 });

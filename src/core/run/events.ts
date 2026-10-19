@@ -58,9 +58,27 @@ export type RunEvent =
       /** Bytes released to the player so far. */
       bytes: number;
       totalBytes?: number;
-      /** How long the real network kept this request waiting while the simulated link was up. */
-      lateMs: number;
+      /** How long the real network kept the first byte waiting past the simulated RTT: its latency was higher. */
+      firstByteLateMs: number;
+      /** How long the real network kept later bytes waiting: it couldn't keep up with the simulated bandwidth. */
+      bodyLateMs: number;
+      /** When the real server's response arrived, once it has. */
+      realFirstByteAt?: number;
+      /** When the real server's last byte arrived, once it has. */
+      realEndAt?: number;
     }
+  /** The real network, measured just before the run without shaping: how fast the stream's host answers. */
+  | {
+      type: "network-check";
+      t: number;
+      host: string;
+      /** Typical time to an answer once the connection is open, ms; undefined if the host didn't answer. */
+      latencyMs: number | undefined;
+      /** Every answer's time in order, ms; the first one also opened the connection. */
+      samplesMs: readonly number[];
+    }
+  /** The tab went to the background or came back. Browsers slow down timers in background tabs. */
+  | { type: "visibility"; t: number; hidden: boolean }
   | { type: "error"; t: number; fatal: boolean; message: string }
   | { type: "end"; t: number; reason: "complete" | "stopped" | "error" };
 

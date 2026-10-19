@@ -1,5 +1,6 @@
 import { startShaping, type ShapingOptions, type ShapingSession } from "@/core/netsim/client";
 import type { NetworkCurve } from "@/core/netsim/curve";
+import { checkLatency, type LatencyCheckOptions } from "@/core/netsim/latency";
 import { ALL_OTHER_ORIGINS } from "@/core/netsim/protocol";
 import { startHlsJs, type PlayerHandle, type RunClock } from "@/core/player/hlsjs";
 import type { PlayerSettings } from "@/core/player/settings";
@@ -37,10 +38,12 @@ export interface Run {
 
 export interface RunOptions {
   shaping?: ShapingOptions;
+  latencyCheck?: LatencyCheckOptions;
 }
 
 /**
  * Plays `setup.streamUrl` in `video` through the simulated network and records everything into one event log.
+ * First it measures the real latency to the stream's host, which also opens the connection the run will use.
  * Run time 0 is the moment the network session starts, so the worker's request timings and the player's events
  * share one clock. The run lasts as long as the network curve, or until the video ends.
  */
@@ -49,6 +52,7 @@ export async function startRun(
   video: HTMLVideoElement,
   options: RunOptions = {},
 ): Promise<Run> {
+  const check = await checkLatency(setup.streamUrl, options.latencyCheck);
   const session: ShapingSession = await startShaping(
     setup.curve,
     [ALL_OTHER_ORIGINS],
@@ -72,6 +76,19 @@ export async function startRun(
     if (event.type === "error" && event.fatal) finish("error");
   };
 
+  emit({
+    type: "network-check",
+    t: 0,
+    host: new URL(setup.streamUrl).host,
+    latencyMs: check.latencyMs,
+    samplesMs: check.samplesMs,
+  });
+  const onVisibilityChange = () => {
+    emit({ type: "visibility", t: clock.now(), hidden: document.hidden });
+  };
+  if (document.hidden) onVisibilityChange();
+  document.addEventListener("visibilitychange", onVisibilityChange);
+
   session.onRequestEvent((message) => {
     emit({
       type: "request",
@@ -81,7 +98,12 @@ export async function startRun(
       phase: message.phase,
       bytes: message.bytes,
       ...(message.totalBytes === undefined ? {} : { totalBytes: message.totalBytes }),
-      lateMs: message.lateMs,
+      firstByteLateMs: message.firstByteLateMs,
+      bodyLateMs: message.bodyLateMs,
+      ...(message.realFirstByteAt === undefined
+        ? {}
+        : { realFirstByteAt: message.realFirstByteAt }),
+      ...(message.realEndAt === undefined ? {} : { realEndAt: message.realEndAt }),
     });
   });
   session.onEnd((reason) => {
@@ -104,6 +126,7 @@ export async function startRun(
       if (done) return;
       done = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (events.at(-1)?.type !== "end") {
         events.push({ type: "end", t: clock.now(), reason });
       }

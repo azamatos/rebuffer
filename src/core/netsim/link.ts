@@ -18,8 +18,16 @@ export interface LinkRequest {
   doneAt: number | undefined;
   /** When the request ran out of real bytes while the simulation could have sent more. */
   starvingSince: number | undefined;
-  /** How long the real network kept this request waiting, while the simulated link was up. */
-  lateMs: number;
+  /**
+   * How long the real network kept the first byte waiting after the simulated RTT, while the
+   * simulated link was up: the real latency was above the simulated one.
+   */
+  firstByteLateMs: number;
+  /**
+   * How long the real network kept later bytes waiting, while the simulated link was up: the real
+   * connection couldn't keep up with the simulated bandwidth.
+   */
+  bodyLateMs: number;
 }
 
 /**
@@ -40,7 +48,8 @@ export interface Delivery {
   bytes: number;
   /** Bytes released so far, including these. */
   released: number;
-  lateMs: number;
+  firstByteLateMs: number;
+  bodyLateMs: number;
   /** Set when the first byte flowed during this step. */
   firstByteAt?: number;
   /** Set when the last byte flowed during this step; the request has then left the link. */
@@ -71,7 +80,8 @@ export function addRequest(link: Link, request: { id: string; startedAt: number 
     firstByteAt: undefined,
     doneAt: undefined,
     starvingSince: undefined,
-    lateMs: 0,
+    firstByteLateMs: 0,
+    bodyLateMs: 0,
   };
   link.requests.set(request.id, added);
   return added;
@@ -106,9 +116,12 @@ export function finishSupply(link: Link, id: string, totalBytes: number): void {
   request.total = totalBytes;
 }
 
+/** Books a wait that ends at `until`: before the first byte it's latency, after it bandwidth. */
 function commitLateness(link: Link, request: LinkRequest, until: number): void {
   if (request.starvingSince === undefined) return;
-  request.lateMs += upTimeBetween(link.curve, request.starvingSince, until) * 1000;
+  const lateMs = upTimeBetween(link.curve, request.starvingSince, until) * 1000;
+  if (request.firstByteAt === undefined) request.firstByteLateMs += lateMs;
+  else request.bodyLateMs += lateMs;
   request.starvingSince = undefined;
 }
 
@@ -206,7 +219,8 @@ export function advance(link: Link, now: number): Delivery[] {
       id: request.id,
       bytes,
       released: whole,
-      lateMs: request.lateMs,
+      firstByteLateMs: request.firstByteLateMs,
+      bodyLateMs: request.bodyLateMs,
       ...(firstByteAt === undefined ? {} : { firstByteAt }),
       ...(request.doneAt === undefined ? {} : { doneAt: request.doneAt }),
     });

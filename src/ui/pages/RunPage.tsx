@@ -7,8 +7,13 @@ import { presetById } from "@/core/netsim/presets";
 import { curveFromParam } from "@/core/netsim/url";
 import { PLAYER_PRESETS, PlayerUnsupportedError, type PlayerPreset } from "@/core/player";
 import { startRun, type Run, type RunResult } from "@/core/run/controller";
-import { describeEvents, formatMbps } from "@/core/run/describe";
-import type { RunEvent } from "@/core/run/events";
+import {
+  describeEvents,
+  describeHonesty,
+  describeNetworkCheck,
+  formatMbps,
+} from "@/core/run/describe";
+import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 
 export interface RunSearch {
@@ -139,6 +144,7 @@ export function RunPage({ search }: { search: RunSearch }) {
   const metrics = events.length > 0 ? computeMetrics(events) : undefined;
   const elapsed = Math.min(metrics?.endS ?? 0, setup.curve.lengthS);
   const lines = describeEvents(events).reverse();
+  const headsUp = describeNetworkCheck(eventsOfType(events, "network-check")[0], setup.curve.rttMs);
 
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 py-6 sm:px-8">
@@ -172,7 +178,7 @@ export function RunPage({ search }: { search: RunSearch }) {
         </div>
         <p role="status" className="text-sm text-fg-2">
           {phase === "ready" && "Ready."}
-          {phase === "starting" && "Starting the network simulator…"}
+          {phase === "starting" && "Checking your connection, then starting the network simulator…"}
           {phase === "running" && "Running."}
           {phase === "finished" && "Finished."}
           {phase === "failed" && "Couldn't run."}
@@ -198,6 +204,12 @@ export function RunPage({ search }: { search: RunSearch }) {
           )}
         </div>
       </section>
+
+      {headsUp && (
+        <p className="rounded-xl border border-warning/50 px-4 py-3 text-sm text-warning-text">
+          {headsUp}
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="rounded-xl border border-error/50 px-4 py-3 text-error-text">
@@ -302,7 +314,7 @@ function Tiles({ metrics }: { metrics: RunMetrics }) {
 function Outcome({ result }: { result: RunResult }) {
   const metrics = computeMetrics(result.events);
   const score = computeScore(metrics);
-  const { honesty } = metrics;
+  const honesty = describeHonesty(metrics.honesty, result.setup.curve.rttMs);
   return (
     <section
       aria-label="Result"
@@ -313,11 +325,7 @@ function Outcome({ result }: { result: RunResult }) {
         {Math.round(score.score)}
         <span className="text-xl font-medium text-fg-3"> / 100</span>
       </p>
-      <p className="text-sm text-fg-2">
-        {honesty.late === 0
-          ? `Your connection kept up: all ${honesty.requests} downloads arrived before the simulation needed them.`
-          : `${honesty.late} of ${honesty.requests} downloads arrived late from your real network (worst ${Math.round(honesty.worstLateMs)} ms), so this run is slower than the simulated network alone.`}
-      </p>
+      {honesty.length > 0 && <p className="text-sm text-fg-2">{honesty.join(" ")}</p>}
       <p className="text-xs text-fg-3">
         Player: {result.player.name} {result.player.version}
       </p>

@@ -3,6 +3,8 @@
 //                          chunk shows up in a checksum. Supports Range and HEAD.
 //   GET /redirect/<size>   302 to /bytes/<size>
 //   GET /hls/<path>        files of the synthetic test stream in media/e2e/ (tests/e2e/fixtures/make-stream.mjs)
+//   GET /slow/<ms>/<path>  any of the above, answered <ms> later: a server farther away than the simulated RTT.
+//                          Relative links in a playlist keep the prefix, so a whole stream can be slow.
 //   GET /                  "ok", for Playwright's readiness check
 // Every response allows any origin and is never cached, so each download really goes over the wire.
 import { readFile } from "node:fs/promises";
@@ -92,8 +94,18 @@ async function sendHlsFile(response, path) {
   }
 }
 
-const server = createServer((request, response) => {
-  const url = new URL(request.url ?? "/", "http://localhost");
+function handle(request, response, url) {
+  const slow = /^\/slow\/(\d+)(\/.*)$/.exec(url.pathname);
+  if (slow) {
+    url.pathname = slow[2];
+    setTimeout(
+      () => {
+        handle(request, response, url);
+      },
+      Math.min(Number(slow[1]), 10_000),
+    );
+    return;
+  }
   if (request.method === "OPTIONS") {
     response.writeHead(204, { ...corsHeaders, "Access-Control-Allow-Methods": "GET, HEAD" }).end();
     return;
@@ -113,6 +125,10 @@ const server = createServer((request, response) => {
   } else {
     sendBytes(request, response, size);
   }
+}
+
+const server = createServer((request, response) => {
+  handle(request, response, new URL(request.url ?? "/", "http://localhost"));
 });
 
 server.listen(PORT, () => {

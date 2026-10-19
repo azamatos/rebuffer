@@ -236,7 +236,11 @@ test.describe("the network shaper", () => {
     expect((firstByte?.at ?? 0) - (start?.at ?? 0)).toBeCloseTo(curve.rttMs / 1000, 6);
     expect((end?.at ?? 0) - (start?.at ?? 0)).toBeCloseTo(expectedSeconds(MIB), 6);
     expect(end).toMatchObject({ bytes: MIB, totalBytes: MIB });
-    expect(end?.lateMs).toBeLessThan(50);
+    expect(end?.firstByteLateMs).toBeLessThan(50);
+    expect(end?.bodyLateMs).toBeLessThan(50);
+    // The local server is faster than the simulated network: its bytes were all in before the link let them out.
+    expect(end?.realFirstByteAt).toBeGreaterThanOrEqual(start?.at ?? Infinity);
+    expect(end?.realEndAt).toBeLessThanOrEqual(end?.at ?? 0);
   });
 
   test("slows a fetch download to the simulated curve", async ({ page }) => {

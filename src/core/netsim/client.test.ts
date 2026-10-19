@@ -105,7 +105,8 @@ describe("startShaping", () => {
       at: 2.5,
       bytes: 1000,
       totalBytes: 1000,
-      lateMs: 0,
+      firstByteLateMs: 0,
+      bodyLateMs: 0,
     } as const;
     container.send(event);
     container.send({ ...event, sessionId: "another-tab" });

@@ -1,5 +1,6 @@
 export {
   computeMetrics,
+  LATE_FIRST_BYTE_MS,
   LATE_MS,
   topLevel,
   type Honesty,

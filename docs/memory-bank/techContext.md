@@ -49,8 +49,25 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
   the very code under test and is hls.js-only. **Why not CDP throttling:** Chromium-only, deprecated
   (`emulateNetworkConditions`), and changing conditions mid-request delivered the rest of the response at once.
 - **Honesty checks** (rule 2): every response records when its bytes arrived from the real network versus when the
-  simulation released them. If the real network was late, the request and the run are flagged. Hidden tabs
-  (throttled timers) are flagged too. Repeat runs of each preset in CI measure the spread that the README states.
+  simulation released them. Repeat runs of each preset in CI measure the spread that the README states (_planned_).
+  **Built 2026-10-19:**
+  - **Latency and bandwidth are told apart.** The link books a wait for real bytes before a request's first byte as
+    `firstByteLateMs` (the real latency is above the simulated RTT) and a wait after it as `bodyLateMs` (the real
+    network couldn't keep up with the simulated bandwidth). Only time while the simulated link is up counts. A first
+    byte counts as late past 20 ms (two shaper ticks, `LATE_FIRST_BYTE_MS`), a download past 50 ms (`LATE_MS`).
+  - **A check before the run** (`src/core/netsim/latency.ts`): the page asks the stream's host for the playlist four
+    times in a row, unshaped, with `cache: "no-store"` (Cloudflare still answers from its cache: it ignores the
+    request's `no-cache`). The first answer opens the connection, so the run's first download doesn't pay for DNS and
+    TLS; the median of the other three is the real latency, logged as a `network-check` event. When it is above the
+    simulated RTT, the Run screen says so while the run plays.
+  - **The real network's speed:** the worker records when each real response arrived and when its last byte did
+    (`realFirstByteAt`, `realEndAt`); the report divides the bytes of finished downloads by the time the real network
+    was busy with at least one of them, and quotes it when bandwidth held the run back.
+  - **Hidden tabs:** the controller logs `visibility` events; the report says how long the tab was in the background.
+  - Why: from the owner's Mac, media.azamatos.com (Cloudflare, Warsaw, cache hit) answers in 80–100 ms on an open
+    connection and about 300 ms on a new one (TLS alone about 230 ms), measured with curl on 2026-10-19. Six of seven
+    presets simulate less than that (15–80 ms), so counting each download as "late" was noise; the report now states
+    the real latency once and keeps "arrived late" for bandwidth.
 - **Built 2026-10-18** (`src/core/netsim`, `src/sw`, `tests/e2e/shaper.spec.ts`):
   - A small Vite plugin bundles `src/sw/sw.ts` into one classic script at `/sw.js` (dev middleware and
     `dist/sw.js`). It is 98 KB minified, mostly zod; `zod/mini` could shrink it.

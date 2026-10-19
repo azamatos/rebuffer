@@ -39,7 +39,7 @@ describe("page messages", () => {
 });
 
 describe("worker messages", () => {
-  it("accept request events with and without a total", () => {
+  it("accept request events with and without a total and the real timings", () => {
     const event = {
       type: "request",
       sessionId: "s1",
@@ -48,12 +48,18 @@ describe("worker messages", () => {
       phase: "first-byte",
       at: 12.48,
       bytes: 0,
-      lateMs: 0,
+      firstByteLateMs: 0,
+      bodyLateMs: 0,
     };
     expect(workerMessage.parse(event)).toEqual(event);
-    expect(workerMessage.parse({ ...event, phase: "end", totalBytes: 1_400_000 })).toMatchObject({
+    const end = {
+      ...event,
+      phase: "end",
       totalBytes: 1_400_000,
-    });
+      realFirstByteAt: 12.1,
+      realEndAt: 12.9,
+    };
+    expect(workerMessage.parse(end)).toEqual(end);
     expect(workerMessage.safeParse({ ...event, phase: "paused" }).success).toBe(false);
   });
 

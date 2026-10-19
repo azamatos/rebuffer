@@ -30,11 +30,27 @@ describe("one request", () => {
     const link = createLink(steady());
     start(link, "a", 1_000_000);
     expect(advance(link, 0.25)).toEqual([
-      { id: "a", bytes: 250_000, released: 250_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "a",
+        bytes: 250_000,
+        released: 250_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
-    expect(advance(link, 0.5)).toEqual([{ id: "a", bytes: 250_000, released: 500_000, lateMs: 0 }]);
+    expect(advance(link, 0.5)).toEqual([
+      { id: "a", bytes: 250_000, released: 500_000, firstByteLateMs: 0, bodyLateMs: 0 },
+    ]);
     expect(advance(link, 1)).toEqual([
-      { id: "a", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 1 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 1,
+      },
     ]);
     expect(link.requests.size).toBe(0);
   });
@@ -44,11 +60,19 @@ describe("one request", () => {
     start(link, "a", 1_000_000);
     expect(advance(link, 0.05)).toEqual([]);
     expect(advance(link, 0.1)).toEqual([
-      { id: "a", bytes: 0, released: 0, lateMs: 0, firstByteAt: 0.1 },
+      { id: "a", bytes: 0, released: 0, firstByteLateMs: 0, bodyLateMs: 0, firstByteAt: 0.1 },
     ]);
-    expect(advance(link, 0.6)).toEqual([{ id: "a", bytes: 500_000, released: 500_000, lateMs: 0 }]);
+    expect(advance(link, 0.6)).toEqual([
+      { id: "a", bytes: 500_000, released: 500_000, firstByteLateMs: 0, bodyLateMs: 0 },
+    ]);
     const [last] = advance(link, 1.2);
-    expect(last).toMatchObject({ id: "a", bytes: 500_000, released: 1_000_000, lateMs: 0 });
+    expect(last).toMatchObject({
+      id: "a",
+      bytes: 500_000,
+      released: 1_000_000,
+      firstByteLateMs: 0,
+      bodyLateMs: 0,
+    });
     expect(last?.doneAt).toBeCloseTo(1.1, 12);
   });
 
@@ -64,10 +88,24 @@ describe("one request", () => {
     });
     start(link, "a", 1_000_000);
     expect(advance(link, 0.5)).toEqual([
-      { id: "a", bytes: 250_000, released: 250_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "a",
+        bytes: 250_000,
+        released: 250_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
     expect(advance(link, 2)).toEqual([
-      { id: "a", bytes: 750_000, released: 1_000_000, lateMs: 0, doneAt: 1 },
+      {
+        id: "a",
+        bytes: 750_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 1,
+      },
     ]);
   });
 
@@ -81,7 +119,14 @@ describe("one request", () => {
     });
     start(link, "a", 2_000_000);
     expect(advance(link, 10)).toEqual([
-      { id: "a", bytes: 1_000_000, released: 1_000_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "a",
+        bytes: 1_000_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
     expect(advance(link, 100)).toEqual([]);
     expect(link.requests.has("a")).toBe(true);
@@ -91,7 +136,15 @@ describe("one request", () => {
     const link = createLink(steady(100));
     start(link, "a", 0);
     expect(advance(link, 0.2)).toEqual([
-      { id: "a", bytes: 0, released: 0, lateMs: 0, firstByteAt: 0.1, doneAt: 0.1 },
+      {
+        id: "a",
+        bytes: 0,
+        released: 0,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0.1,
+        doneAt: 0.1,
+      },
     ]);
   });
 });
@@ -102,12 +155,40 @@ describe("sharing", () => {
     start(link, "a", 1_000_000);
     start(link, "b", 1_000_000);
     expect(advance(link, 1)).toEqual([
-      { id: "a", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0 },
-      { id: "b", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
     expect(advance(link, 2)).toEqual([
-      { id: "a", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 2 },
-      { id: "b", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 2 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 2,
+      },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 2,
+      },
     ]);
   });
 
@@ -120,7 +201,8 @@ describe("sharing", () => {
         id,
         bytes: 1_000_000,
         released: 1_500_000,
-        lateMs: 0,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
         doneAt: 4.5,
       })),
     );
@@ -131,11 +213,33 @@ describe("sharing", () => {
     start(link, "a", 500_000);
     start(link, "b", 1_500_000);
     expect(advance(link, 1)).toEqual([
-      { id: "a", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0, doneAt: 1 },
-      { id: "b", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+        doneAt: 1,
+      },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
     expect(advance(link, 2)).toEqual([
-      { id: "b", bytes: 1_000_000, released: 1_500_000, lateMs: 0, doneAt: 2 },
+      {
+        id: "b",
+        bytes: 1_000_000,
+        released: 1_500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 2,
+      },
     ]);
   });
 
@@ -144,15 +248,36 @@ describe("sharing", () => {
     start(link, "a", 1_000_000, 0);
     start(link, "b", 1_000_000, 0.5);
     expect(advance(link, 1)).toEqual([
-      { id: "a", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0.5 },
-      { id: "b", bytes: 0, released: 0, lateMs: 0, firstByteAt: 1 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0.5,
+      },
+      { id: "b", bytes: 0, released: 0, firstByteLateMs: 0, bodyLateMs: 0, firstByteAt: 1 },
     ]);
     expect(advance(link, 2)).toEqual([
-      { id: "a", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 2 },
-      { id: "b", bytes: 500_000, released: 500_000, lateMs: 0 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 2,
+      },
+      { id: "b", bytes: 500_000, released: 500_000, firstByteLateMs: 0, bodyLateMs: 0 },
     ]);
     expect(advance(link, 2.5)).toEqual([
-      { id: "b", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 2.5 },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 2.5,
+      },
     ]);
   });
 
@@ -161,10 +286,22 @@ describe("sharing", () => {
     start(link, "a", 1_000_000);
     start(link, "b", 1_000_000);
     advance(link, 1);
-    expect(abortRequest(link, "a")).toMatchObject({ id: "a", released: 500_000, lateMs: 0 });
+    expect(abortRequest(link, "a")).toMatchObject({
+      id: "a",
+      released: 500_000,
+      firstByteLateMs: 0,
+      bodyLateMs: 0,
+    });
     expect(abortRequest(link, "a")).toBeUndefined();
     expect(advance(link, 1.5)).toEqual([
-      { id: "b", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 1.5 },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 1.5,
+      },
     ]);
   });
 
@@ -190,16 +327,44 @@ describe("late real network", () => {
     start(link, "a", undefined);
     start(link, "b", 1_000_000);
     expect(advance(link, 0.5)).toEqual([
-      { id: "b", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 0 },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 0,
+      },
     ]);
     supplyBytes(link, "a", 1_000_000);
     finishSupply(link, "a", 1_000_000);
     expect(advance(link, 1.5)).toEqual([
-      { id: "a", bytes: 500_000, released: 500_000, lateMs: 500, firstByteAt: 0.5 },
-      { id: "b", bytes: 500_000, released: 1_000_000, lateMs: 0, doneAt: 1.5 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 500,
+        bodyLateMs: 0,
+        firstByteAt: 0.5,
+      },
+      {
+        id: "b",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        doneAt: 1.5,
+      },
     ]);
     expect(advance(link, 2)).toEqual([
-      { id: "a", bytes: 500_000, released: 1_000_000, lateMs: 500, doneAt: 2 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 1_000_000,
+        firstByteLateMs: 500,
+        bodyLateMs: 0,
+        doneAt: 2,
+      },
     ]);
   });
 
@@ -211,7 +376,14 @@ describe("late real network", () => {
     supplyBytes(link, "a", 250_000);
     finishSupply(link, "a", 500_000);
     expect(advance(link, 1)).toEqual([
-      { id: "a", bytes: 250_000, released: 500_000, lateMs: 250, doneAt: 0.75 },
+      {
+        id: "a",
+        bytes: 250_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 250,
+        doneAt: 0.75,
+      },
     ]);
   });
 
@@ -228,7 +400,15 @@ describe("late real network", () => {
     supplyBytes(link, "a", 500_000);
     finishSupply(link, "a", 500_000);
     expect(advance(link, 1.5)).toEqual([
-      { id: "a", bytes: 500_000, released: 500_000, lateMs: 0, firstByteAt: 1, doneAt: 1.5 },
+      {
+        id: "a",
+        bytes: 500_000,
+        released: 500_000,
+        firstByteLateMs: 0,
+        bodyLateMs: 0,
+        firstByteAt: 1,
+        doneAt: 1.5,
+      },
     ]);
   });
 
@@ -239,7 +419,7 @@ describe("late real network", () => {
     advance(link, 1);
     finishSupply(link, "a", 500_000);
     expect(advance(link, 1.25)).toEqual([
-      { id: "a", bytes: 0, released: 500_000, lateMs: 0, doneAt: 0.5 },
+      { id: "a", bytes: 0, released: 500_000, firstByteLateMs: 0, bodyLateMs: 0, doneAt: 0.5 },
     ]);
   });
 
@@ -247,7 +427,23 @@ describe("late real network", () => {
     const link = createLink(steady());
     start(link, "a", undefined);
     advance(link, 0.3);
-    expect(abortRequest(link, "a")?.lateMs).toBeCloseTo(300, 9);
+    expect(abortRequest(link, "a")?.firstByteLateMs).toBeCloseTo(300, 9);
+  });
+
+  it("books a wait before the first byte as latency and a later one as bandwidth", () => {
+    const link = createLink(steady(100));
+    start(link, "a", undefined);
+    // The simulated RTT is over at 0.1 s; the real first bytes arrive at 0.3 s.
+    advance(link, 0.3);
+    supplyBytes(link, "a", 100_000);
+    // They go out by 0.4 s; the next real bytes arrive at 0.5 s.
+    advance(link, 0.5);
+    supplyBytes(link, "a", 100_000);
+    finishSupply(link, "a", 200_000);
+    const [last] = advance(link, 1);
+    expect(last?.firstByteLateMs).toBeCloseTo(200, 9);
+    expect(last?.bodyLateMs).toBeCloseTo(100, 9);
+    expect(last?.doneAt).toBeCloseTo(0.6, 9);
   });
 });
 
