@@ -19,7 +19,8 @@
   Cloudflare R2/Pages limits and video terms; prior art (the gap is real); name collisions.
 - Targets: MVP live by **Nov 22**, compare runs and the case study by **Dec 6** (`progress.md`).
 - Parked on 2026-10-18 (see `progress.md`, Later): subtitle sync tool, a player for your own films, encode comparer.
-- **Code exists since 2026-10-18; on GitHub since 2026-10-19** (github.com/azamatos/rebuffer, public). M0 scaffold, M1 core modules, and the first
+- **Code exists since 2026-10-18; on GitHub since 2026-10-19** (github.com/azamatos/rebuffer, public). **Live at
+  https://rebuffer.pages.dev** (Cloudflare Pages, Git integration: pushes to main deploy). M0 scaffold, M1 core modules, and the first
   working Run screen: a real hls.js run plays through the simulated network end to end. Nothing is deployed.
 
 ## Decisions (settled 2026-10-18 unless marked open)
@@ -46,8 +47,11 @@
 
 ## Next step
 
-- **Owner:** create the R2 bucket on media.azamatos.com and a Cloudflare Pages project for rebuffer.azamatos.com
-  (connected to the GitHub repo). Then upload the full encode (`scripts/media/README.md`).
+- **Owner (Cloudflare dashboard; wrangler's login can't edit DNS or enable R2):**
+  1. Add the DNS record for rebuffer.azamatos.com: CNAME `rebuffer` → `rebuffer.pages.dev`, proxied (or use
+     "Activate domain" under Workers & Pages → rebuffer → Custom domains). The domain is already attached.
+  2. Enable R2 (R2 Object Storage → enable; free tier, may need a card). Then an agent creates the bucket,
+     connects media.azamatos.com, sets CORS and uploads the encode.
 - **Agents (M2):** the Run screen's charts (uPlot, three charts on one time axis), Home setup pickers wired to the
   Run screen, the keyboard-only Home → run test. Until our encode is uploaded, the default sample is Unified
   Streaming's public *Tears of Steel* (`src/core/samples.ts`); switch the default to ours after the upload.

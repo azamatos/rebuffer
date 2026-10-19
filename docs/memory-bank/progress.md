@@ -28,8 +28,11 @@ agents do most of the building and every milestone is shippable on its own.
 - [ ] Rename the folder to `~/www/me/rebuffer`
 - [x] Full encode (2026-10-18): clean 912 MB (184 × 4 s segments per rung; our parser finds only two notes: no
       I-frame playlists, one 2.05× ladder gap), problems version 1.0 GB (the planted mistakes found exactly)
-- [ ] R2 bucket on media.azamatos.com (owner) and upload
-- [ ] Cloudflare Pages project on rebuffer.azamatos.com, preview deploys per branch
+- [ ] R2: the owner enables R2 in the dashboard (wrangler can't); then an agent creates the bucket, connects
+      media.azamatos.com, sets CORS and uploads
+- [x] Cloudflare Pages project `rebuffer` with Git integration (builds `pnpm build`, serves `dist`; every push to
+      main deploys, other branches get previews), live at https://rebuffer.pages.dev (2026-10-19)
+- [ ] rebuffer.azamatos.com: the domain is attached but waits for its DNS record (owner; wrangler can't edit DNS)
 - [ ] shadcn/ui set up when the first component needs it
 
 ## M1: core modules (target Nov 1)
@@ -57,6 +60,10 @@ engines.
       (2026-10-18)
 - [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot)
 - [ ] Home setup (stream, network, player pickers) wired to the Run screen; Try the tunnel from Home
+- [ ] Warm the stream before a run (playlists and first segments) and cache segments in the worker, so repeat runs
+      match and a slow first byte doesn't count against the simulation. Found 2026-10-19 on the live site: Unified
+      Streaming packages segments on demand, so all 17 downloads came late (worst 1.2 s) against an 80 ms RTT
+- [ ] Name levels by width class (1920×800 → 1080p) like the inspector, not by height
 - [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
 
 ## M3: report, network editor, inspector (target Nov 15)
@@ -104,5 +111,6 @@ engines.
   Playwright checks green). Playlist parser, codecs and lint rules merged (193 tests). Run controller and the first
   Run screen built: a real hls.js run plays through the shaper in all three engines (301 unit tests, 56 Playwright
   checks).
-- 2026-10-19: pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
+- 2026-10-19: deployed with Cloudflare Pages (Git integration) at https://rebuffer.pages.dev; a real run on the live
+  site works end to end. Pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
   to drop private references from the docs (no commit had been published).
