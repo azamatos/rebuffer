@@ -12,7 +12,7 @@ building and every milestone is shippable on its own.
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
 | M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
-| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness, charts and Home setup left |
+| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness done (not deployed yet); charts and Home setup left |
 | M3 Report, network editor, inspector | Nov 15 | not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
@@ -31,7 +31,7 @@ building and every milestone is shippable on its own.
 - [x] R2 bucket `azamatos-media` at https://media.azamatos.com: CORS open to any origin (GET, HEAD), cache rule
       "media: cache segments and playlists", r2.dev off; all 1,740 files uploaded and verified (2026-10-19)
 - [ ] Push-triggered deploys: deferred by the owner on 2026-10-19; deploys are by hand (`techContext.md`, "Deploying")
-- [ ] Optional: rename the folder to `~/www/me/rebuffer`
+- [x] Folder renamed to `~/www/me/rebuffer` (by 2026-10-19)
 - [ ] shadcn/ui, when the first component needs it
 
 ## M1: core modules — done
@@ -50,12 +50,12 @@ building and every milestone is shippable on its own.
 - [x] Run screen, first version: setup, progress, video, live tiles, event log, score, honesty line (2026-10-18)
 - [x] End-to-end Playwright run on a synthetic ffmpeg ladder in all three engines (2026-10-18)
 - [x] Our film is the default sample; a live run on rebuffer.azamatos.com plays it from media.azamatos.com (2026-10-19)
-- [ ] **Honest lateness:** a warm-up before the run measures the real latency and throughput; the report separates
-      "your real latency (~N ms) is above the simulated one" from "your connection couldn't keep up". Found on
-      2026-10-19: even from Cloudflare's cache, this connection's latency is above the simulated 80 ms RTT (warm:
-      20 of 41 downloads late, worst 268 ms; cold: 34 of 34, worst 596 ms; Unified Streaming's on-demand packaging:
-      17 of 17, worst 1.2 s)
-- [ ] Optional with the above: cache segments in the worker so repeat runs of a setup match
+- [x] **Honest lateness** (2026-10-19, not deployed yet): a check before the run measures the real latency and
+      opens the connection; the result tells late starts (the real network answered slower than the simulated RTT)
+      from late bytes (it paused or couldn't keep up), quotes the real speed and the measured latency, and reports
+      background-tab time. Live numbers are in `techContext.md`, "Honesty checks"
+- [ ] Cache segments in the worker so repeat runs of a setup match (the owner decides after seeing the live results;
+      recommended after the charts). Live runs showed why: Home fibre scored 76, then 85, on the same setup
 - [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot), per the design canvas
 - [ ] Home setup (stream, network, player pickers) wired to `/run`; "Try the tunnel" from Home
 - [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
@@ -107,3 +107,8 @@ building and every milestone is shippable on its own.
   media.azamatos.com with CDN caching, CORS and all files verified; our film became the default sample; levels named
   by width class; live runs work. Push-triggered deploys don't fire (project created through the API); the owner
   deferred the fix.
+- 2026-10-19 (second session): honest lateness. The link books late first bytes and late later bytes separately;
+  a check before the run measures the real latency and opens the connection; the result names late starts, late
+  bytes (with the real speed) and background-tab time in plain words; 321 unit tests, 61 Playwright checks (one new:
+  a slow test server). Live runs against media.azamatos.com showed first bytes far later than the check suggests and
+  run-to-run variation, so the wording names no cause it can't show.

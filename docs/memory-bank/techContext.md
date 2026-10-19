@@ -66,8 +66,16 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
   - **Hidden tabs:** the controller logs `visibility` events; the report says how long the tab was in the background.
   - Why: from the owner's Mac, media.azamatos.com (Cloudflare, Warsaw, cache hit) answers in 80–100 ms on an open
     connection and about 300 ms on a new one (TLS alone about 230 ms), measured with curl on 2026-10-19. Six of seven
-    presets simulate less than that (15–80 ms), so counting each download as "late" was noise; the report now states
-    the real latency once and keeps "arrived late" for bandwidth.
+    presets simulate less than that (15–80 ms).
+  - **Measured in live runs (2026-10-19, Playwright Chromium on the owner's Mac, local build against
+    media.azamatos.com):** the check before the run gives 86–105 ms; its first answer, which opens the connection,
+    took 320–810 ms. During runs, first bytes are often much later than the check suggests (Home fibre: late by 82 ms
+    typically, up to 301–663 ms; Tunnel: up to 390–455 ms; Rural 3G: 4–17 of 87 late by up to 438 ms), and the same
+    setup varied between two runs (Home fibre scored 76, then 85). Causes seen: playlists expire at Cloudflare after
+    5 minutes (`max-age=300`), and the next fetch is a MISS or REVALIDATED (about 100 ms more); segments were all
+    cache hits (76–158 ms). The rest is unexplained (load on the real connection, the worker's fetch path), so the
+    report names no cause for late starts: it gives typical and worst waits and quotes the measured latency as a
+    fact. Late bytes mid-download came from pauses, not low speed: the real network averaged 48–71 Mbps.
 - **Built 2026-10-18** (`src/core/netsim`, `src/sw`, `tests/e2e/shaper.spec.ts`):
   - A small Vite plugin bundles `src/sw/sw.ts` into one classic script at `/sw.js` (dev middleware and
     `dist/sw.js`). It is 98 KB minified, mostly zod; `zod/mini` could shrink it.
