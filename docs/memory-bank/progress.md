@@ -1,98 +1,87 @@
 # Roadmap
 
-Target: **MVP live by 2026-11-22; compare runs, case study and launch by 2026-12-06** (the owner's portfolio schedule). The owner works on it about 3 hours a week and pauses during busy weeks, so
-agents do most of the building and every milestone is shippable on its own.
+Target: **MVP live by 2026-11-22; compare runs, case study and launch by 2026-12-06** (the owner's portfolio
+schedule). The owner works on it about 3 hours a week and pauses during busy weeks, so agents do most of the
+building and every milestone is shippable on its own.
 
 ## Status
 
-| Milestone | Status |
-|---|---|
-| Plan for a Smart TV app | done 2026-10-17, dropped 2026-10-18 |
-| Plan for the HLS network lab, design proposal | done 2026-10-18 |
-| M0 Decisions and setup | in progress (scaffold done 2026-10-18; repo, bucket and deploy wait for the owner) |
-| M1 Core modules | done 2026-10-18 (except the Irish 4G trace converter) |
-| M2 Live run | in progress (a real run works end to end; charts next) |
-| M3 Report, network editor, inspector | not started |
-| M4 Polish; MVP live | not started |
-| M5 Compare and launch | not started |
+| Milestone | Target | Status |
+|---|---|---|
+| Plan for a Smart TV app | — | done 2026-10-17, dropped 2026-10-18 |
+| Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
+| M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
+| M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
+| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness, charts and Home setup left |
+| M3 Report, network editor, inspector | Nov 15 | not started |
+| M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
+| M5 Compare and launch | Dec 6 | not started |
 
-## M0: decisions and setup (target Oct 25)
+## M0: decisions and setup — done
 
-- [x] Owner decides the open items in `activeContext.md` and reviews the design canvas (2026-10-18)
+- [x] Decisions settled; design canvas accepted (2026-10-18)
 - [x] `git init`; Vite 8 + React 19 + TypeScript 6 + Tailwind 4, TanStack Router, ESLint (strict, type-checked),
       Prettier, Vitest, Playwright + axe in 3 engines, size-limit, Lighthouse CI, GitHub Actions (2026-10-18)
 - [x] App shell: family wordmark, navigation, skip link, routes for every screen, not-found page (2026-10-18)
-- [x] Media script: encode *Tears of Steel* (ladder + "with problems" version + subtitles) (2026-10-18)
-- [x] GitHub repo github.com/azamatos/rebuffer (owner created it, public; pushed 2026-10-19; description and topics
-      set)
-- [ ] Rename the folder to `~/www/me/rebuffer`
-- [x] Full encode (2026-10-18): clean 912 MB (184 × 4 s segments per rung; our parser finds only two notes: no
-      I-frame playlists, one 2.05× ladder gap), problems version 1.0 GB (the planted mistakes found exactly)
-- [x] R2 bucket `azamatos-media` on media.azamatos.com (owner enabled R2, created the bucket and the cache rule
-      "media: cache segments and playlists"; r2.dev off). CORS open to any origin for GET/HEAD; all 1,740 files
-      uploaded and verified (2026-10-19). Cloudflare caches per Origin (R2 sends `Vary: Origin`), so the CORS header
-      survives caching
-- [x] Cloudflare Pages project `rebuffer` with Git integration (builds `pnpm build`, serves `dist`; every push to
-      main deploys, other branches get previews), live at https://rebuffer.pages.dev (2026-10-19)
-- [x] rebuffer.azamatos.com live (owner added the DNS record, 2026-10-19)
-- [ ] Automatic deploys on push: the project was created through the API and GitHub's webhook never fires
-      (test pushes 9e21ec4 and 65b65d7 didn't deploy). Owner: check the Cloudflare GitHub app's repo access, or
-      recreate the project from the dashboard. Until then deploys are triggered by hand through the API
-- [ ] shadcn/ui set up when the first component needs it
+- [x] Media script and full encode of *Tears of Steel*: clean 912 MB (184 × 4 s segments per rung), version with
+      problems 1.0 GB; our parser finds the planted mistakes exactly (2026-10-18)
+- [x] GitHub repo github.com/azamatos/rebuffer, public, description and topics set (2026-10-19)
+- [x] Cloudflare Pages project `rebuffer` at https://rebuffer.azamatos.com; `*.pages.dev` sends `noindex`
+      (2026-10-19)
+- [x] R2 bucket `azamatos-media` at https://media.azamatos.com: CORS open to any origin (GET, HEAD), cache rule
+      "media: cache segments and playlists", r2.dev off; all 1,740 files uploaded and verified (2026-10-19)
+- [ ] Push-triggered deploys: deferred by the owner on 2026-10-19; deploys are by hand (`techContext.md`, "Deploying")
+- [ ] Optional: rename the folder to `~/www/me/rebuffer`
+- [ ] shadcn/ui, when the first component needs it
 
-## M1: core modules (target Nov 1)
+## M1: core modules — done
 
-- [x] Playlist parser, codec names, lint rules, with fixtures and tests (2026-10-18; 193 tests; checked on our
-      real encodes: the planted mistakes are found)
-- [x] Network simulator: curve model, link scheduler, presets, page↔worker protocol, client, with tests (2026-10-18)
-- [ ] Irish 4G trace converter
-- [x] Run event log; metrics and score from synthetic logs, with tests (2026-10-18)
-- [x] hls.js adapter (events from the player and the video element) and player presets (2026-10-18; end-to-end test in M2)
-- [ ] "What happened" notes and "try next" ideas (moved to M3, to tune on real runs)
-- [x] Service Worker shaping proven by a Playwright test in Chromium, Firefox and WebKit: 3–24 ms behind the curve
-      (2026-10-18)
-
-Done when the core passes its tests and a 1 MB download through a known curve lands within tolerance in all three
-engines.
+- [x] Playlist parser, codec names, lint rules with spec references; 193 tests (2026-10-18)
+- [x] Network simulator: curve model, link scheduler, presets, page↔worker protocol, client; compact curve URL
+      format (2026-10-18)
+- [x] Service Worker shaper, proven in Chromium, Firefox and WebKit: 3–24 ms behind the curve, never ahead; shapes
+      every origin except the app's own (2026-10-18)
+- [x] Run event log; metrics, score and the honesty count (2026-10-18)
+- [x] hls.js adapter and player presets; levels named by width class (1280×534 → 720p) (2026-10-19)
 
 ## M2: live run (target Nov 8)
 
-- [x] hls.js adapter and RunController; event log; setup in the URL (stream, network preset or compact curve,
-      player preset) (2026-10-18)
-- [x] Run screen, first version: setup, progress, video, live tiles, event log, score and honesty line
-      (2026-10-18)
-- [x] Playwright: a synthetic ffmpeg ladder plays through the shaper end to end in Chromium, Firefox and WebKit
-      (2026-10-18)
-- [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot)
-- [ ] Home setup (stream, network, player pickers) wired to the Run screen; Try the tunnel from Home
-- [ ] Report latency and bandwidth lateness separately ("your real latency is ~N ms, above the simulated 80 ms" vs
-      "your connection couldn't keep up"), measured in a warm-up before the run
-- [ ] Warm the stream before a run (playlists and first segments) and cache segments in the worker, so repeat runs
-      match and a slow first byte doesn't count against the simulation. Found 2026-10-19 on the live site: Unified
-      Streaming packages segments on demand, so all 17 downloads came late (worst 1.2 s) against an 80 ms RTT
-- [x] Name levels by width class (1280×534 → 720p) like the inspector (2026-10-19)
+- [x] Run controller; setup in the URL (stream, network preset or compact curve, player preset) (2026-10-18)
+- [x] Run screen, first version: setup, progress, video, live tiles, event log, score, honesty line (2026-10-18)
+- [x] End-to-end Playwright run on a synthetic ffmpeg ladder in all three engines (2026-10-18)
+- [x] Our film is the default sample; a live run on rebuffer.azamatos.com plays it from media.azamatos.com (2026-10-19)
+- [ ] **Honest lateness:** a warm-up before the run measures the real latency and throughput; the report separates
+      "your real latency (~N ms) is above the simulated one" from "your connection couldn't keep up". Found on
+      2026-10-19: even from Cloudflare's cache, this connection's latency is above the simulated 80 ms RTT (warm:
+      20 of 41 downloads late, worst 268 ms; cold: 34 of 34, worst 596 ms; Unified Streaming's on-demand packaging:
+      17 of 17, worst 1.2 s)
+- [ ] Optional with the above: cache segments in the worker so repeat runs of a setup match
+- [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot), per the design canvas
+- [ ] Home setup (stream, network, player pickers) wired to `/run`; "Try the tunnel" from Home
 - [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
 
 ## M3: report, network editor, inspector (target Nov 15)
 
-- [ ] Report: score, tiles, timeline, "what happened", "try next", export JSON, share link; saved runs
-- [ ] Network editor with presets, recorded traces, keyboard editing, import and export
-- [ ] Inspector: ladder, tracks, segments, measured bitrate, findings
+- [ ] Report: score with breakdown, tiles, timeline, "what happened" notes, "try next" ideas, export JSON, share
+      link; saved runs in IndexedDB; Runs list
+- [ ] Network editor: presets, recorded traces, keyboard editing, import and export
+- [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
+- [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
 
-## M4: polish; MVP live (target Nov 22)
+## M4: polish; MVP complete (target Nov 22)
 
-- [ ] Home, About (how it works, limits, credits), first-run hints
-- [ ] Accessibility pass (axe clean, table views, live region); budgets and Lighthouse ≥ 95
+- [ ] About (how it works, limits, credits), first-run hints
+- [ ] Accessibility pass (table views for charts, live region); budgets; Lighthouse ≥ 95
 - [ ] Pre-render the home page: CI measured Lighthouse performance 0.82 on GitHub's runners (0.98 locally) because
-      the first paint waits for React; the CI assertion is a warning until this is done (2026-10-19)
+      the first paint waits for React; the CI assertion is a warning until this is done
 - [ ] Determinism job: spread per preset measured and published
+- [ ] Real Safari check by hand (shaped responses, redirects, aborts)
 - [ ] README: pitch, GIF, architecture, measured numbers, how to run and test
-- [ ] Deployed to the chosen subdomain
 
 ## M5: compare and launch (target Dec 6)
 
 - [ ] Compare two saved runs (tiles with differences, overlaid charts)
-- [ ] Case study on azamatos.com; repo public (owner's call) and pinned; LinkedIn post with a GIF
+- [ ] Case study on azamatos.com; repo pinned; LinkedIn post with a GIF
 
 ## Later (only if it earns it)
 
@@ -107,20 +96,14 @@ engines.
 
 - 2026-10-17: Smart TV app idea agreed; folder, README, AGENTS.md and memory bank written.
 - 2026-10-18: scope review; the TV app dropped. Pains of viewers and video teams reviewed; the owner chose the HLS
-  network lab. Research on stack versions, hls.js internals, Service Worker shaping (tested in 3 engines), trace
-  licences, test streams, film licence, Cloudflare terms and names. Brief, spec, tech plan, AGENTS.md and README
-  rewritten; design proposal published as a canvas (6 boards).
-- 2026-10-18: owner settled the decisions (Rebuffer at rebuffer.azamatos.com, media at media.azamatos.com, any
-  stream link, public test streams, family wordmark). M0 scaffold built: tooling, app shell, tests (Vitest; 25
-  Playwright checks with axe in 3 engines), CI, Lighthouse 98/100/100/100 locally, media script (test encodes
-  verified: 4 s fMP4 ladder; the problems version cuts a 6.625 s segment under a 6 s target). M1 started: event log,
-  metrics, score, hls.js adapter. Network simulator and Service Worker shaper built and merged (98 unit tests, 49
-  Playwright checks green). Playlist parser, codecs and lint rules merged (193 tests). Run controller and the first
-  Run screen built: a real hls.js run plays through the shaper in all three engines (301 unit tests, 56 Playwright
-  checks).
-- 2026-10-19: deployed with Cloudflare Pages at https://rebuffer.azamatos.com (custom domain live); media on R2 at
-  media.azamatos.com with CDN caching; our Tears of Steel is the default sample. Live runs of our film work; the
-  honesty check still flags downloads as late because this connection's real latency is above the simulated 80 ms
-  even from cache (cold: 34/34 late, worst 596 ms; warm: 20/41, worst 268 ms) → split latency from bandwidth
-  lateness in M2. Pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
-  to drop private references from the docs (no commit had been published).
+  network lab. Research on stack versions, hls.js internals, Service Worker shaping, trace licences, test streams,
+  film licence, Cloudflare terms and names. Brief, spec, tech plan, AGENTS.md and README rewritten; design canvas
+  published (6 boards).
+- 2026-10-18: decisions settled. M0 scaffold; M1 core modules (parser, simulator and shaper built by two agents in
+  worktrees, metrics and the hls.js adapter in the main tree); the run controller and the first Run screen; full
+  encode of the film.
+- 2026-10-19: pushed to github.com/azamatos/rebuffer (public); before the first push, unpublished history was
+  rewritten to drop private references from the docs. Cloudflare Pages live at rebuffer.azamatos.com; R2 media at
+  media.azamatos.com with CDN caching, CORS and all files verified; our film became the default sample; levels named
+  by width class; live runs work. Push-triggered deploys don't fire (project created through the API); the owner
+  deferred the fix.

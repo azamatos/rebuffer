@@ -1,6 +1,7 @@
 # Product spec
 
-**Agreed 2026-10-18; only the app shell is built.** Screens follow the design proposal (canvas linked in
+**Agreed 2026-10-18. Built by 2026-10-19: the shell, Home's hero, and the Run screen's first version (no charts
+yet); the other screens are placeholders.** Screens follow the design proposal (canvas linked in
 `activeContext.md`), accepted on 2026-10-18. The app is Rebuffer, at rebuffer.azamatos.com. The header carries the
 family wordmark shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊`.
 

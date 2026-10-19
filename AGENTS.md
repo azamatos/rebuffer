@@ -3,13 +3,12 @@
 A browser-only lab for HLS video streaming: pick a stream, pick a network (a preset or a bandwidth curve you
 draw), press Run, and a real player (hls.js) plays through the simulated network while live charts show its
 decisions; a report scores the result. It also inspects HLS playlists. No backend. Sample content: Blender
-Studio's _Tears of Steel_ (CC BY 3.0), re-encoded, never cut. Owner: Azamat Jorayev (azamatos). Planned at
+Studio's _Tears of Steel_ (CC BY 3.0), re-encoded, never cut. Owner: Azamat Jorayev (azamatos). Live at
 rebuffer.azamatos.com; sample media at media.azamatos.com. Applies to every agent tool; Claude Code also reads
 `CLAUDE.md`.
 
-**Status (2026-10-18): M0 in progress.** A local git repo with the app shell, tooling, tests, CI and the media
-script; nothing deployed yet. The project changed on 2026-10-18 from a Smart TV app to this lab. Start with
-`docs/memory-bank/activeContext.md`.
+**Status (2026-10-19): M0 and M1 done, M2 in progress.** Live at https://rebuffer.azamatos.com (deployed by hand;
+see `techContext.md`, "Deploying"). Start with `docs/memory-bank/activeContext.md`.
 
 ## Read first
 

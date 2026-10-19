@@ -1,7 +1,7 @@
 # Project brief
 
 **Chosen 2026-10-18.** Replaces the Smart TV app planned on 2026-10-17 (dropped: too much hardware work for a
-portfolio piece). Nothing is built yet. The name and subdomain are open (`activeContext.md`).
+portfolio piece). Live at https://rebuffer.azamatos.com since 2026-10-19, still in development (`progress.md`).
 
 ## What it is
 
@@ -51,7 +51,7 @@ No backend: everything runs in the visitor's browser. The sample film is Blender
 
 ## What success looks like
 
-- Live on an azamatos.com subdomain; the README has a GIF, the architecture, and measured numbers.
+- Live at rebuffer.azamatos.com; the README has a GIF, the architecture, and measured numbers.
 - The 30-second path works: open → "Try the tunnel" → watch → report.
 - **The simulation is honest:** the same setup gives the same result within a stated, measured margin, and a run
   says so when the visitor's real network was slower than the simulated one.

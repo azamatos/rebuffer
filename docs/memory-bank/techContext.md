@@ -1,7 +1,7 @@
 # Technical plan
 
-**Agreed 2026-10-18; the M0 scaffold exists, the lab itself isn't built yet.** Versions and API facts were checked on 2026-10-18 (`npm view`,
-package sources, a scratch Playwright test). Items marked **open** wait for the owner (`activeContext.md`).
+**Agreed 2026-10-18; built through M1 and the first Run screen by 2026-10-19.** Versions and API facts were checked
+on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 
 ## Stack
 
@@ -23,15 +23,16 @@ package sources, a scratch Playwright test). Items marked **open** wait for the 
 | Budgets | size-limit, Lighthouse CI | 14.2 / 0.15 | Bundle size per route; Lighthouse ≥ 95 |
 | Lint, format | ESLint flat + typescript-eslint, Prettier | 10.13 / 3.9 | Owner's default |
 | Runtime | Node ≥ 22.12, pnpm 10 | — | Owner's default; Vite 8 needs Node 20.19+ or 22.12+ |
-| Hosting | Cloudflare Pages at rebuffer.azamatos.com, R2 at media.azamatos.com, Web Analytics | wrangler 4.151 | Free tiers; R2 is the route Cloudflare's terms allow for video |
+| Hosting | Cloudflare Pages at rebuffer.azamatos.com, R2 at media.azamatos.com (Web Analytics optional, not on yet) | wrangler 4.151 (devDependency) | Free tiers; R2 is the route Cloudflare's terms allow for video |
 | Fonts | Geist (variable) and Space Mono, self-hosted via Fontsource | 5.3 | Same faces as azamatos.com; no third-party font requests |
 
 ## How the network is simulated
 
-**Decision proposed: a Service Worker shapes the player's own requests.**
+**Decided 2026-10-18 and built: a Service Worker shapes the player's own requests.**
 
-- During a run, the page registers a *session* with the Service Worker: the network curve, the latency, the stream's
-  origin and the start time. The SW intercepts requests from that page to that origin and answers each one with a
+- During a run, the page registers a *session* with the Service Worker: the network curve, the latency, the origins
+  to shape (the run controller passes `*`: every origin except the app's own, because segments often live on
+  another host) and the start time. The SW intercepts those requests from that page and answers each one with a
   `Response` whose body it releases on the schedule the curve allows. Bytes come from the real network (and
   Cache Storage for repeat runs).
 - **One bottleneck link per run.** Concurrent downloads (video and audio, a playlist refresh) share the bandwidth
@@ -151,11 +152,13 @@ reference code is non-commercial research only, with patent notices.
   remixes. Attribution: "(CC) Blender Foundation | mango.blender.org", plus "re-encoded for streaming". Source:
   `download.blender.org/demo/movies/ToS/tears_of_steel_1080p.mov.zip` (584 MB; the frame is really 1920×800).
   Official English subtitles (`/subtitles/`) become a WebVTT track.
-- **Ladder** (H.264 High + AAC-LC, fMP4/CMAF, 4 s segments): 1920 wide 5.0 Mbps, 1280 2.8, 960 1.6, 640 0.8,
-  426 0.4. Labels use the width class (1080p, 720p…) and the inspector shows the real 2.4:1 size. About 1 GB in R2
-  for the whole film.
-- **"With problems" variant** for the inspector: MPEG-TS, 6 s segments, one 6.6 s segment, under-declared bandwidth,
-  missing `CODECS` on two rungs. Made by the same script.
+- **Ladder** (H.264 High + AAC-LC, fMP4/CMAF, 4 s segments, separate audio, English WebVTT): targets 1920 wide 5.0
+  Mbps, 1280 2.8, 960 1.6, 640 0.8, 426 0.4 (declared peaks came out 6.0, 3.3, 1.9, 0.94, 0.47). Labels use the
+  width class (1080p, 720p…); the real frame is 2.4:1. 912 MB. URL:
+  `https://media.azamatos.com/tears-of-steel/clean/master.m3u8`.
+- **Version with problems** for the inspector: MPEG-TS, 6 s segments, segment 12 lasts 6.625 s under a 6 s target,
+  720p encoded at 3.2 Mbps but declared 2.8, no `CODECS` on 540p and 240p, no I-frame playlists. 1.0 GB. URL:
+  `https://media.azamatos.com/tears-of-steel/problems/master.m3u8`. Both made by `scripts/media/encode.mjs`.
 - **Recorded traces:** excerpts of the Irish 4G dataset (Raca et al., MMSys 2018, CC BY 4.0, Zenodo 1219679), and maybe
   Lumos5G (CC BY 4.0), converted to our JSON with attribution and "excerpted and converted". Not bundled: Riiser
   HSDPA and Ghent 4G (no licence), Mahimahi (GPL repo), Puffer (no licence), NYU-METS (ODbL share-alike: only in
@@ -163,10 +166,12 @@ reference code is non-commercial research only, with patent notices.
 - **Third-party test streams** offered as links (all CORS-open on 2026-10-18, no SLA): Apple bipbop 16×9 (TS, 5
   rungs, subtitles, I-frames), Apple advanced fMP4 example, Unified Streaming Tears of Steel (TS, 5 rungs, 4 s),
   Mux Big Buck Bunny (TS, 10 s). Bitmovin's demo streams refuse other origins: don't use.
-- **Hosting:** R2 bucket on `media.azamatos.com` (media files only; `r2.dev` is rate-limited and for development
-  only), long cache headers, CORS for the app's origins (`scripts/media/r2-cors.json`). Free tier: 10 GB-month, 1M Class A and 10M
-  Class B operations, free egress. **Open:** the owner creates the bucket; Cloudflare may require a payment method
-  on file to enable R2 (not verified).
+- **Hosting (live 2026-10-19):** R2 bucket `azamatos-media` on `media.azamatos.com`; `r2.dev` off. Segments carry
+  `Cache-Control: public, max-age=31536000, immutable`, playlists `max-age=300`; a zone cache rule ("media: cache
+  segments and playlists", hostname equals media.azamatos.com, eligible for cache, edge TTL from Cache-Control)
+  makes Cloudflare cache them. CORS allows any origin for GET and HEAD with `Range`
+  (`scripts/media/r2-cors.json`); R2 sends `Vary: Origin`, and Cloudflare keeps one cached copy per origin, so the
+  CORS header survives caching. Free tier: 10 GB-month, 1M Class A and 10M Class B operations, free egress.
 
 ## Performance budgets
 
@@ -182,12 +187,32 @@ reference code is non-commercial research only, with patent notices.
 - **Vitest:** parser (fixtures from the third-party streams, our own and edge cases), codec names, lint rules,
   link scheduler (exact byte schedules for given curves, fair sharing, RTT, outages), metrics and score on
   synthetic logs, notes and ideas, URL codec, trace import.
-- **Playwright** (keyboard only, axe on every screen): Home → Try the tunnel (a 20 s CI curve) → Report; network
-  editor moved point by point with arrows; Inspect the "with problems" sample → findings; SW shaping test (1 MB
-  through a known curve, duration within tolerance) in Chromium, Firefox and WebKit.
-- **CI test stream:** ffmpeg `testsrc` + sine, 3 rungs, 2 s segments, 30 s, generated in CI (media never in git).
+- **Playwright today** (Chromium, Firefox, WebKit; axe on every screen): `shell.spec.ts` (routes, skip link,
+  keyboard navigation), `shaper.spec.ts` (byte-exact shaped downloads within tolerance, fair sharing, Range,
+  redirects, aborts, the `*` wildcard), `run.spec.ts` (a full run on the synthetic stream; skipped in a browser build
+  that can't decode H.264 through MSE). Planned: Home → Try the tunnel → Report, the network editor by keyboard,
+  Inspect the version with problems.
+- **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
+  writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
+  cross-origin on port 4013 under `/hls/`, next to deterministic `/bytes/<size>` files. CI installs ffmpeg.
 - **Determinism job:** each preset run 5× in Chromium; the spread is recorded and published.
 - **Lighthouse CI** on Home and a Report built from a stored run; **size-limit** per route.
+
+## Deploying
+
+- **App:** Cloudflare Pages project `rebuffer` (build `pnpm build`, output `dist`, production branch `main`). It is
+  connected to the GitHub repo, but pushes don't trigger builds: the project was created through the API and
+  GitHub's webhook never fired. The owner deferred the fix on 2026-10-19 (`activeContext.md`). **Deploy by hand**
+  after pushing: `POST https://api.cloudflare.com/client/v4/accounts/<account id>/pages/projects/rebuffer/deployments`
+  with form field `branch=main`, authorised with the OAuth token from `wrangler login` (`pnpm exec wrangler whoami`
+  shows the account id). Cloudflare clones `main` and builds it; poll
+  `.../deployments/<id>` until `latest_stage` is `deploy` with status `success`.
+- **Headers:** `public/_headers` sets the CSP (`connect-src` and `media-src` open, because the lab plays any link)
+  and `X-Robots-Tag: noindex` for `*.pages.dev` addresses, so only rebuffer.azamatos.com is indexed.
+- **Media:** `node scripts/media/upload.mjs` uploads `media/out/<name>` with wrangler (1,740 files for Tears of
+  Steel; master playlists last); `scripts/media/README.md` has the commands.
+- **What wrangler's login can't do** (owner, in the dashboard): DNS records, enabling R2, cache rules, API tokens,
+  and the GitHub app's repository access.
 
 ## Risks
 
