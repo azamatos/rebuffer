@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Level, RunEvent } from "./events";
 import type { Honesty } from "@/core/metrics";
+import type { NetworkCurve } from "@/core/netsim/curve";
 import {
   describeEvents,
   describeHonesty,
@@ -18,6 +19,7 @@ describe("formatMbps", () => {
   it("picks a readable unit", () => {
     expect(formatMbps(400_000)).toBe("400 kbps");
     expect(formatMbps(2_800_000)).toBe("2.8 Mbps");
+    expect(formatMbps(6_000_000)).toBe("6 Mbps");
     expect(formatMbps(50_000_000)).toBe("50 Mbps");
   });
 });
@@ -98,70 +100,115 @@ describe("describeNetworkCheck", () => {
 });
 
 describe("describeHonesty", () => {
+  const network = (rttMs: number, topMbps: number): NetworkCurve => ({
+    shape: "steps",
+    rttMs,
+    lengthS: 90,
+    points: [
+      { t: 0, mbps: topMbps },
+      { t: 20, mbps: 1.2 },
+    ],
+  });
   const honesty = (overrides: {
     latency?: Partial<Honesty["latency"]>;
     bandwidth?: Partial<Honesty["bandwidth"]>;
     hiddenS?: number;
   }): Honesty => ({
-    requests: 41,
+    requests: 94,
     latency: {
       host: "media.azamatos.com",
-      realMs: 85,
+      realMs: 97,
       late: 0,
+      typicalLateMs: 0,
       worstLateMs: 12,
       ...overrides.latency,
     },
-    bandwidth: { late: 0, worstLateMs: 0, realBps: 18_000_000, ...overrides.bandwidth },
+    bandwidth: {
+      late: 0,
+      typicalLateMs: 0,
+      worstLateMs: 0,
+      realBps: 24_000_000,
+      ...overrides.bandwidth,
+    },
     hiddenS: overrides.hiddenS ?? 0,
   });
 
   it("says the connection kept up when nothing was late", () => {
-    expect(describeHonesty(honesty({}), 80)).toEqual([
-      "Your connection kept up: all 41 downloads arrived before the simulation needed them.",
+    expect(describeHonesty(honesty({}), network(80, 6))).toEqual([
+      "Your connection kept up: all 94 downloads arrived before the simulation needed them.",
     ]);
   });
 
-  it("puts a late start down to the real latency", () => {
-    expect(describeHonesty(honesty({ latency: { late: 38, worstLateMs: 52 } }), 40)).toEqual([
-      "38 of 41 downloads started late, by up to 52 ms: your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms.",
-      "Your connection kept up with the bandwidth.",
-    ]);
-  });
-
-  it("doesn't quote a measured latency that was below the simulated one", () => {
+  it("reports late starts without blaming them on the latency measured before the run", () => {
     expect(
-      describeHonesty(honesty({ latency: { realMs: 30, late: 2, worstLateMs: 310 } }), 80)[0],
-    ).toBe(
-      "2 of 41 downloads started late, by up to 310 ms: the real network was slower to answer than the simulated 80 ms.",
-    );
+      describeHonesty(
+        honesty({ latency: { late: 75, typicalLateMs: 128, worstLateMs: 390 } }),
+        network(80, 6),
+      ),
+    ).toEqual([
+      "75 of 94 downloads started late, typically by 128 ms and at most 390 ms: the real network took longer to answer than the simulated 80 ms latency.",
+      "Measured before the run, media.azamatos.com answered in about 97 ms.",
+      "Once downloads started, your connection kept up.",
+    ]);
   });
 
-  it("puts late bytes down to the bandwidth, with the speed the real network managed", () => {
-    expect(describeHonesty(honesty({ bandwidth: { late: 7, worstLateMs: 1240 } }), 15)).toEqual([
-      "7 of 41 downloads arrived late, by up to 1.2 s: the real network couldn't keep up with the simulated bandwidth (it delivered about 18 Mbps while downloading).",
+  it("leaves out the measured latency when the check got no answer", () => {
+    expect(
+      describeHonesty(
+        honesty({ latency: { realMs: undefined, late: 2, typicalLateMs: 40, worstLateMs: 60 } }),
+        network(200, 1.5),
+      ),
+    ).toEqual([
+      "2 of 94 downloads started late, typically by 40 ms and at most 60 ms: the real network took longer to answer than the simulated 200 ms latency.",
+      "Once downloads started, your connection kept up.",
+    ]);
+  });
+
+  it("puts late bytes down to the bandwidth when the real network was slower than the simulation's top speed", () => {
+    expect(
+      describeHonesty(
+        honesty({
+          bandwidth: { late: 7, typicalLateMs: 300, worstLateMs: 1240, realBps: 18_000_000 },
+        }),
+        network(15, 50),
+      ),
+    ).toEqual([
+      "7 of 94 downloads arrived late, typically by 300 ms and at most 1.2 s: the real network couldn't keep up with the simulated bandwidth (it delivered about 18 Mbps while downloading; the simulation goes up to 50 Mbps).",
       "This run is slower than the simulated network alone.",
     ]);
+  });
+
+  it("calls late bytes pauses when the real network was faster on average", () => {
+    expect(
+      describeHonesty(
+        honesty({ bandwidth: { late: 8, typicalLateMs: 57, worstLateMs: 262 } }),
+        network(80, 6),
+      )[0],
+    ).toBe(
+      "8 of 94 downloads arrived late, typically by 57 ms and at most 262 ms: the real network paused partway through them, though on average it delivered about 24 Mbps, more than the simulated top speed of 6 Mbps.",
+    );
   });
 
   it("names both, and a background tab", () => {
     expect(
       describeHonesty(
         honesty({
-          latency: { late: 3, worstLateMs: 120 },
-          bandwidth: { late: 1, worstLateMs: 268, realBps: undefined },
+          latency: { late: 3, typicalLateMs: 90, worstLateMs: 120 },
+          bandwidth: { late: 1, typicalLateMs: 268, worstLateMs: 268, realBps: undefined },
           hiddenS: 12,
         }),
-        40,
+        network(40, 6),
       ),
     ).toEqual([
-      "3 of 41 downloads started late, by up to 120 ms: your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms.",
-      "1 of 41 downloads arrived late, by up to 268 ms: the real network couldn't keep up with the simulated bandwidth.",
+      "3 of 94 downloads started late, typically by 90 ms and at most 120 ms: the real network took longer to answer than the simulated 40 ms latency.",
+      "Measured before the run, media.azamatos.com answered in about 97 ms.",
+      "1 of 94 downloads arrived late, typically by 268 ms and at most 268 ms: the real network didn't deliver them as fast as the simulation could send them.",
       "This run is slower than the simulated network alone.",
       "The tab was in the background for 12 s, where browsers slow down timers, so the player may have behaved differently than in a visible tab.",
     ]);
   });
 
   it("says nothing about downloads when there were none", () => {
-    expect(describeHonesty({ ...honesty({}), requests: 0 }, 80)).toEqual([]);
+    expect(describeHonesty({ ...honesty({}), requests: 0 }, network(80, 6))).toEqual([]);
   });
 });

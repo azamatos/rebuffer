@@ -57,7 +57,7 @@ test("a run says when the real latency is above the simulated one", async ({ pag
 
   const result = page.getByRole("region", { name: "Result" });
   await expect(result).toContainText(/\d+ of \d+ downloads started late/);
-  await expect(result).toContainText("Your connection kept up with the bandwidth.");
+  await expect(result).toContainText("Measured before the run, localhost:4013 answered in about");
 
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);

@@ -51,11 +51,15 @@ export interface Honesty {
     host: string | undefined;
     realMs: number | undefined;
     late: number;
+    /** The median wait of the late ones, ms. */
+    typicalLateMs: number;
     worstLateMs: number;
   };
   /** The real network couldn't keep up with the simulated bandwidth, so bytes arrived late mid-download. */
   bandwidth: {
     late: number;
+    /** The median wait of the late ones, ms. */
+    typicalLateMs: number;
     worstLateMs: number;
     /** What the real network delivered while it was downloading, bits per second. */
     realBps: number | undefined;
@@ -151,9 +155,11 @@ function honesty(events: readonly RunEvent[], endS: number): Honesty {
 function lateness(
   lates: readonly number[],
   thresholdMs: number,
-): { late: number; worstLateMs: number } {
+): { late: number; typicalLateMs: number; worstLateMs: number } {
+  const late = lates.filter((lateMs) => lateMs > thresholdMs);
   return {
-    late: lates.filter((lateMs) => lateMs > thresholdMs).length,
+    late: late.length,
+    typicalLateMs: median(late) ?? 0,
     worstLateMs: lates.reduce((worst, lateMs) => Math.max(worst, lateMs), 0),
   };
 }

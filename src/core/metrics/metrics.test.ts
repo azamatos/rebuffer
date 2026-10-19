@@ -128,8 +128,8 @@ describe("honesty", () => {
     ]);
     expect(honesty).toMatchObject({
       requests: 3,
-      latency: { host: "media.example", realMs: 85, late: 2, worstLateMs: 45 },
-      bandwidth: { late: 2, worstLateMs: 400 },
+      latency: { host: "media.example", realMs: 85, late: 2, typicalLateMs: 33, worstLateMs: 45 },
+      bandwidth: { late: 2, typicalLateMs: 225.5, worstLateMs: 400 },
       hiddenS: 0,
     });
   });
@@ -175,8 +175,8 @@ describe("honesty", () => {
   it("is clean when nothing was shaped", () => {
     expect(computeMetrics([{ type: "end", t: 1, reason: "stopped" }]).honesty).toEqual({
       requests: 0,
-      latency: { host: undefined, realMs: undefined, late: 0, worstLateMs: 0 },
-      bandwidth: { late: 0, worstLateMs: 0, realBps: undefined },
+      latency: { host: undefined, realMs: undefined, late: 0, typicalLateMs: 0, worstLateMs: 0 },
+      bandwidth: { late: 0, typicalLateMs: 0, worstLateMs: 0, realBps: undefined },
       hiddenS: 0,
     });
   });

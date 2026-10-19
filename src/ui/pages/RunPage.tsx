@@ -314,7 +314,7 @@ function Tiles({ metrics }: { metrics: RunMetrics }) {
 function Outcome({ result }: { result: RunResult }) {
   const metrics = computeMetrics(result.events);
   const score = computeScore(metrics);
-  const honesty = describeHonesty(metrics.honesty, result.setup.curve.rttMs);
+  const honesty = describeHonesty(metrics.honesty, result.setup.curve);
   return (
     <section
       aria-label="Result"

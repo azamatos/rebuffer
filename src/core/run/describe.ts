@@ -1,5 +1,6 @@
 import { formatClock, formatDuration } from "@/core/format/time";
 import { LATE_FIRST_BYTE_MS, type Honesty } from "@/core/metrics";
+import type { NetworkCurve } from "@/core/netsim/curve";
 import type { Level, RunEvent } from "./events";
 
 /** A level for people: "720p (2.8 Mbps)". */
@@ -14,7 +15,7 @@ export function formatMbps(bitsPerSecond: number): string {
   return mbps >= 10
     ? `${mbps.toFixed(0)} Mbps`
     : mbps >= 1
-      ? `${mbps.toFixed(1)} Mbps`
+      ? `${Number(mbps.toFixed(1))} Mbps`
       : `${Math.round(bitsPerSecond / 1000)} kbps`;
 }
 
@@ -116,11 +117,15 @@ export function describeNetworkCheck(
 }
 
 /**
- * Says in plain words whether the simulation held (AGENTS.md rule 2): whether the real network answered slower
- * than the simulated RTT, couldn't keep up with the simulated bandwidth, or the tab sat in the background.
+ * Says in plain words whether the simulation held (AGENTS.md rule 2): whether downloads started late (the real
+ * network took longer to answer than the simulated RTT), arrived late (the real network didn't deliver bytes as fast
+ * as the simulation could send them), or the tab sat in the background. It names a cause only where the numbers
+ * show one: a slow answer can come from distance, a cache miss or a busy connection alike.
  */
-export function describeHonesty(honesty: Honesty, simulatedRttMs: number): string[] {
+export function describeHonesty(honesty: Honesty, curve: NetworkCurve): string[] {
   const { requests, latency, bandwidth, hiddenS } = honesty;
+  const late = (count: number, verb: string, typicalMs: number, worstMs: number) =>
+    `${count} of ${requests} downloads ${verb} late, typically by ${formatMs(typicalMs)} and at most ${formatMs(worstMs)}`;
   const sentences: string[] = [];
   if (requests > 0 && latency.late === 0 && bandwidth.late === 0) {
     sentences.push(
@@ -128,24 +133,30 @@ export function describeHonesty(honesty: Honesty, simulatedRttMs: number): strin
     );
   }
   if (latency.late > 0) {
-    const started = `${latency.late} of ${requests} downloads started late, by up to ${formatMs(latency.worstLateMs)}`;
     sentences.push(
-      latency.realMs !== undefined && latency.realMs > simulatedRttMs
-        ? `${started}: your real latency to ${latency.host ?? "the stream's host"} is about ${Math.round(latency.realMs)} ms, above the simulated ${simulatedRttMs} ms.`
-        : `${started}: the real network was slower to answer than the simulated ${simulatedRttMs} ms.`,
+      `${late(latency.late, "started", latency.typicalLateMs, latency.worstLateMs)}: the real network took longer to answer than the simulated ${curve.rttMs} ms latency.`,
     );
+    if (latency.realMs !== undefined) {
+      sentences.push(
+        `Measured before the run, ${latency.host ?? "the stream's host"} answered in about ${Math.round(latency.realMs)} ms.`,
+      );
+    }
   }
   if (bandwidth.late > 0) {
-    const delivered =
-      bandwidth.realBps === undefined
-        ? ""
-        : ` (it delivered about ${formatMbps(bandwidth.realBps)} while downloading)`;
+    const peakBps = Math.max(...curve.points.map((point) => point.mbps)) * 1e6;
+    const { realBps } = bandwidth;
+    const cause =
+      realBps === undefined
+        ? "the real network didn't deliver them as fast as the simulation could send them"
+        : realBps < peakBps
+          ? `the real network couldn't keep up with the simulated bandwidth (it delivered about ${formatMbps(realBps)} while downloading; the simulation goes up to ${formatMbps(peakBps)})`
+          : `the real network paused partway through them, though on average it delivered about ${formatMbps(realBps)}, more than the simulated top speed of ${formatMbps(peakBps)}`;
     sentences.push(
-      `${bandwidth.late} of ${requests} downloads arrived late, by up to ${formatMs(bandwidth.worstLateMs)}: the real network couldn't keep up with the simulated bandwidth${delivered}.`,
+      `${late(bandwidth.late, "arrived", bandwidth.typicalLateMs, bandwidth.worstLateMs)}: ${cause}.`,
       "This run is slower than the simulated network alone.",
     );
   } else if (latency.late > 0) {
-    sentences.push("Your connection kept up with the bandwidth.");
+    sentences.push("Once downloads started, your connection kept up.");
   }
   if (hiddenS > 0) {
     sentences.push(
