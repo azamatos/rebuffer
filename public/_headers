@@ -8,3 +8,11 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Only rebuffer.azamatos.com should show up in search results, not Cloudflare's own addresses for the project
+# (production and preview deployments on pages.dev).
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
