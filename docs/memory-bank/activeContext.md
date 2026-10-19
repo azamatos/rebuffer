@@ -1,6 +1,6 @@
 # Active context
 
-**Updated 2026-10-18.** Read this first.
+**Updated 2026-10-19.** Read this first.
 
 ## Where things stand
 
@@ -19,7 +19,7 @@
   Cloudflare R2/Pages limits and video terms; prior art (the gap is real); name collisions.
 - Targets: MVP live by **Nov 22**, compare runs and the case study by **Dec 6** (`progress.md`).
 - Parked on 2026-10-18 (see `progress.md`, Later): subtitle sync tool, a player for your own films, encode comparer.
-- **Code exists since 2026-10-18:** a local git repo (no remote yet). M0 scaffold, M1 core modules, and the first
+- **Code exists since 2026-10-18; on GitHub since 2026-10-19** (github.com/azamatos/rebuffer, public). M0 scaffold, M1 core modules, and the first
   working Run screen: a real hls.js run plays through the simulated network end to end. Nothing is deployed.
 
 ## Decisions (settled 2026-10-18 unless marked open)
@@ -37,7 +37,7 @@
 | 9 | Scope by Dec 6 | Compare two runs and the case study; Shaka Player after launch. |
 | 10 | Stream links | The lab accepts **any HLS link** from launch, with a clear message when a server blocks browser access. |
 | 11 | Test streams | Public test streams (Apple, Unified Streaming, Mux) for development and as samples; no special streams from the owner. |
-| 12 | Folder and repo | **Open:** rename `~/www/me/tv` → `~/www/me/rebuffer` (after this session, so the session's folder doesn't move) and create the GitHub repo `azamatos/rebuffer` (owner creates it or says yes). |
+| 12 | Folder and repo | Repo **github.com/azamatos/rebuffer**, created by the owner on 2026-10-19 (public), pushed over SSH. **Open:** rename `~/www/me/tv` → `~/www/me/rebuffer` (after the session that works in it). |
 
 ## Questions for context (deferred to the beta, owner's call 2026-10-18)
 
@@ -46,9 +46,8 @@
 
 ## Next step
 
-- **Owner:** create the GitHub repo `azamatos/rebuffer` (or say yes and an agent creates it), the R2 bucket on
-  media.azamatos.com, and a Cloudflare Pages project for rebuffer.azamatos.com. Then upload the full encode
-  (`scripts/media/README.md`).
+- **Owner:** create the R2 bucket on media.azamatos.com and a Cloudflare Pages project for rebuffer.azamatos.com
+  (connected to the GitHub repo). Then upload the full encode (`scripts/media/README.md`).
 - **Agents (M2):** the Run screen's charts (uPlot, three charts on one time axis), Home setup pickers wired to the
   Run screen, the keyboard-only Home → run test. Until our encode is uploaded, the default sample is Unified
   Streaming's public *Tears of Steel* (`src/core/samples.ts`); switch the default to ours after the upload.

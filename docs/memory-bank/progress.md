@@ -23,7 +23,9 @@ agents do most of the building and every milestone is shippable on its own.
       Prettier, Vitest, Playwright + axe in 3 engines, size-limit, Lighthouse CI, GitHub Actions (2026-10-18)
 - [x] App shell: family wordmark, navigation, skip link, routes for every screen, not-found page (2026-10-18)
 - [x] Media script: encode *Tears of Steel* (ladder + "with problems" version + subtitles) (2026-10-18)
-- [ ] GitHub repo `azamatos/rebuffer` (owner creates it or says yes); rename the folder to `~/www/me/rebuffer`
+- [x] GitHub repo github.com/azamatos/rebuffer (owner created it, public; pushed 2026-10-19; description and topics
+      set)
+- [ ] Rename the folder to `~/www/me/rebuffer`
 - [x] Full encode (2026-10-18): clean 912 MB (184 × 4 s segments per rung; our parser finds only two notes: no
       I-frame playlists, one 2.05× ladder gap), problems version 1.0 GB (the planted mistakes found exactly)
 - [ ] R2 bucket on media.azamatos.com (owner) and upload
@@ -67,6 +69,8 @@ engines.
 
 - [ ] Home, About (how it works, limits, credits), first-run hints
 - [ ] Accessibility pass (axe clean, table views, live region); budgets and Lighthouse ≥ 95
+- [ ] Pre-render the home page: CI measured Lighthouse performance 0.82 on GitHub's runners (0.98 locally) because
+      the first paint waits for React; the CI assertion is a warning until this is done (2026-10-19)
 - [ ] Determinism job: spread per preset measured and published
 - [ ] README: pitch, GIF, architecture, measured numbers, how to run and test
 - [ ] Deployed to the chosen subdomain
@@ -100,3 +104,5 @@ engines.
   Playwright checks green). Playlist parser, codecs and lint rules merged (193 tests). Run controller and the first
   Run screen built: a real hls.js run plays through the shaper in all three engines (301 unit tests, 56 Playwright
   checks).
+- 2026-10-19: pushed to github.com/azamatos/rebuffer (public). Before the first push, local history was rewritten
+  to drop private references from the docs (no commit had been published).
