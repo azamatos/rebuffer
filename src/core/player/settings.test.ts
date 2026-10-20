@@ -51,6 +51,15 @@ describe("settings in a link", () => {
     expect(settingsFromParam("capLevelToPlayerSize:yes")).toMatchObject({ ok: false });
   });
 
+  it("refuses names every object inherits", () => {
+    for (const key of ["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__"]) {
+      expect(settingsFromParam(`${key}:5`)).toEqual({
+        ok: false,
+        error: `“${key}” isn't a setting the lab knows.`,
+      });
+    }
+  });
+
   it("finds the changes from a preset and titles them", () => {
     const changes = settingChanges(
       { maxBufferLength: 10, capLevelToPlayerSize: true },

@@ -139,7 +139,8 @@ const LIMITS: Record<
   abrBandWidthUpFactor: { min: 0.05, max: 1 },
 };
 
-const isSettingKey = (key: string): key is PlayerSettingKey => key in SETTINGS;
+// Own keys only: `in` would also take names every object inherits, such as `constructor` or `__proto__`.
+const isSettingKey = (key: string): key is PlayerSettingKey => Object.hasOwn(SETTINGS, key);
 
 /** A setting's value for people and for links: `unlimited` for Infinity, `auto` for no start level. */
 export function formatSetting(
