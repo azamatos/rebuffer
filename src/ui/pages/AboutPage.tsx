@@ -85,7 +85,10 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-/** How the lab works, where it stops, how each number is computed, and credits. */
+/**
+ * How the lab works, where it stops, how each number is computed, and credits. The text is 47.75em wide (72ch of
+ * Geist): in em, the line breaks don't move when the web font swaps in.
+ */
 export function AboutPage() {
   // A link from another screen to a section (Compare's "how repeatable runs are") arrives before this lazy page has
   // rendered, so the router's scroll to the hash finds nothing: scroll once it's here.
@@ -113,7 +116,7 @@ export function AboutPage() {
         </ul>
       </nav>
 
-      <article className="flex max-w-[72ch] min-w-0 flex-col gap-8 text-fg-2 [&_strong]:font-semibold [&_strong]:text-fg">
+      <article className="flex max-w-[47.75em] min-w-0 flex-col gap-8 text-fg-2 [&_strong]:font-semibold [&_strong]:text-fg">
         <header className="flex flex-col gap-4">
           <h1 className="text-[32px] font-semibold tracking-tight text-fg">About</h1>
           <p className="text-lg">

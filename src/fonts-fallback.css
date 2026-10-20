@@ -1,0 +1,51 @@
+/* Made by scripts/fonts/fallbacks.mjs; run it again rather than editing this file. Fallback faces sized like Geist
+   and Space Mono, so text keeps its place when the web fonts swap in (src/styles.css puts them in the font stacks).
+   Measured widths, em: Geist 0.4671 (400) and 0.4884 (600), Arial 0.4458, Arial Bold
+   0.4798, Roboto 0.4448 (Capsize), Space Mono 0.6120, Courier New 0.6001. */
+
+@font-face {
+  font-family: "Geist Fallback";
+  src:
+    local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"),
+    local("Arimo"), local("Arimo-Regular");
+  font-weight: 100 500;
+  size-adjust: 104.78%;
+  ascent-override: 95.92%;
+  descent-override: 28.16%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Geist Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"),
+    local("LiberationSans-Bold"), local("Arimo Bold"), local("Arimo-Bold");
+  font-weight: 600 900;
+  size-adjust: 101.79%;
+  ascent-override: 98.73%;
+  descent-override: 28.98%;
+  line-gap-override: 0%;
+}
+
+/* Android has no Arial: Roboto, one face for every weight. */
+@font-face {
+  font-family: "Geist Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  font-weight: 100 900;
+  size-adjust: 105%;
+  ascent-override: 95.71%;
+  descent-override: 28.09%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Space Mono Fallback";
+  src:
+    local("Courier New"), local("CourierNewPSMT"), local("Liberation Mono"),
+    local("LiberationMono"), local("Cousine"), local("Cousine-Regular");
+  font-weight: 100 900;
+  size-adjust: 101.98%;
+  ascent-override: 109.82%;
+  descent-override: 35.4%;
+  line-gap-override: 0%;
+}

@@ -26,8 +26,8 @@ try {
   // expects its own SSR set-up, whose inline scripts our CSP doesn't allow): add the markers of a finished boundary,
   // so React hydrates instead of throwing the markup away. tests/e2e/home.spec.ts fails if they stop matching.
   const markup = `<!--$-->${html}<!--/$-->`;
-  // The Latin fonts start loading with the page rather than after the CSS, so they're there for the first paint
-  // (src/styles.css: `font-display: optional` doesn't swap a late font in).
+  // The Latin fonts start loading with the page rather than after the CSS, so they're usually there for the first
+  // paint; when they aren't, the sized fallbacks keep the text in place (src/fonts-fallback.css).
   const fonts = readdirSync(new URL("../dist/assets/", import.meta.url)).filter((file) =>
     /^(geist-latin-wght|space-mono-latin-400)-normal-[\w-]+\.woff2$/.test(file),
   );

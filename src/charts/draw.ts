@@ -97,7 +97,7 @@ export interface Frame {
 
 /** Room on the right for axis labels. Every chart keeps the same, so their time axes line up. */
 export const GUTTER_PX = 84;
-export const FONT = '12px "Space Mono", ui-monospace, monospace';
+export const FONT = '12px "Space Mono", "Space Mono Fallback", ui-monospace, monospace';
 const LABEL_GAP_PX = 14;
 
 const timeScale = (frame: Frame, painter: Painter): Scale =>

@@ -52,7 +52,9 @@ export function HomePage() {
         <p className="font-mono text-[13px] tracking-[0.08em] text-accent uppercase">
           HLS network lab
         </p>
-        <h1 className="max-w-[18ch] text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-[56px]">
+        {/* em, not ch: a ch is the width of "0" in whichever font is showing, so the line breaks would move when
+            Geist swaps in. 12.3em is 18ch of Geist SemiBold. */}
+        <h1 className="max-w-[12.3em] text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-[56px]">
           See how a video player survives a bad network.
         </h1>
         <p className="max-w-[560px] text-lg text-fg-2">
