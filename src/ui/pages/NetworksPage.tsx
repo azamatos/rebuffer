@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { NetworkCurve } from "@/core/netsim/curve-math";
 import { networkById } from "@/core/netsim/networks";
@@ -75,6 +75,13 @@ async function resolve(search: NetworksSearch): Promise<Loaded> {
 }
 
 /** The Networks screen: presets, recorded traces and your own networks, and an editor for the chosen one. */
+const networksRoute = getRouteApi("/networks");
+
+/** The Networks screen as the router shows it: the network comes from the URL. */
+export function NetworksRoute() {
+  return <NetworksPage search={networksRoute.useSearch()} />;
+}
+
 export function NetworksPage({ search }: { search: NetworksSearch }) {
   const navigate = useNavigate();
   const { networks: saved, reload } = useSavedNetworks();

@@ -174,5 +174,9 @@ building and every milestone is shippable on its own.
   (each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads); Compare; README. 484 unit tests, 138 Playwright checks, Home's JavaScript 95.1 KB. Not
   pushed at first. Pushed later that day (`98b6327`, the owner's "lets now push the changes"):
   live in 45 s; CI's e2e passed, its Lighthouse step failed on performance (0.75–0.84) from layout shift: Linux's
-  fallback fonts reflow when Geist swaps in. Reproduced in a Linux container; fixed with `font-display: optional`
-  and preloads (CLS 0, Lighthouse 1.0 in Linux Chromium); the fix waits for the owner's OK to push.
+  fallback fonts reflow when Geist swaps in. Reproduced in a Linux container. The owner asked for a better fix than
+  `font-display: optional` (best practices): fallback faces sized like the web fonts (next/font's and Capsize's
+  method, measured in Chromium by `scripts/fonts/fallbacks.mjs`), `em` instead of `ch`, and screens whose code the
+  router loads before they render (a directly opened screen had pushed its footer down). With the fonts held back
+  1.5 s, Home's layout shift is 0.0000–0.0001 on macOS and Linux; Lighthouse 1.0 in Linux Chromium, 0.99 on the Mac.
+  Waits for the owner's OK to push.

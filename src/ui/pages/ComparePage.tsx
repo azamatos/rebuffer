@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { mountCompareCharts, type CompareCharts } from "@/charts/compare";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
@@ -60,6 +60,13 @@ const pair = (a: string | undefined, b: string | undefined): CompareSearch => ({
   ...(a && { a }),
   ...(b && { b }),
 });
+
+const compareRoute = getRouteApi("/runs/compare");
+
+/** Compare as the router shows it: the two runs come from the URL. */
+export function CompareRoute() {
+  return <ComparePage search={compareRoute.useSearch()} />;
+}
 
 /** Two runs saved in this browser, side by side: B read against A. */
 export function ComparePage({ search }: { search: CompareSearch }) {

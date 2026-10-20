@@ -12,9 +12,10 @@
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
 - **Live site = `main` at `98b6327`** (pushed 2026-10-20 with the owner's "lets now push the changes"; Cloudflare
   deployed it in about 45 s; checked live in three engines and both themes). CI's e2e passed there; its Lighthouse
-  step failed (performance 0.75–0.84, from font-swap layout shift on Linux). The fix (`font-display: optional` and
-  preloads) is committed locally and waits for the owner's OK to push. **Every push to `main` deploys on its own.**
-  Pushing is outward-facing: ask the owner before each push.
+  step failed (performance 0.75–0.84) on font-swap layout shift on Linux. Fixed locally, not pushed: fallback fonts
+  sized like Geist and Space Mono (the owner chose this over `font-display: optional`), em instead of ch, and
+  screens that load whole (`techContext.md`, "Themes and the first paint"). **Every push to `main` deploys on its
+  own.** Pushing is outward-facing: ask the owner before each push.
 - **What works today (locally; live is the fourth session's state):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
@@ -42,7 +43,8 @@
 
 ## Next step (in this order)
 
-1. **Push the font fix** (ask first), then check that CI's Lighthouse step passes on GitHub's runners.
+1. **Push the font and route-loading fixes** (ask first), then check that CI's Lighthouse step passes on GitHub's
+   runners.
 2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
 4. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
@@ -162,10 +164,19 @@ that needs their eye under "Waiting for the owner".
 
 ## Lessons worth keeping
 
+- **`ch` is the width of "0" in whichever font is showing:** a box sized in `ch` changes width when a web font swaps
+  in, and its text re-wraps. Size text boxes in `em`.
+- **A router-wide `defaultPendingComponent` breaks hydration** of Home's build-time markup (the root route gets a
+  Suspense boundary in the browser only). Set pending components per lazy route.
+- **TanStack Router calls `replaceState` once as the app starts** (its history state, no URL change). A test that
+  navigates or reloads in that instant is aborted in Firefox and WebKit: wait for the app first (`openApp`, or a
+  heading).
+- **Docker Desktop doesn't show the repo at its Mac path inside a container** (`-v $PWD:$PWD` came up empty): mount
+  it at `/repo` and link `node_modules` inside the container.
 - **Lighthouse on GitHub's runners loses its points to layout shift, not paint time:** Linux's fallback fonts are far
   from Geist, so a swapped-in web font moves the text (CLS 0.33 on CI, 0.024 on the Mac). Reproduce in Docker with
-  `mcr.microsoft.com/playwright:v1.64.1-noble` and `@lhci/cli` (`CHROME_PATH` = its Chromium). Fixed with
-  `font-display: optional` and preloads.
+  `mcr.microsoft.com/playwright:v1.64.1-noble` and `@lhci/cli` (`CHROME_PATH` = its Chromium). Fixed with sized
+  fallback faces (`scripts/fonts/fallbacks.mjs`) and preloads.
 - **Lighthouse CI with `staticDistDir` opens `/index.html` unless `url` says otherwise,** and our router shows the
   not-found screen there: CI scored the wrong page until 2026-10-20 (`lighthouserc.json` now lists `/`).
 - **Lighthouse simulates from what it observed:** scripts that ran before the observed first paint count toward FCP,

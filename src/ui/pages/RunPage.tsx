@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { computeMetrics, computeScore, type RunMetrics } from "@/core/metrics";
@@ -147,6 +147,13 @@ function errorMessage(error: unknown): string {
   if (error instanceof ShapingError || error instanceof PlayerUnsupportedError)
     return error.message;
   return "The run couldn't start. Check the stream link and try again.";
+}
+
+const runRoute = getRouteApi("/run");
+
+/** The Run screen as the router shows it: the setup comes from the URL. */
+export function RunRoute() {
+  return <RunPage search={runRoute.useSearch()} />;
 }
 
 export function RunPage({ search }: { search: RunSearch }) {

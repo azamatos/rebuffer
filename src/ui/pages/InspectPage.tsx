@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type ChangeEvent, type SubmitEvent } from "react";
 import { MEASURED_SEGMENTS } from "@/core/inspect/load";
 import {
@@ -29,6 +29,13 @@ const secondary =
 const textLink = "text-accent underline underline-offset-2 hover:text-accent-hover";
 
 /** The Inspect screen: read an HLS playlist and everything it names, measure it, and explain what's wrong. */
+const inspectRoute = getRouteApi("/inspect");
+
+/** The Inspect screen as the router shows it: the playlist's link comes from the URL. */
+export function InspectRoute() {
+  return <InspectPage search={inspectRoute.useSearch()} />;
+}
+
 export function InspectPage({ search }: { search: InspectSearch }) {
   const navigate = useNavigate();
   const [link, setLink] = useState(search.url ?? "");

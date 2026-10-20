@@ -2,9 +2,9 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   type RouterHistory,
 } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
 import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
@@ -13,29 +13,13 @@ import type { CompareSearch } from "@/ui/pages/ComparePage";
 import type { InspectSearch } from "@/ui/pages/InspectPage";
 import type { RunSearch } from "@/ui/pages/RunPage";
 
-// The Run screen brings hls.js, zod and the simulator client, so it loads only when opened.
-const RunPage = lazy(() =>
-  import("@/ui/pages/RunPage").then((module) => ({ default: module.RunPage })),
-);
-const RunsPage = lazy(() =>
-  import("@/ui/pages/RunsPage").then((module) => ({ default: module.RunsPage })),
-);
-const InspectPage = lazy(() =>
-  import("@/ui/pages/InspectPage").then((module) => ({ default: module.InspectPage })),
-);
-const NetworksPage = lazy(() =>
-  import("@/ui/pages/NetworksPage").then((module) => ({ default: module.NetworksPage })),
-);
-const ComparePage = lazy(() =>
-  import("@/ui/pages/ComparePage").then((module) => ({ default: module.ComparePage })),
-);
-const AboutPage = lazy(() =>
-  import("@/ui/pages/AboutPage").then((module) => ({ default: module.AboutPage })),
-);
-// The Report draws the same charts, so it loads on demand too.
-const ReportPage = lazy(() =>
-  import("@/ui/pages/ReportPage").then((module) => ({ default: module.ReportPage })),
-);
+// Every screen but Home loads its code when it's needed (the Run screen brings hls.js and the simulator client).
+// The router loads a route's code as part of loading the route, on intent (hover, focus) and before the first render
+// (src/app.tsx), so a screen appears whole: no "Loading…" that the content then pushes down. `pending` shows only when
+// a screen's code takes over a second to arrive. It's set per screen, not as the router's default: a default would
+// wrap the root route in a Suspense boundary in the browser but not in Home's build-time render, and React couldn't
+// hydrate it.
+const pending = () => <p className="px-8 py-10 text-fg-2">Loading…</p>;
 
 const title = (page: string) => ({ meta: [{ title: `${page} · Rebuffer` }] });
 
@@ -66,44 +50,26 @@ const runRoute = createRoute({
   path: "/run",
   head: () => title("Run"),
   validateSearch: runSearch,
-  component: RunRoute,
+  component: lazyRouteComponent(() => import("@/ui/pages/RunPage"), "RunRoute"),
+  pendingComponent: pending,
 });
-
-function RunRoute() {
-  const search = runRoute.useSearch();
-  return (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the lab…</p>}>
-      <RunPage search={search} />
-    </Suspense>
-  );
-}
 
 const runsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs",
   head: () => title("Runs"),
-  component: () => (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the runs…</p>}>
-      <RunsPage />
-    </Suspense>
-  ),
+  component: lazyRouteComponent(() => import("@/ui/pages/RunsPage"), "RunsPage"),
+  pendingComponent: pending,
 });
 
 const reportRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs/$runId",
   head: () => title("Report"),
-  component: ReportRoute,
+  // The Report draws the same charts as the Run screen.
+  component: lazyRouteComponent(() => import("@/ui/pages/ReportPage"), "ReportRoute"),
+  pendingComponent: pending,
 });
-
-function ReportRoute() {
-  const { runId } = reportRoute.useParams();
-  return (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the report…</p>}>
-      <ReportPage runId={runId} />
-    </Suspense>
-  );
-}
 
 // A static segment, so it wins over /runs/$runId.
 const compareRoute = createRoute({
@@ -120,17 +86,9 @@ const compareRoute = createRoute({
     }
     return result;
   },
-  component: CompareRoute,
+  component: lazyRouteComponent(() => import("@/ui/pages/ComparePage"), "CompareRoute"),
+  pendingComponent: pending,
 });
-
-function CompareRoute() {
-  const search = compareRoute.useSearch();
-  return (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the comparison…</p>}>
-      <ComparePage search={search} />
-    </Suspense>
-  );
-}
 
 /** Keeps the string params the Networks screen knows. */
 function networksSearch(search: Record<string, unknown>): NetworksSearch {
@@ -147,17 +105,9 @@ const networksRoute = createRoute({
   path: "/networks",
   head: () => title("Networks"),
   validateSearch: networksSearch,
-  component: NetworksRoute,
+  component: lazyRouteComponent(() => import("@/ui/pages/NetworksPage"), "NetworksRoute"),
+  pendingComponent: pending,
 });
-
-function NetworksRoute() {
-  const search = networksRoute.useSearch();
-  return (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the networks…</p>}>
-      <NetworksPage search={search} />
-    </Suspense>
-  );
-}
 
 const inspectRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -165,27 +115,16 @@ const inspectRoute = createRoute({
   head: () => title("Inspect a stream"),
   validateSearch: (search: Record<string, unknown>): InspectSearch =>
     typeof search.url === "string" && search.url !== "" ? { url: search.url } : {},
-  component: InspectRoute,
+  component: lazyRouteComponent(() => import("@/ui/pages/InspectPage"), "InspectRoute"),
+  pendingComponent: pending,
 });
-
-function InspectRoute() {
-  const search = inspectRoute.useSearch();
-  return (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the inspector…</p>}>
-      <InspectPage search={search} />
-    </Suspense>
-  );
-}
 
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/about",
   head: () => title("About"),
-  component: () => (
-    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading…</p>}>
-      <AboutPage />
-    </Suspense>
-  ),
+  component: lazyRouteComponent(() => import("@/ui/pages/AboutPage"), "AboutPage"),
+  pendingComponent: pending,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -201,7 +140,11 @@ const routeTree = rootRoute.addChildren([
 
 /** The app's router: in the browser with its address bar, or at a given path when Home is rendered at build time. */
 export function createAppRouter(history?: RouterHistory) {
-  return createRouter({ routeTree, defaultPreload: "intent", ...(history && { history }) });
+  return createRouter({
+    routeTree,
+    defaultPreload: "intent",
+    ...(history && { history }),
+  });
 }
 
 declare module "@tanstack/react-router" {

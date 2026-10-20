@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { tabTo } from "./helpers";
+import { openApp, tabTo } from "./helpers";
 
 // Two saved runs written straight into the app's IndexedDB (src/core/persist/runs.ts), so this needs no video
 // decoding: A on hls.js defaults stalls for 2 s; B, with Fast start, starts sooner on 240p and never stalls.
@@ -86,7 +86,7 @@ function savedRun(id: string, savedAt: number, fast: boolean) {
 }
 
 async function seed(page: Page): Promise<void> {
-  await page.goto("/runs");
+  await openApp(page, "/runs");
   const now = Date.now();
   const records = [savedRun("aaaa1111", now - 60_000, false), savedRun("bbbb2222", now, true)];
   await page.evaluate(async (entries) => {
@@ -114,6 +114,8 @@ async function seed(page: Page): Promise<void> {
     db.close();
   }, records);
   await page.reload();
+  // The app has read them (and finished loading: navigating while it starts aborts in Firefox and WebKit).
+  await expect(page.getByRole("link", { name: "Compare two runs" })).toBeVisible();
 }
 
 test("two runs compare side by side, by keyboard", async ({ page, browserName }) => {

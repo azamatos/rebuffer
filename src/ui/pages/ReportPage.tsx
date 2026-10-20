@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { getRouteApi, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
@@ -15,6 +15,13 @@ import { RunCharts } from "@/ui/run/RunCharts";
 import { useNow } from "@/ui/runs/useNow";
 
 type Loaded = { status: "loading" } | { status: "missing" } | { status: "ready"; run: SavedRun };
+
+const reportRoute = getRouteApi("/runs/$runId");
+
+/** The Report as the router shows it: the run's id comes from the address. */
+export function ReportRoute() {
+  return <ReportPage runId={reportRoute.useParams().runId} />;
+}
 
 export function ReportPage({ runId }: { runId: string }) {
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });

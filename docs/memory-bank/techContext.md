@@ -208,12 +208,23 @@ A run, step by step:
   first paint (locally they arrive at once), it counted them, and FCP stayed at 2.0 s (1.2 s with no scripts). Now
   1.7 s, LCP 2.0–2.1 s, performance 0.98–0.99 locally. Replacing the markup instead of hydrating it made the browser
   record a second largest paint, so the app hydrates.
-- **Fonts don't shift the page (2026-10-20, after CI failed):** our own `@font-face` rules for Geist and Space Mono
-  (Latin and Latin Extended from Fontsource's files) with `font-display: optional`, and `scripts/prerender.mjs`
-  preloads the two Latin files. With Fontsource's `swap`, Linux's fallback fonts (far from Geist) made the hero text
-  reflow: Lighthouse on GitHub's runners measured CLS 0.33 (0.115 in a Linux container; 0.024 on a Mac), which cost
-  the performance score most of its points (0.75–0.84 on CI). Now CLS 0; Lighthouse 1.0 in Linux Chromium
-  (`mcr.microsoft.com/playwright` in Docker), 0.99 on the Mac.
+- **Fonts swap in without moving the page (2026-10-20, after CI failed; the owner chose this over `optional` and
+  asked for best practices):** Fontsource's faces with `font-display: swap`, and fallback faces sized like them, as
+  next/font and Capsize do: `size-adjust` from the ratio of average character widths (Capsize's English letter
+  weights), and the web font's ascent, descent and line gap. Arial and Arial Bold (Liberation Sans and Arimo on Linux
+  share their metrics) for Geist at 400 and 600, Roboto on Android, Courier New (Liberation Mono, Cousine) for Space
+  Mono. `scripts/fonts/fallbacks.mjs` measures the widths in Chromium (the variable Geist at each weight; fontkit can't
+  vary a WOFF2) and writes `src/fonts-fallback.css`; run it again if the fonts change. The build preloads the two
+  Latin files. Widths in `ch` followed whichever font was showing, so they're in `em` now (the heading's 12.3em is
+  18ch of Geist SemiBold). Measured with the fonts held back 1.5 s: Home's layout shift 0.0000 on desktop and 0.0001
+  on phones, Chromium on macOS and Linux (up to 0.285 on a Linux phone with the plain fallback); About 0.017 at most.
+  Lighthouse: 1.0 in Linux Chromium (Docker, `mcr.microsoft.com/playwright`), 0.99 on the Mac. Before this, CI's
+  Lighthouse measured CLS 0.33 and scored 0.75–0.84.
+- **Screens load whole:** each lazy screen is a `lazyRouteComponent` that reads its URL with `getRouteApi`, so the
+  router loads its code with the route (on intent, and in `router.load()`, which `src/app.tsx` now awaits on every
+  path). Before, a screen opened directly showed "Loading…" and then pushed the footer down (layout shift 0.08–0.16).
+  The "Loading…" pending component is set per lazy route, not as the router's default: a default wraps the root
+  route in a Suspense boundary in the browser but not in Home's build-time render, and hydration failed.
 - **Zod parses without compiling** (`src/core/zod.ts`, `jitless`): its probe for `new Function` made Firefox log a
   CSP error.
 
