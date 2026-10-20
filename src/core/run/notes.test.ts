@@ -194,4 +194,35 @@ describe("whatHappened", () => {
       text: "The quality changed 10 times between 0:05 and 3:50, between 720p (2.8 Mbps) and 1080p (5 Mbps).",
     });
   });
+
+  it("keeps the abandons the switch notes told of in the summary", () => {
+    const busy: RunEvent[] = [
+      ...start,
+      { type: "segment-loading", t: 3, level: 2, sn: 1 },
+      { type: "segment-abandoned", t: 4, level: 2, sn: 1, bytesLoaded: 900_000 },
+    ];
+    for (let i = 0; i < 10; i++) busy.push(shown(5 + i * 25, i % 2 === 0 ? 1 : 2));
+    busy.push(end(300));
+    const result = notes(busy, steps([[0, 6]], 300));
+    expect(result).toHaveLength(2);
+    expect(result[1]?.text).toBe(
+      "The quality changed 10 times between 0:05 and 3:50, between 720p (2.8 Mbps) and 1080p (5 Mbps). The player gave up on a download on the way, wasting 0.9 MB.",
+    );
+  });
+
+  it("sums up the notes that don't fit in the last one", () => {
+    const stalls: RunEvent[] = [...start];
+    for (let i = 0; i < 8; i++) {
+      stalls.push({ type: "stall-start", t: 10 + i * 10 }, { type: "stall-end", t: 12 + i * 10 });
+    }
+    stalls.push(end(100));
+    const result = notes(stalls, steps([[0, 6]], 100));
+    expect(result).toHaveLength(7);
+    expect(result.slice(1, 6).map((note) => note.from)).toEqual([10, 20, 30, 40, 50]);
+    expect(result[6]).toEqual({
+      from: 60,
+      to: 82,
+      text: "From 1:00 to 1:22, 3 more stalls; the charts show each one.",
+    });
+  });
 });

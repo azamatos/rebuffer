@@ -126,14 +126,24 @@ export function whatHappened(timeline: Timeline, curve: NetworkCurve): Note[] {
   });
 
   const eventNotes: Note[] = [];
+  // What each event note counts, for the summary when there are more notes than fit.
+  const counted = new Map<Note, { stalls: number; abandons: number }>();
+  const pushEvent = (note: Note, stalls: number, abandons: number) => {
+    eventNotes.push(note);
+    counted.set(note, { stalls, abandons });
+  };
   abandoned.forEach((download, index) => {
     if (attached.has(index)) return;
     const t = download.end ?? download.start;
-    eventNotes.push({
-      start: t,
-      end: t,
-      text: `The player gave up on a ${label(download.level)} download at ${formatClock(t, 1)}, wasting ${mb(download.bytes ?? 0)}. The network was at ${rate(bandwidthAt(curve, t))}.`,
-    });
+    pushEvent(
+      {
+        start: t,
+        end: t,
+        text: `The player gave up on a ${label(download.level)} download at ${formatClock(t, 1)}, wasting ${mb(download.bytes ?? 0)}. The network was at ${rate(bandwidthAt(curve, t))}.`,
+      },
+      0,
+      1,
+    );
   });
 
   const stallText = (stall: OpenInterval) => {
@@ -167,11 +177,15 @@ export function whatHappened(timeline: Timeline, curve: NetworkCurve): Note[] {
         `${before === undefined ? "Playback" : `The buffer ran down from ${formatDuration(before)}, and playback`} ${stallText(first)}${stalls.length > 1 ? `, then ${stalls.length - 1} more ${stalls.length === 2 ? "time" : "times"}` : ""}.`,
       );
     }
-    eventNotes.push({
-      start: outage.start,
-      end: Math.max(outage.end, first?.end ?? 0),
-      text: sentences.join(" "),
-    });
+    pushEvent(
+      {
+        start: outage.start,
+        end: Math.max(outage.end, first?.end ?? 0),
+        text: sentences.join(" "),
+      },
+      stalls.length,
+      0,
+    );
   }
 
   for (const stall of timeline.stalls) {
@@ -195,7 +209,7 @@ export function whatHappened(timeline: Timeline, curve: NetworkCurve): Note[] {
         `The simulated network carried ${rate(net)} then, more than the quality on screen needs; the simulation check below says whether your real network held downloads back.`,
       );
     }
-    eventNotes.push({ start: stall.start, end: stallEnd, text: sentences.join(" ") });
+    pushEvent({ start: stall.start, end: stallEnd, text: sentences.join(" ") }, 1, 0);
   }
 
   if (switchNotes.length === 0 && eventNotes.length === 0 && first) {
@@ -214,16 +228,43 @@ export function whatHappened(timeline: Timeline, curve: NetworkCurve): Note[] {
     const byBitrate = [...new Set(qualities)].sort((a, b) => bitrate(a) - bitrate(b));
     const start = switchNotes[0]?.start ?? 0;
     const end = switchNotes.at(-1)?.end ?? start;
+    // The abandons the switch notes told of go into the summary, or no note would mention them.
+    const gaveUp = abandoned.filter((_, index) => attached.has(index));
+    const wasted = gaveUp.reduce((sum, download) => sum + (download.bytes ?? 0), 0);
+    const abandons =
+      gaveUp.length === 0
+        ? ""
+        : ` The player gave up on ${gaveUp.length === 1 ? "a download" : `${gaveUp.length} downloads`} on the way, wasting ${mb(wasted)}.`;
     rest = [
       {
         start,
         end,
-        text: `The quality changed ${switches.length} times between ${formatClock(start)} and ${formatClock(end)}, between ${label(byBitrate[0] ?? 0)} and ${label(byBitrate.at(-1) ?? 0)}.`,
+        text: `The quality changed ${switches.length} times between ${formatClock(start)} and ${formatClock(end)}, between ${label(byBitrate[0] ?? 0)} and ${label(byBitrate.at(-1) ?? 0)}.${abandons}`,
       },
       ...eventNotes,
     ];
   }
-  return [...notes, ...rest.sort((a, b) => a.start - b.start)].slice(0, MAX_NOTES);
+  const all = [...notes, ...rest.sort((a, b) => a.start - b.start)];
+  if (all.length <= MAX_NOTES) return all;
+  // Too many to list: the last note sums up the rest, so nothing goes unmentioned.
+  const left = all.slice(MAX_NOTES - 1);
+  const from = left[0]?.start ?? 0;
+  const to = Math.max(...left.map((note) => note.end));
+  const stalls = left.reduce((sum, note) => sum + (counted.get(note)?.stalls ?? 0), 0);
+  const abandons = left.reduce((sum, note) => sum + (counted.get(note)?.abandons ?? 0), 0);
+  const parts = [
+    stalls > 0 && `${stalls} more ${stalls === 1 ? "stall" : "stalls"}`,
+    abandons > 0 && `${abandons} more abandoned ${abandons === 1 ? "download" : "downloads"}`,
+  ].filter((part) => part !== false);
+  const what = parts.length > 0 ? parts.join(" and ") : `${left.length} more events`;
+  return [
+    ...all.slice(0, MAX_NOTES - 1),
+    {
+      start: from,
+      end: to,
+      text: `From ${formatClock(from)} to ${formatClock(to)}, ${what}; the charts show each one.`,
+    },
+  ];
 }
 
 /** The most video buffered in the half minute before `t`, and when. */
