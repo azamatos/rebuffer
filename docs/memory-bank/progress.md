@@ -12,7 +12,7 @@ building and every milestone is shippable on its own.
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
 | M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
-| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness deployed; charts and saved downloads built (not deployed yet); Home setup left |
+| M2 Live run | Nov 8 | in progress: honest lateness, live charts and saved downloads are live; Home setup left |
 | M3 Report, network editor, inspector | Nov 15 | not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
@@ -30,7 +30,7 @@ building and every milestone is shippable on its own.
       (2026-10-19)
 - [x] R2 bucket `azamatos-media` at https://media.azamatos.com: CORS open to any origin (GET, HEAD), cache rule
       "media: cache segments and playlists", r2.dev off; all 1,740 files uploaded and verified (2026-10-19)
-- [ ] Push-triggered deploys: deferred by the owner on 2026-10-19; deploys are by hand (`techContext.md`, "Deploying")
+- [x] Push-triggered deploys: every push to `main` deploys (checked 2026-10-20)
 - [x] Folder renamed to `~/www/me/rebuffer` (by 2026-10-19)
 - [ ] shadcn/ui, when the first component needs it
 
@@ -54,10 +54,10 @@ building and every milestone is shippable on its own.
       opens the connection; the result tells late starts (the real network answered slower than the simulated RTT)
       from late bytes (it paused or couldn't keep up), quotes the real speed and the measured latency, and reports
       background-tab time. Live numbers are in `techContext.md`, "Honesty checks"
-- [x] **Run screen charts** (2026-10-20, not deployed yet): bandwidth and quality, buffer, downloads on one time
+- [x] **Run screen charts** (2026-10-20, live): bandwidth and quality, buffer, downloads on one time
       axis, per the design canvas; our own canvas code instead of uPlot (`techContext.md`, Stack); a sentence and a
       data table per chart; 0.1 ms per frame (p50), 1.8 ms at most, at 4× CPU throttling
-- [x] **Saved downloads for repeat runs** (2026-10-20, not deployed yet; the owner approved it after the charts): the
+- [x] **Saved downloads for repeat runs** (2026-10-20, live; the owner approved it after the charts): the
       worker keeps what runs download in Cache Storage (300 MB, oldest out) and answers repeat runs from it, still
       shaped; the result says how many came from it and can forget it
 - [ ] Home setup (stream, network, player pickers) wired to `/run`; "Try the tunnel" from Home
@@ -120,3 +120,4 @@ building and every milestone is shippable on its own.
   table each; 1.8 ms per frame at worst at 4× CPU throttling). Saved downloads: the worker keeps what runs download
   (300 MB) and answers repeat runs from it; Tunnel scored 31, then 25, 25, 25 (runs 2–4 identical). Playlists now
   cache for a day at Cloudflare (the owner re-uploaded them with `upload.mjs --playlists`). 367 unit tests, 64 Playwright checks.
+  Then pushed: Cloudflare built and deployed `7b7d527` from the push on its own (auto-deploy works now), and CI passed.

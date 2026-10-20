@@ -247,13 +247,11 @@ reference code is non-commercial research only, with patent notices.
 
 ## Deploying
 
-- **App:** Cloudflare Pages project `rebuffer` (build `pnpm build`, output `dist`, production branch `main`). It is
-  connected to the GitHub repo, but pushes don't trigger builds: the project was created through the API and
-  GitHub's webhook never fired. The owner deferred the fix on 2026-10-19 (`activeContext.md`). **Deploy by hand**
-  after pushing: `POST https://api.cloudflare.com/client/v4/accounts/<account id>/pages/projects/rebuffer/deployments`
-  with form field `branch=main`, authorised with the OAuth token from `wrangler login` (`pnpm exec wrangler whoami`
-  shows the account id). Cloudflare clones `main` and builds it; poll
-  `.../deployments/<id>` until `latest_stage` is `deploy` with status `success`.
+- **App:** Cloudflare Pages project `rebuffer` (build `pnpm build`, output `dist`, production branch `main`),
+  connected to the GitHub repo. **Every push to `main` deploys** (checked 2026-10-20: the deployment and Cloudflare's
+  GitHub check appear within seconds, the build takes about a minute). On 2026-10-19 pushes didn't trigger builds;
+  what fixed it isn't recorded. By hand, if ever needed: a clean build of the commit, then `pnpm exec wrangler pages
+  deploy dist --project-name rebuffer --branch main --commit-hash <sha>`.
 - **Headers:** `public/_headers` sets the CSP (`connect-src` and `media-src` open, because the lab plays any link)
   and `X-Robots-Tag: noindex` for `*.pages.dev` addresses, so only rebuffer.azamatos.com is indexed.
 - **Media:** `node scripts/media/upload.mjs` uploads `media/out/<name>` with wrangler (1,740 files for Tears of

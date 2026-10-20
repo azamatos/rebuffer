@@ -1,6 +1,6 @@
 # Active context
 
-**Updated 2026-10-20 (third session: deploy, live charts, saved downloads).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (third session: live charts, saved downloads, auto-deploy works).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -14,9 +14,9 @@
   live charts, a plain-English event log, score and an honesty paragraph at the end), and placeholders for Inspect,
   Networks, Runs and About. The core under it is done: playlist parser and lint rules, network simulator and
   Service Worker shaper, hls.js adapter, run controller, metrics and score.
-- **Live site = commit `3b7f739` (honest lateness)**, pushed and deployed by hand on 2026-10-20 (`wrangler pages
-  deploy` of a clean build of that commit). The charts and saved downloads are on `main` locally, **not pushed or
-  deployed yet**.
+- **Live site = commit `7b7d527`** (honest lateness, live charts, saved downloads), pushed on 2026-10-20 and built by
+  Cloudflare from the push. **Pushes to `main` now deploy on their own** (checked 2026-10-20: the deployment and
+  Cloudflare's GitHub check appeared within 10 s of the push, done in about a minute; GitHub's CI passed too).
 - **Honest lateness (built 2026-10-19):** a check before the run measures the real latency to the stream's host and
   opens the connection; the result tells late starts from late bytes, quotes the real speed and the measured
   latency, and reports background-tab time (`techContext.md`, "Honesty checks").
@@ -32,15 +32,13 @@
 
 ## Next step (in this order)
 
-1. **The owner decides** on the items in "Waiting for the owner" below (push and deploy the charts and saved
-   downloads first).
-2. **Home setup (M2).** Stream, network and player pickers on Home that open `/run` with the setup in the URL; a
+1. **Home setup (M2).** Stream, network and player pickers on Home that open `/run` with the setup in the URL; a
    keyboard-only Playwright test from Home through a finished run.
-3. Then M3: Report screen (notes, "try next", export, share link, saved runs, zoomable charts), network editor,
+2. Then M3: Report screen (notes, "try next", export, share link, saved runs, zoomable charts), network editor,
    inspector screen.
 
-Deploys are by hand for now (see "Deploying" in `techContext.md`): pushes to GitHub don't trigger Cloudflare
-builds, and the owner decided on 2026-10-19 to leave that for later.
+Pushes to `main` deploy to rebuffer.azamatos.com on their own (checked 2026-10-20). Pushing is still outward-facing:
+ask the owner first.
 
 ## Decisions (settled 2026-10-18 to 2026-10-20)
 
@@ -57,7 +55,7 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 | 9 | Samples | Our *Tears of Steel* (clean, and a version with planted mistakes) first; public test streams from Unified Streaming, Apple and Mux after it |
 | 10 | Scope by Dec 6 | Compare two runs and the case study; Shaka Player after launch |
 | 11 | Repo | github.com/azamatos/rebuffer, public (owner created it 2026-10-19), pushed over SSH |
-| 12 | Deploys | By hand until push-triggered builds are fixed; the owner deferred that on 2026-10-19 |
+| 12 | Deploys | Cloudflare builds every push to `main` (working as of 2026-10-20; by hand before) |
 | 13 | Repeat runs | The browser keeps what runs download (300 MB) so repeats match; approved 2026-10-20 ("go with recommendations"), built the same day |
 | 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the owner re-uploaded the 14 playlists the same day (`upload.mjs --playlists`) |
 
@@ -70,10 +68,6 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 
 ## Waiting for the owner (raised 2026-10-20, third session)
 
-- **Push and deploy the charts and saved downloads.** Recommended: yes. Pushing is done over SSH (`git push origin
-  main`); deploying by hand is a clean build plus `pnpm exec wrangler pages deploy dist --project-name rebuffer
-  --branch main` (`techContext.md`, "Deploying"). The agent's permission checker blocks deploys and R2 writes, so the
-  owner runs them or allows them.
 - **Score on slow networks (observation, decision 5 stays as is until the owner reopens it).** Rural 3G played with
   no stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.
@@ -83,10 +77,8 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 
 ## Owner's open items
 
-- Fix push-triggered deploys (deferred): GitHub → Settings → Applications → Cloudflare Workers and Pages → Configure
-  → make sure azamatos/rebuffer is listed; if pushes still don't deploy, recreate the `rebuffer` Pages project from
-  the dashboard (Create → Pages → Connect to Git; build `pnpm build`, output `dist`) and re-add the custom domain.
-- Optional: Cloudflare Web Analytics for rebuffer.azamatos.com (the CSP already allows its beacon).
+- Cloudflare Web Analytics: the live pages load its beacon (`static.cloudflareinsights.com`, seen 2026-10-20), so it
+  looks switched on; the owner can confirm in the dashboard. The CSP allows it.
 - Deferred to the beta: which player failures hurt most in the owner's past work and which hls.js settings were
   tuned; own network recordings for presets.
 
