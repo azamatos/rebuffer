@@ -3,7 +3,6 @@ import { lazy, Suspense } from "react";
 import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
-import { PlannedPage } from "@/ui/pages/PlannedPage";
 import type { NetworksSearch } from "@/ui/networks/NetworkList";
 import type { InspectSearch } from "@/ui/pages/InspectPage";
 import type { RunSearch } from "@/ui/pages/RunPage";
@@ -20,6 +19,9 @@ const InspectPage = lazy(() =>
 );
 const NetworksPage = lazy(() =>
   import("@/ui/pages/NetworksPage").then((module) => ({ default: module.NetworksPage })),
+);
+const AboutPage = lazy(() =>
+  import("@/ui/pages/AboutPage").then((module) => ({ default: module.AboutPage })),
 );
 // The Report draws the same charts, so it loads on demand too.
 const ReportPage = lazy(() =>
@@ -144,10 +146,9 @@ const aboutRoute = createRoute({
   path: "/about",
   head: () => title("About"),
   component: () => (
-    <PlannedPage
-      title="About"
-      summary="How the simulation works and where it stops, how each number is computed, and credits."
-    />
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading…</p>}>
+      <AboutPage />
+    </Suspense>
   ),
 });
 
