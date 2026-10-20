@@ -64,8 +64,10 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
     start: "now",
   });
 
+  // The actions work from the keyboard (AGENTS.md rule 4).
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export JSON" }).click();
+  await tabTo(page, browserName, page.getByRole("button", { name: "Export JSON" }));
+  await page.keyboard.press("Enter");
   const file = await (await download).path();
   const exported = JSON.parse(await readFile(file, "utf8")) as {
     format: string;
@@ -74,22 +76,26 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   expect(exported.format).toBe("rebuffer-run");
   expect(exported.events.length).toBeGreaterThan(10);
 
-  await page.getByRole("button", { name: "Copy link" }).click();
+  await tabTo(page, browserName, page.getByRole("button", { name: "Copy link" }));
+  await page.keyboard.press("Enter");
   await expect(page.getByText(/Copied a link to this setup|didn't let the lab copy/)).toBeVisible();
 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-  // The run is listed on the Runs page and on Home.
+  // The run is listed on Home and on the Runs page, which opens its report from the keyboard.
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Recent runs" })).toContainText("Custom network");
   await page.goto("/runs");
   const row = page.getByRole("row", { name: /Custom network/ });
   await expect(row).toContainText("hls.js defaults");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  await page.goto("/");
-  await expect(page.getByRole("region", { name: "Recent runs" })).toContainText("Custom network");
+  await tabTo(page, browserName, row.getByRole("link", { name: /Report\b.*Custom network/ }));
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(reportUrl);
 
   // Delete forgets it.
-  await page.goto(reportUrl);
-  await page.getByRole("button", { name: "Delete" }).click();
+  await tabTo(page, browserName, page.getByRole("button", { name: "Delete" }));
+  await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs$/);
   await expect(page.getByText("No runs yet.")).toBeVisible();
   await page.goto(reportUrl);
