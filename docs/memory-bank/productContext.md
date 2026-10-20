@@ -45,6 +45,11 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   declared bandwidth below the measured peak, a big gap between two rungs of the ladder.
 - **Run this stream** goes to Home with the stream chosen.
 - Blocked by CORS: a clear message ("this server doesn't let browsers read it") and the paste-text option.
+- **Built 2026-10-20:** all of the above, with these choices: "Run this stream" opens the Run screen with the
+  stream; measured peaks come from the sizes of the first 3 segments of each playlist (HEAD requests), with a
+  separate audio track added segment by segment; a finding repeated across playlists is listed once with every
+  file and line; under-declared variants offer "Run it on a N Mbps network" (a steady network 10% over what they
+  declare). The link lives in the address (`/inspect?url=`).
 
 ### Network
 

@@ -1,7 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fourth session: review fixes and zoom pushed; the Networks screen built, not
-pushed yet).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (end of the fourth session: M3 done. Review fixes, zoom and the Networks screen are live; the
+Inspect screen is built, not pushed yet).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,10 +10,10 @@ pushed yet).** Read this first, then `progress.md`.
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `c18034c`** (pushed 2026-10-20 with the owner's "push"; CI green; the deployed Report has
-  zoom). **Not pushed yet:** the 4.4 s logo blink (`a0ed972`), the Networks screen and its parts (`cadf486`…`0b68abf`)
-  and this hand-off. **Every push to `main` deploys on its own** (Cloudflare builds it in about a minute). Pushing is
-  outward-facing: ask the owner before each push.
+- **Live site = `main` at `55356a3`** (pushed 2026-10-20 after the owner's "lets go"; CI green; the deployed site
+  has the Networks screen). **Not pushed yet:** the Inspect screen (`5f9ebab`, `e647d85`), the clean film's
+  BANDWIDTH fix (`26686a8`) and this hand-off. **Every push to `main` deploys on its own** (Cloudflare builds it in
+  about a minute). Pushing is outward-facing: ask the owner before each push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
     link; seven network presets with a thumbnail each; four player presets; Run), recent runs, how it works.
@@ -23,30 +23,34 @@ pushed yet).** Read this first, then `progress.md`.
     (300 MB), so they match.
   - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, the charts from the saved log with numbered
     markers, "What happened" notes, "Try next" ideas (each the setup with one change), setup, simulation check, how
-    the score is computed; Run again, Change network (not pushed yet), Export JSON, Copy link, Delete. **Zoom**:
+    the score is computed; Run again, Change network, Export JSON, Copy link, Delete. **Zoom**:
     buttons above the charts (in, out, earlier, later, whole run), a drag across a chart, "Show on the chart" on each
     note; the axis, markers, sentences and tables follow the view.
   - **Runs (`/runs`):** the runs saved in this browser (the newest 50).
-  - **Networks (`/networks`, built 2026-10-20, not pushed yet):** the seven presets, four recorded 4G traces (Irish 4G
-    dataset, CC BY 4.0, credited) and your own; a curve editor that works with the keyboard alone, with our film's
-    qualities drawn over it; point and whole-network fields; undo; import JSON or CSV, export both; save in this
-    browser; "Use in a run" (run links now carry a drawn network's `name=`).
-  - Placeholders: Inspect, About.
-- **Quality bar today:** 462 unit tests; 88 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
-  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 93.2 KB of a 100 KB brotli
+  - **Networks (`/networks`):** the seven presets, four recorded 4G traces (Irish 4G dataset, CC BY 4.0, credited)
+    and your own; a curve editor that works with the keyboard alone, with our film's qualities drawn over it; point
+    and whole-network fields; undo; import JSON or CSV, export both; save in this browser; "Use in a run" (run links
+    carry a drawn network's `name=`).
+  - **Inspect (`/inspect?url=`, built 2026-10-20, not pushed yet):** a link, pasted text or a file; summary with
+    finding counts and Run this stream; the ladder with declared, average and measured peak (first 3 segments,
+    sizes by HEAD, separate audio added segment by segment), codecs in words and what this browser plays; findings
+    grouped across playlists with file, line and spec; segments of any playlist as a chart, a sentence and a table.
+    On our "with problems" sample it shows all four planted mistakes.
+  - Placeholder: About.
+- **Quality bar today:** 474 unit tests; 94 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
+  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 93.4 KB of a 100 KB brotli
   budget, counting every script `index.html` loads (91.0 before the Networks screen: the bundler now splits React
   and the router into a third file, which compresses worse; the raw size grew about 1 KB).
-- **Schedule:** M0, M1 and M2 are done (targets were Oct 25, Nov 1 and Nov 8). M3 (Nov 15) is in progress: the Report
-  and the network editor are done; the inspector screen is next. MVP live by Nov 22, launch Dec 6.
+- **Schedule:** M0, M1, M2 and M3 are done (targets were Oct 25, Nov 1, Nov 8 and Nov 15; M3 finished 2026-10-20).
+  M4 (polish, MVP complete, Nov 22) is next; launch Dec 6.
 
 ## Next step (in this order)
 
-1. **Ask the owner to push** the blink and the Networks screen (see "Waiting for the owner"), then check the live
-   site: open `/networks`, edit a curve with the keyboard, use it in a run.
-2. **Inspector screen (`/inspect`, M3)** on top of `src/core/hls`: ladder, tracks, segments, measured bitrate,
-   findings. Follow the design canvas (Inspect board).
-3. Then M4: About (with the traces' credit too), first-run hints, accessibility pass, pre-rendered Home
-   (Lighthouse), real Safari check, README.
+1. **Ask the owner to push** the Inspect screen and the BANDWIDTH fix, and to **upload the clean film's new
+   `master.m3u8`** (see "Waiting for the owner"); then check `/inspect` on both samples live.
+2. **M4:** About (how it works, limits, credits for the film and the traces), first-run hints, the accessibility
+   pass (a live region for switches and stalls on the Run screen), pre-rendered Home (Lighthouse), the determinism
+   job, a real Safari check, README.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
@@ -88,9 +92,23 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
-- **Push:** the 4.4 s logo blink, the Networks screen (curve edits and CSV, four recorded traces, saved networks,
-  the screen itself, "Change network" on the Report) and this hand-off. All checks pass locally (462 unit tests,
-  88 Playwright checks).
+- **Push:** the Inspect screen (core and screen), the clean film's BANDWIDTH fix and this hand-off. All checks pass
+  locally (474 unit tests, 94 Playwright checks).
+- **Upload the clean film's master playlist (blocked for the agent: R2 writes):** the inspector found that our clean
+  `master.m3u8` declares each variant's video alone (ffmpeg leaves out the separate audio; RFC 8216 §4.3.4.2 counts
+  it): 240p declares 469 kbps and peaks at 600 kbps with its audio. The local copy is fixed
+  (`node scripts/media/encode.mjs --only polish`, already run). The owner runs
+  `node scripts/media/upload.mjs --playlists`. Cloudflare caches playlists for a day (decision 14), so purge
+  `https://media.azamatos.com/tears-of-steel/clean/master.m3u8` in the dashboard, or wait a day; browsers that saved
+  the old one for repeat runs keep it until "Forget saved downloads". Until then the live inspector shows a warning
+  on our clean sample, which is true.
+- **Inspect, departures from the design canvas (Inspect board):**
+  - "Run this stream" opens the Run screen with the stream (as "Use in a run" does), not Home's setup.
+  - Measured peaks come from segment sizes (HEAD requests, or a download when a server won't answer one), so the
+    first 3 segments of every playlist cost about 18 small requests, not 25 MB of video.
+  - A finding broken the same way in several playlists is listed once, with every file; a 6.6 s segment in all five
+    renditions is one error. The board shows only the 720p one.
+  - The column the board calls "Resolution" is "Picture" (size and frame rate).
 - **Deviations from the design canvas (Network board), for the owner's eye:**
   - The board says Tab moves between points; that would trap keyboard users in the editor (WCAG 2.1.2), so Tab
     leaves it as anywhere else and `[` `]` choose the point before or after (Home and End: first and last).
@@ -101,8 +119,6 @@ that needs their eye under "Waiting for the owner".
     run's own stream and player when the editor came from a report's "Change network".
 - **On phones the network list comes before the editor** (11 cards to scroll past). Possible later: a compact
   list (a select, or collapsed groups) under 700 px. Not done; the design has the list first.
-- **Behaviour change (review fix, pushed 2026-10-20, rule 2):** the Service Worker fetches with `cache: "no-store"`,
-  so a setup's first run always goes over the real network, and repeats come from the saved copy.
 - **Score on slow networks (observation; decision 5 stays until the owner reopens it).** Rural 3G played with no
   stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.
@@ -144,6 +160,9 @@ that needs their eye under "Waiting for the owner".
   (`rebuffer` for runs, `rebuffer-networks` for networks).
 - **The router quotes a search value that reads as a number** (`?run=%2231994322%22`). It still works; new ids start
   with a letter (`newNetworkId`), and tests accept the quotes for run ids.
+- **ffmpeg's master playlist leaves separate audio out of BANDWIDTH** (and AVERAGE-BANDWIDTH): measure the variant
+  with its audio, as `polishMaster` now does. Found by our own inspector on our "clean" sample.
+- **macOS has no `timeout` command,** and `cat > file` with no input waits forever in the agent's shell.
 - **Keyboard tests only Tab forward:** in Firefox, a control earlier in the page than the focus can be 40+ Tabs
   away. Order a test's steps as a person would fill the page, top to bottom, or load the page afresh.
 - **The code review (`/code-review high <range>`) earned its keep:** 10 findings on the third session, 8 real. Its

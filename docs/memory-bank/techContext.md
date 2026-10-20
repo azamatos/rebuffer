@@ -141,7 +141,7 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 preset's, as `abrEwmaFastVoD:1.5`, within limits in `src/core/player/settings.ts`; `start=now` from Home's buttons
 and the Report's starts it and is then dropped from the URL; `name=` a drawn network's name) · `/runs` saved runs ·
 `/runs/$runId` a report (both lazy) · `/networks` network editor (lazy; `?network=` a preset or trace, `saved=` yours,
-`run=` a run's network to change, `new=blank`) · `/inspect`
+`run=` a run's network to change, `new=blank`) · `/inspect` the inspector (lazy; `?url=` the playlist) · `/inspect`
 stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 
@@ -199,6 +199,12 @@ reference code is non-commercial research only, with patent notices.
 - Lint rules with severity and spec reference (RFC 8216 sections, Apple's HLS authoring spec). MVP set: segment over
   target duration, missing `CODECS` or `RESOLUTION`, declared bandwidth below measured peak, missing `ENDLIST` on VOD,
   version too low for the tags used, mixed containers, no I-frame playlists.
+- **Screen built 2026-10-20:** `src/core/inspect` (a `Reader` over fetch, injectable for tests; `loadInspection` reads
+  every media playlist a multivariant one names, I-frame playlists aside; `measureMedia` takes each of the first 3
+  segments' size from its byte range or a HEAD request, falling back to a download; `model.ts` builds the summary,
+  ladder, tracks, grouped findings, segment statistics and links). Separate audio is added to a variant's video
+  segment by segment (RFC 8216 §4.3.4.2), not peak to peak. Media Capabilities answers "plays here" (MediaSource as
+  the fallback), asked with `video/mp4` codecs since hls.js hands MPEG-TS over as fMP4.
 - Later: probe segments in a worker (keyframe at segment start, real codec vs declared) with a small TS/fMP4 reader.
 - **Built 2026-10-18** (`src/core/hls`, 193 tests). Decisions where the specs left room: any EXTINF or
   TARGETDURATION makes a media playlist (as hls.js does); variables are substituted in URIs and quoted values only;
@@ -239,7 +245,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 93.2 KB on 2026-10-20 (91.0 before the Networks screen: the bundler now puts React and TanStack Router in a third file, named `time-*.js` after a module it also holds, and three files compress worse than two; the raw size grew about 1 KB). Lazy chunks: the Run screen, the Report, the Networks screen (10 KB gzip), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 93.2 KB on 2026-10-20 (91.0 before the Networks screen: the bundler now puts React and TanStack Router in a third file, named `time-*.js` after a module it also holds, and three files compress worse than two; the raw size grew about 1 KB). Lazy chunks: the Run screen, the Report, the Networks screen (10 KB gzip), the Inspect screen (21 KB gzip, with the playlist parser), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |
@@ -261,8 +267,11 @@ reference code is non-commercial research only, with patent notices.
   `networks.spec.ts` (a trace with its credit; the tunnel edited on the curve by keyboard: choose, move, step to a
   quality line, add, delete, undo; a time outside the neighbours explained; name and latency; export JSON; save,
   with focus kept; Use in a run carries the name; a CSV imported from the keyboard and a broken file explained;
-  axe), and `report.spec.ts` covers "Change network".
-  Planned: Home → Run → Report, Inspect the version with problems.
+  axe), `inspect.spec.ts` (a link typed by keyboard: summary, ladder with codecs and measured peaks, findings,
+  another playlist's segments, Run this stream; pasted text; a file; a server without CORS, via the file server's
+  `/nocors/` prefix; a bad link; axe), and `report.spec.ts` covers "Change network".
+  Planned: Home → Run → Report. The "with problems" sample lives on media.azamatos.com, which CI doesn't depend on:
+  its four mistakes are checked by hand (all found, 2026-10-20) and by unit tests on `problems-*.m3u8` fixtures.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
   cross-origin on port 4013 under `/hls/`, next to deterministic `/bytes/<size>` files. CI installs ffmpeg.

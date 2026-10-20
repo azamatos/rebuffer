@@ -13,7 +13,7 @@ building and every milestone is shippable on its own.
 | M0 Decisions and setup | Oct 25 | done 2026-10-19; push-triggered deploys work since 2026-10-20 |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3, done 2026-10-20) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | in progress: the Report (zoom live) and the network editor done 2026-10-20 (the editor not pushed yet); the inspector next |
+| M3 Report, network editor, inspector | Nov 15 | done 2026-10-20 (the Report and the network editor live; the inspector not pushed yet) |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -82,7 +82,9 @@ building and every milestone is shippable on its own.
 - [x] Network editor: presets, recorded traces, your own (IndexedDB), a curve editor by keyboard or pointer, point
       and whole-network fields, undo, import and export JSON and CSV, Use in a run (2026-10-20)
 - [x] Report: Change network, keeping the run's stream and player (2026-10-20)
-- [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
+- [x] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings (2026-10-20)
+- [x] Our clean film's BANDWIDTH counts its separate audio (found by the inspector; local copy fixed 2026-10-20, the
+      upload waits for the owner)
 
 ## M4: polish; MVP complete (target Nov 22)
 
@@ -153,4 +155,9 @@ building and every milestone is shippable on its own.
   Home's JavaScript 91.0 KB. The owner said "push" (`c18034c`, CI green, live), chose a 4.4 s blink for the logo
   cursor (WCAG 2.2.2), and "lets go with networks": curve edits and CSV (pure, tested), four recorded 4G traces
   from the Irish 4G dataset (licence checked at Zenodo: CC BY 4.0), saved networks, the Networks screen and "Change
-  network" on the Report. 462 unit tests, 88 Playwright checks, Home's JavaScript 93.2 KB. Not pushed yet.
+  network" on the Report. 462 unit tests, 88 Playwright checks, Home's JavaScript 93.2 KB. The owner said "lets go":
+  pushed (`55356a3`, CI green, live), then the Inspect screen (M3 done): a reader and model in `src/core/inspect`,
+  the screen, and e2e tests against the synthetic stream (and a server without CORS). On media.azamatos.com it shows
+  all four planted mistakes; on our clean film it found a real one: BANDWIDTH without the separate audio. The encode
+  script now measures it with the audio; the upload waits for the owner. 474 unit tests, 94 Playwright checks, Home's
+  JavaScript 93.4 KB. Not pushed yet.
