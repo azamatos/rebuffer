@@ -10,12 +10,10 @@
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `98b6327`** (pushed 2026-10-20 with the owner's "lets now push the changes"; Cloudflare
-  deployed it in about 45 s; checked live in three engines and both themes). CI's e2e passed there; its Lighthouse
-  step failed (performance 0.75–0.84) on font-swap layout shift on Linux. Fixed locally, not pushed: fallback fonts
-  sized like Geist and Space Mono (the owner chose this over `font-display: optional`), em instead of ch, and
-  screens that load whole (`techContext.md`, "Themes and the first paint"). **Every push to `main` deploys on its
-  own.** Pushing is outward-facing: ask the owner before each push.
+- **Live site = `main` at `5a16d13`** (pushed 2026-10-20 with the owner's "Lets push"; Cloudflare deployed it in
+  about 75 s; every screen checked live in Chromium, Firefox and WebKit, both themes). **CI green**: Lighthouse on
+  GitHub's runner 100 in all four categories (CLS 0, FCP 0.9 s, LCP 1.4 s, TBT 0), e2e 135 passed. **Every push to
+  `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
 - **What works today (locally; live is the fourth session's state):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
@@ -43,8 +41,7 @@
 
 ## Next step (in this order)
 
-1. **Push the font and route-loading fixes** (ask first), then check that CI's Lighthouse step passes on GitHub's
-   runners.
+1. **Push this docs commit** with the next change (ask first).
 2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
 4. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
@@ -92,7 +89,6 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
-- **Push this session's work** (ask; nothing from it is live).
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
   arrow and tilde darken with it. Screenshots before the push.

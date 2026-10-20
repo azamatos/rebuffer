@@ -14,7 +14,7 @@ building and every milestone is shippable on its own.
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3, done 2026-10-20) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
-| M4 Polish; MVP live | Nov 22 | done 2026-10-20 locally, except the real Safari check (needs the owner); not pushed yet |
+| M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
@@ -179,4 +179,5 @@ building and every milestone is shippable on its own.
   method, measured in Chromium by `scripts/fonts/fallbacks.mjs`), `em` instead of `ch`, and screens whose code the
   router loads before they render (a directly opened screen had pushed its footer down). With the fonts held back
   1.5 s, Home's layout shift is 0.0000–0.0001 on macOS and Linux; Lighthouse 1.0 in Linux Chromium, 0.99 on the Mac.
-  Waits for the owner's OK to push.
+  Pushed with the owner's "Lets push" (`5a16d13`): live, CI green, Lighthouse on GitHub's runner 100 in every
+  category.
