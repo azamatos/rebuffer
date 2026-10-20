@@ -46,7 +46,12 @@ async function problems(): Promise<Inspection> {
 
 /** Measured peaks by media playlist address, Mbps. */
 const peaks = (entries: Record<string, number>): Map<string, Measured> =>
-  new Map(Object.entries(entries).map(([url, mbps]) => [url, { peakBps: mbps * 1e6, count: 3 }]));
+  new Map(
+    Object.entries(entries).map(([url, mbps]) => [
+      url,
+      { peakBps: mbps * 1e6, count: 1, rates: [mbps * 1e6] },
+    ]),
+  );
 
 describe("loadInspection", () => {
   it("reads the media playlist of every variant, and says why one couldn't be read", async () => {
@@ -88,7 +93,11 @@ describe("measureMedia", () => {
       },
     );
     expect(asked).toEqual([]);
-    expect(measured).toEqual({ peakBps: (1_532_810 * 8) / 4, count: 3 });
+    expect(measured).toEqual({
+      peakBps: (1_532_810 * 8) / 4,
+      count: 3,
+      rates: [(1_532_810 * 8) / 4, (1_398_001 * 8) / 4, (1_450_212 * 8) / 4],
+    });
   });
 
   it("asks the server for sizes, and measures what it can", async () => {
@@ -100,7 +109,11 @@ describe("measureMedia", () => {
         { [`${BASE}1280/segment_000.ts`]: 2_400_000, [`${BASE}1280/segment_002.ts`]: 2_550_000 },
       ),
     );
-    expect(measured).toEqual({ peakBps: 3_400_000, count: 2 });
+    expect(measured).toEqual({
+      peakBps: 3_400_000,
+      count: 2,
+      rates: [3_200_000, undefined, 3_400_000],
+    });
   });
 });
 
@@ -129,6 +142,23 @@ describe("the screen's model", () => {
     ]);
     expect(rows[1]?.over).toBeCloseTo(0.214, 3);
     expect(rows[0]?.over).toBeUndefined();
+  });
+
+  it("adds separate audio segment by segment, not peak to peak", async () => {
+    const master = [
+      "#EXTM3U",
+      '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",NAME="English",DEFAULT=YES,URI="audio.m3u8"',
+      '#EXT-X-STREAM-INF:BANDWIDTH=600000,CODECS="avc1.4d401e,mp4a.40.2",RESOLUTION=426x178,AUDIO="a"',
+      "240p.m3u8",
+    ].join("\n");
+    const result = await loadInspection({ url: `${BASE}master.m3u8`, text: master }, reader({}));
+    if (!result.ok) throw new Error("not ok");
+    const measured = new Map<string, Measured>([
+      [`${BASE}240p.m3u8`, { peakBps: 500_000, count: 3, rates: [500_000, 400_000, 450_000] }],
+      [`${BASE}audio.m3u8`, { peakBps: 140_000, count: 3, rates: [100_000, 140_000, 120_000] }],
+    ]);
+    const [row] = ladderRows(result.inspection, measured);
+    expect(row).toMatchObject({ measuredBps: 600_000, withAudio: true, over: undefined });
   });
 
   it("groups a finding found in several playlists, and adds the measured bandwidth", async () => {

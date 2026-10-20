@@ -110,6 +110,8 @@ export interface Measured {
   peakBps: number | undefined;
   /** Segments whose size was read. */
   count: number;
+  /** Each measured segment's bit rate, in playlist order; undefined where the size couldn't be read. */
+  rates: (number | undefined)[];
 }
 
 /** Segments measured per media playlist. */
@@ -137,5 +139,5 @@ export async function measureMedia(
     }),
   );
   const known = rates.filter((rate): rate is number => rate !== undefined);
-  return { peakBps: known.length > 0 ? Math.max(...known) : undefined, count: known.length };
+  return { peakBps: known.length > 0 ? Math.max(...known) : undefined, count: known.length, rates };
 }

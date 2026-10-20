@@ -134,6 +134,23 @@ function audioUrl(top: MultivariantPlaylist, group: string | undefined): string 
   return (members.find((rendition) => rendition.default) ?? members[0])?.resolvedUri;
 }
 
+/**
+ * A variant's peak with its separate audio, segment by segment, as RFC 8216 defines BANDWIDTH: the highest sum of a
+ * video segment and the audio segment beside it (the audio's peak where that one wasn't measured).
+ */
+function combinedPeak(
+  video: Measured | undefined,
+  audio: Measured | undefined,
+): number | undefined {
+  if (video?.peakBps === undefined) return undefined;
+  if (audio?.peakBps === undefined) return video.peakBps;
+  const audioPeak = audio.peakBps;
+  const sums = video.rates.flatMap((rate, i) =>
+    rate === undefined ? [] : [rate + (audio.rates[i] ?? audioPeak)],
+  );
+  return Math.max(...sums);
+}
+
 export function ladderRows(inspection: Inspection, measured: Measurements): LadderRow[] {
   const { top } = inspection;
   if (top.kind !== "multivariant") return [];
@@ -142,10 +159,10 @@ export function ladderRows(inspection: Inspection, measured: Measurements): Ladd
     .sort((a, b) => (b.bandwidth ?? 0) - (a.bandwidth ?? 0))
     .map((variant) => {
       const codecs = variant.codecs?.map(describeCodec);
-      const video = variant.resolvedUri ? measured.get(variant.resolvedUri)?.peakBps : undefined;
+      const video = variant.resolvedUri ? measured.get(variant.resolvedUri) : undefined;
       const separateAudio = audioUrl(top, variant.audio);
-      const audio = separateAudio ? measured.get(separateAudio)?.peakBps : undefined;
-      const measuredBps = video === undefined ? undefined : video + (audio ?? 0);
+      const audio = separateAudio ? measured.get(separateAudio) : undefined;
+      const measuredBps = combinedPeak(video, audio);
       const over =
         measuredBps !== undefined && variant.bandwidth !== undefined
           ? measuredBps / variant.bandwidth - 1
@@ -162,7 +179,7 @@ export function ladderRows(inspection: Inspection, measured: Measurements): Ladd
         video: codecs?.find((codec) => codec.kind === "video"),
         audio: codecs?.find((codec) => codec.kind === "audio"),
         measuredBps,
-        withAudio: audio !== undefined,
+        withAudio: audio?.peakBps !== undefined,
         over: over !== undefined && over > 0.1 ? over : undefined,
         shade: ranked.length <= 1 ? 4 : Math.round((rank * 4) / (ranked.length - 1)),
         mediaUrl: variant.resolvedUri,

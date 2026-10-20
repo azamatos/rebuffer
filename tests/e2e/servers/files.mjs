@@ -6,6 +6,7 @@
 //   GET /slow/<ms>/<path>  any of the above, answered <ms> later: a server farther away than the simulated RTT.
 //                          Relative links in a playlist keep the prefix, so a whole stream can be slow.
 //   GET /keep/<path>       any of the above, cacheable: the lab may save it for repeat runs.
+//   GET /nocors/<path>     any of the above without CORS headers: a server that doesn't let browsers read it.
 //   GET /                  "ok", for Playwright's readiness check
 // Every response allows any origin. Outside /keep/ none may be stored, so each download really goes over the wire.
 import { readFile } from "node:fs/promises";
@@ -109,6 +110,20 @@ function handle(request, response, url, keep = false) {
       },
       Math.min(Number(slow[1]), 10_000),
     );
+    return;
+  }
+  const blocked = /^\/nocors(\/.*)$/.exec(url.pathname);
+  if (blocked) {
+    url.pathname = blocked[1];
+    const writeHead = response.writeHead.bind(response);
+    response.writeHead = (status, headers = {}) =>
+      writeHead(
+        status,
+        Object.fromEntries(
+          Object.entries(headers).filter(([name]) => !name.startsWith("Access-Control-")),
+        ),
+      );
+    handle(request, response, url, keep);
     return;
   }
   const kept = /^\/keep(\/.*)$/.exec(url.pathname);

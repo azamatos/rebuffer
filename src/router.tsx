@@ -5,6 +5,7 @@ import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
 import { PlannedPage } from "@/ui/pages/PlannedPage";
 import type { NetworksSearch } from "@/ui/networks/NetworkList";
+import type { InspectSearch } from "@/ui/pages/InspectPage";
 import type { RunSearch } from "@/ui/pages/RunPage";
 
 // The Run screen brings hls.js, zod and the simulator client, so it loads only when opened.
@@ -13,6 +14,9 @@ const RunPage = lazy(() =>
 );
 const RunsPage = lazy(() =>
   import("@/ui/pages/RunsPage").then((module) => ({ default: module.RunsPage })),
+);
+const InspectPage = lazy(() =>
+  import("@/ui/pages/InspectPage").then((module) => ({ default: module.InspectPage })),
 );
 const NetworksPage = lazy(() =>
   import("@/ui/pages/NetworksPage").then((module) => ({ default: module.NetworksPage })),
@@ -121,13 +125,19 @@ const inspectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/inspect",
   head: () => title("Inspect a stream"),
-  component: () => (
-    <PlannedPage
-      title="Inspect a stream"
-      summary="Read an HLS playlist: the quality ladder, codecs in plain words, tracks, segments, measured bitrates and findings with explanations."
-    />
-  ),
+  validateSearch: (search: Record<string, unknown>): InspectSearch =>
+    typeof search.url === "string" && search.url !== "" ? { url: search.url } : {},
+  component: InspectRoute,
 });
+
+function InspectRoute() {
+  const search = inspectRoute.useSearch();
+  return (
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the inspector…</p>}>
+      <InspectPage search={search} />
+    </Suspense>
+  );
+}
 
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
