@@ -14,8 +14,8 @@ building and every milestone is shippable on its own.
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3, done 2026-10-20) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
-| M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
-| M5 Compare and launch | Dec 6 | not started |
+| M4 Polish; MVP live | Nov 22 | done 2026-10-20 locally, except the real Safari check (needs the owner); not pushed yet |
+| M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
 
@@ -88,17 +88,21 @@ building and every milestone is shippable on its own.
 
 ## M4: polish; MVP complete (target Nov 22)
 
-- [ ] About (how it works, limits, credits), first-run hints
-- [ ] Accessibility pass (live region for switches and stalls; chart tables are built); budgets; Lighthouse ≥ 95
-- [ ] Pre-render the home page: CI measured Lighthouse performance 0.82 on GitHub's runners (0.98 locally) because
-      the first paint waits for React; the CI assertion is a warning until this is done
-- [ ] Determinism job: spread per preset measured and published
-- [ ] Real Safari check by hand (shaped responses, redirects, aborts)
-- [ ] README: pitch, GIF, architecture, measured numbers, how to run and test
+- [x] About (how it works, limits, the numbers, privacy, credits) and a first-run hint on the Run screen (2026-10-20)
+- [x] Accessibility pass: a polite live log of switches and stalls on the Run screen; axe on every screen in both
+      themes (2026-10-20)
+- [x] Light theme with a System / Light / Dark switch (the owner's request, 2026-10-20)
+- [x] Home rendered at build time and hydrated, the app's code after the first paint; Lighthouse CI opens `/` and
+      fails under 95 (2026-10-20; locally 0.98–0.99)
+- [x] Repeatability job: every preset 5× in Chromium, the spread published in the README and on About (2026-10-20)
+- [ ] Real Safari check by hand (shaped responses, redirects, aborts): needs the owner; checklist in
+      `activeContext.md`
+- [x] README: pitch, architecture, measured numbers, how to run and test (2026-10-20); the GIF is recorded by
+      `scripts/readme/record-gif.mjs` and waits for the owner's upload
 
 ## M5: compare and launch (target Dec 6)
 
-- [ ] Compare two saved runs (tiles with differences, overlaid charts)
+- [x] Compare two saved runs (differences in words, what changed, overlaid charts) (2026-10-20)
 - [ ] Case study on azamatos.com; repo pinned; LinkedIn post with a GIF
 
 ## Later (only if it earns it)
@@ -162,3 +166,10 @@ building and every milestone is shippable on its own.
   script now measures it with the audio; the upload waits for the owner. 474 unit tests, 94 Playwright checks, Home's
   JavaScript 93.4 KB. Pushed with the owner's "lets push" (`dc3fd6f`, CI green, live). The clean master's upload
   waits for the owner.
+- 2026-10-20 (fifth session): the owner asked to finish what's left and to add a light theme with a switch. Built, in
+  order, each with its tests: the light theme (System / Light / Dark, a hashed inline script so nothing flashes, axe
+  in both themes); About; a polite live log of switches and stalls; a first-run hint; Home rendered at build time and
+  hydrated, with the app's code after the first paint (Lighthouse locally 0.98–0.99; CI had been scoring the
+  not-found page at `/index.html`); zod without `eval` (Firefox logged a CSP error); the repeatability job
+  (each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads); Compare; README. 484 unit tests, 138 Playwright checks, Home's JavaScript 95.1 KB. Not
+  pushed: waits for the owner.

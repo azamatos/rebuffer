@@ -1,6 +1,6 @@
 # Technical plan
 
-**Agreed 2026-10-18; built through M1 and the first Run screen by 2026-10-19.** Versions and API facts were checked
+**Agreed 2026-10-18; built through M1 and the first Run screen by 2026-10-19; M4 and Compare built 2026-10-20.** Versions and API facts were checked
 on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 
 ## Stack
@@ -142,7 +142,8 @@ preset's, as `abrEwmaFastVoD:1.5`, within limits in `src/core/player/settings.ts
 and the Report's starts it and is then dropped from the URL; `name=` a drawn network's name) · `/runs` saved runs ·
 `/runs/$runId` a report (both lazy) · `/networks` network editor (lazy; `?network=` a preset or trace, `saved=` yours,
 `run=` a run's network to change, `new=blank`) · `/inspect` the inspector (lazy; `?url=` the playlist) · `/inspect`
-stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
+stream inspector · `/runs/compare` two saved runs side by side (lazy; `?a=&b=` run ids; a static segment, so it wins over
+`/runs/$runId`) · `/about` (lazy). Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 
 ## Architecture
@@ -162,7 +163,10 @@ src/
                    database)
   sw/              Service Worker: shaping transport (imports core/netsim), cache for repeat runs
   charts/          canvas charts: scales and labels (pure), drawing, the rAF loop that follows a run
-  ui/              routes, screens, components (shadcn), hooks
+  ui/              routes, screens, components (shadcn), hooks; ui/theme: System / Light / Dark (below)
+  app.tsx          the app: hydrates Home's built markup, or renders afresh elsewhere
+  main.tsx         the entry: the theme, then imports app.tsx after the first paint
+  prerender.tsx    Home rendered to HTML at build time (scripts/prerender.mjs)
 content/traces/    trace excerpts as JSON (irish-4g.json, made by scripts/traces/convert-irish4g.mjs) + credit
 scripts/media/     download, encode the ladder, the flawed variant, subtitles, upload
 tests/e2e/         Playwright specs; CI test stream made with ffmpeg
@@ -181,6 +185,31 @@ A run, step by step:
    second.
 6. At the end, `metrics` turns the log into numbers, notes and ideas (pure functions); the run (setup, versions,
    log, metrics) is saved to IndexedDB, and the Run screen offers "See the report".
+
+## Themes and the first paint (built 2026-10-20)
+
+- **Light and dark.** The owner asked for a light theme with a switch on 2026-10-20. `src/styles.css` keeps the dark
+  tokens in `@theme` and overrides them under `:root[data-theme="light"]` (text 4.5:1 on both grounds; the accent
+  darkens to a teal that white text reads on; qualities run light to dark). `src/ui/theme/theme.ts` keeps the choice
+  (System, the default; Light; Dark) in `localStorage` and `<html data-theme>` set to the theme in use, following the
+  system while the choice is System and other tabs through `storage`. The header has the switch (three radios). The
+  canvases redraw on a change (`useTheme`, `retheme()`).
+- **No flash.** An inline script in `index.html` sets `data-theme` before the first paint; the CSP allows it by its
+  hash (`public/_headers`, checked by `tests/unit/csp.test.ts`). It also marks paths other than Home
+  (`data-not-home`).
+- **Home is rendered at build time** (`scripts/prerender.mjs`: Vite's SSR loader and `react-dom/server` on
+  `src/prerender.tsx`). TanStack Router renders a Suspense boundary in the browser that its server render leaves out
+  (it expects its own SSR set-up, whose inline scripts the CSP doesn't allow), so the script wraps the markup in a
+  finished boundary's markers and `src/app.tsx` hydrates it after `router.load()`. "Recent runs" renders only after
+  hydration (`useSyncExternalStore` with a server snapshot). Every other path gets the same file: CSS hides Home's
+  markup there (`[data-not-home] #root[data-prerendered]`) and the app renders afresh.
+- **The app's code runs after the first paint.** `src/main.tsx` (theme, CSS) imports `app.tsx` from a
+  `requestAnimationFrame` + `setTimeout`. Lighthouse simulates from what it observed: when the scripts ran before the
+  first paint (locally they arrive at once), it counted them, and FCP stayed at 2.0 s (1.2 s with no scripts). Now
+  1.7 s, LCP 2.0–2.1 s, performance 0.98–0.99 locally. Replacing the markup instead of hydrating it made the browser
+  record a second largest paint, so the app hydrates.
+- **Zod parses without compiling** (`src/core/zod.ts`, `jitless`): its probe for `new Function` made Firefox log a
+  CSP error.
 
 ## Metrics and score
 
@@ -245,7 +274,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 93.2 KB on 2026-10-20 (91.0 before the Networks screen: the bundler now puts React and TanStack Router in a third file, named `time-*.js` after a module it also holds, and three files compress worse than two; the raw size grew about 1 KB). Lazy chunks: the Run screen, the Report, the Networks screen (10 KB gzip), the Inspect screen (21 KB gzip, with the playlist parser), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli: every script `index.html` loads, plus the app chunk the entry imports after the first paint with the chunks it needs (`.size-limit.js` reads both lists from the build: the page, and the entry's `__vite__mapDeps`). 95.1 KB on 2026-10-20 (93.4 before the theme switch and the deferred app; the entry's preload helper is about 1 KB). Lazy chunks: the Run screen, the Report, Compare, About, the Networks screen (10 KB gzip), the Inspect screen (21 KB gzip, with the playlist parser), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |
@@ -275,8 +304,20 @@ reference code is non-commercial research only, with patent notices.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
   cross-origin on port 4013 under `/hls/`, next to deterministic `/bytes/<size>` files. CI installs ffmpeg.
-- **Determinism job:** each preset run 5× in Chromium; the spread is recorded and published.
-- **Lighthouse CI** on Home and a Report built from a stored run; **size-limit** per route.
+- **Repeatability job (built 2026-10-20):** `pnpm repeat` (`tests/repeat/`, `playwright.repeat.config.ts`) runs each
+  preset 5× in Chromium, one run at a time, on a 2:00 synthetic stream at our film's bitrates (`make-stream.mjs
+  --repeat`, noise in the picture so each rung fills its bitrate) from the local file server; metrics come from
+  `src/core` (the node tsconfig has the `@/` alias for that). `summarize.mjs` writes the table the README and About
+  quote. `.github/workflows/repeat.yml` runs it by hand and every Monday.
+- **Compare** (`compare.spec.ts`) writes two saved runs straight into IndexedDB, so it needs no video decoding.
+- **Build-time Home** (`home.spec.ts`): its content without JavaScript, the same `<h1>` node after hydration and no
+  console errors, and Home's markup hidden on other paths while the app's script is held back. `openApp`
+  (`helpers.ts`) waits until the app has taken the markup over (`#root` loses `data-prerendered`) before keys.
+- **Themes:** `shell.spec.ts` runs axe on every screen in both themes (Playwright reports a light system theme by
+  default, so the other specs check the light one) and switches the theme by keyboard; `tests/unit/csp.test.ts`
+  checks the inline script's CSP hash.
+- **Lighthouse CI** on Home (`/`; until 2026-10-20 it opened `/index.html`, which the router treats as not found),
+  failing under 95 in any category since Home is built at build time; **size-limit** for Home.
 
 ## Deploying
 

@@ -1,6 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fourth session: M3 done and live).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (end of the fifth session: M4 and Compare built, not pushed).** Read this first, then
+`progress.md`.
 
 ## Where things stand
 
@@ -9,46 +10,45 @@
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `dc3fd6f`** plus this note (pushed 2026-10-20 with the owner's "lets push"; CI green; the
-  deployed Inspect chunk matches the local build). Two docs commits wait to be pushed (the upload README's cache notes, and this). **Every push to `main` deploys on its
-  own** (Cloudflare builds it in about a minute). Pushing is outward-facing: ask the owner before each push.
-- **What works today:**
-  - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
-    link; seven network presets with a thumbnail each; four player presets; Run), recent runs, how it works.
+- **Live site = `main` at `dc3fd6f`.** This session's commits (from `718b568` on: two docs commits from the fourth
+  session, then the light theme, About, the live region, the first-run hint, build-time Home, the repeatability job,
+  Compare, README and docs) are **local, not pushed**. **Every push to `main` deploys on its own** (Cloudflare builds
+  it in about a minute). Pushing is outward-facing: ask the owner before each push.
+- **What works today (locally; live is the fourth session's state):**
+  - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
+    setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
+    each; four player presets; Run), recent runs, how it works.
   - **Run screen:** setup from the URL, a check of the real latency before the run, video, live tiles, three live
-    charts (bandwidth and quality, buffer, segment downloads; own canvas code), an event log, and at the end the
-    score, an honesty paragraph and "See the report". Repeat runs take downloads from a copy saved in the browser
-    (300 MB), so they match.
-  - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, the charts from the saved log with numbered
-    markers, "What happened" notes, "Try next" ideas (each the setup with one change), setup, simulation check, how
-    the score is computed; Run again, Change network, Export JSON, Copy link, Delete. **Zoom**:
-    buttons above the charts (in, out, earlier, later, whole run), a drag across a chart, "Show on the chart" on each
-    note; the axis, markers, sentences and tables follow the view.
-  - **Runs (`/runs`):** the runs saved in this browser (the newest 50).
-  - **Networks (`/networks`):** the seven presets, four recorded 4G traces (Irish 4G dataset, CC BY 4.0, credited)
-    and your own; a curve editor that works with the keyboard alone, with our film's qualities drawn over it; point
-    and whole-network fields; undo; import JSON or CSV, export both; save in this browser; "Use in a run" (run links
-    carry a drawn network's `name=`).
-  - **Inspect (`/inspect?url=`, built 2026-10-20):** a link, pasted text or a file; summary with
-    finding counts and Run this stream; the ladder with declared, average and measured peak (first 3 segments,
-    sizes by HEAD, separate audio added segment by segment), codecs in words and what this browser plays; findings
-    grouped across playlists with file, line and spec; segments of any playlist as a chart, a sentence and a table.
-    On our "with problems" sample it shows all four planted mistakes.
-  - Placeholder: About.
-- **Quality bar today:** 474 unit tests; 94 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
-  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 93.4 KB of a 100 KB brotli
-  budget, counting every script `index.html` loads (91.0 before the Networks screen: the bundler now splits React
-  and the router into a third file, which compresses worse; the raw size grew about 1 KB).
-- **Schedule:** M0, M1, M2 and M3 are done (targets were Oct 25, Nov 1, Nov 8 and Nov 15; M3 finished 2026-10-20).
-  M4 (polish, MVP complete, Nov 22) is next; launch Dec 6.
+    charts, an event log, a polite live log that reads out switches and stalls, a first-run hint ("What to watch",
+    until "Got it"), and at the end the score, an honesty paragraph and "See the report".
+  - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, zoomable charts with numbered markers, "What
+    happened", "Try next", setup, simulation check, how the score is computed; Run again, Change network, Compare
+    with…, Export JSON, Copy link, Delete.
+  - **Runs (`/runs`)** and **Compare (`/runs/compare`, built 2026-10-20):** two saved runs side by side: what changed,
+    every number with B against A in words and a verdict, the charts overlaid (A solid, B dashed).
+  - **Networks (`/networks`)** and **Inspect (`/inspect`)** as in the fourth session.
+  - **About (`/about`, built 2026-10-20):** how a run works, where the simulation stops, how repeatable it is, the
+    numbers and the score, privacy, credits (film, 4G dataset, test streams, libraries with licences).
+  - **Light theme (built 2026-10-20, the owner asked for it):** System (default), Light or Dark from three radios in
+    the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
+- **Quality bar today:** 484 unit tests; 138 Playwright checks in Chromium, Firefox and WebKit (axe on every screen, in
+  both themes; 3 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 95.1 KB of a 100 KB brotli budget (now counting the app chunk the entry
+  loads after the first paint); Lighthouse on Home locally 0.98–0.99 performance, 1.0 in the rest (CI now fails
+  under 0.95, and opens `/`: it used to open `/index.html`, the not-found screen).
+- **Repeatability (`pnpm repeat`, measured 2026-10-20):** Each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads. The README and About quote the table.
+- **Schedule:** M0–M4 done (M4's target was Nov 22; done 2026-10-20 except the real Safari check, which needs the
+  owner). M5: Compare is built; the case study, pinning and the LinkedIn post remain (launch Dec 6).
 
 ## Next step (in this order)
 
-1. **Check `/inspect` on our clean sample live:** after the cache expires (from the evening of 2026-10-21) it should
-   show no warning about bandwidth; if it still does, see "Waiting for the owner". Push the two docs commits.
-2. **M4:** About (how it works, limits, credits for the film and the traces), first-run hints, the accessibility
-   pass (a live region for switches and stalls on the Run screen), pre-rendered Home (Lighthouse), the determinism
-   job, a real Safari check, README.
+1. **Show the owner, then push** (ask first): the light theme, About, Compare, build-time Home. After the push, check
+   CI (Lighthouse now fails under 95 on GitHub's runners: watch the first run) and the live site.
+2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
+3. **The README's GIF:** `node scripts/readme/record-gif.mjs --url <a preview>` writes `media/readme/rebuffer.gif`;
+   the owner uploads it (command in the script) before the README's image works.
+4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+   the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
@@ -80,6 +80,8 @@ that needs their eye under "Waiting for the owner".
 | 13 | Repeat runs | The browser keeps what runs download (300 MB) so repeats match; approved 2026-10-20 ("go with recommendations") |
 | 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the owner re-uploaded the 14 playlists the same day |
 | 15 | Charts | Own canvas code instead of uPlot: the agent's call on 2026-10-20 (reasons in `techContext.md`, Stack), shown to the owner with the results |
+| 16 | Themes | A light theme next to the dark one, with a System / Light / Dark switch; System is the default. The owner asked for it on 2026-10-20 ("not everyone will like" dark only); the light palette is the agent's, for the owner's eye |
+| 17 | First paint | Home rendered at build time and hydrated, the app's code after the first paint: the agent's call on 2026-10-20 (`techContext.md`, "Themes and the first paint") |
 
 ## Design and plan artifacts
 
@@ -89,6 +91,25 @@ that needs their eye under "Waiting for the owner".
   and deploy decisions); this memory bank is the source of truth when they differ.
 
 ## Waiting for the owner (raised 2026-10-20)
+
+- **Push this session's work** (ask; nothing from it is live).
+- **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
+  darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
+  arrow and tilde darken with it. Screenshots before the push.
+- **The README's GIF** (`scripts/readme/record-gif.mjs`): media stays out of git (AGENTS.md rule 7), so the README
+  points at `https://media.azamatos.com/readme/rebuffer.gif`, which the owner uploads with wrangler (the command is
+  in the script). It shows a few seconds of the film inside the app, without sound (the film's images are CC BY 3.0;
+  the CC BY-ND soundtrack isn't in it); the owner may prefer the synthetic test stream.
+- **Real Safari check (M4's last item), about 10 minutes in Safari on the Mac, on the live site after the push:**
+  1. "Try the tunnel": it plays, the charts move, the result's simulation check reads sensibly.
+  2. Rural 3G with Fast start; Stop halfway (an abort mid-download), then Run again.
+  3. Start a run and switch to another tab for 20 s (the worker idles; the report should note background time).
+  4. Inspect our "with problems" sample (four findings); the theme switch; Compare two runs.
+  5. Anything that looks wrong: a screenshot is enough.
+- **Compare's colours:** A is a solid line in the text colour, B a dashed line in the accent (no new colour tokens;
+  the network keeps its blue). The owner may prefer two new hues.
+- **About states the score's limit** ("on a network slower than the top quality, even a run without a stall scores
+  low"), which answers the slow-network observation below in words; decision 5 itself is unchanged.
 
 - **Clean film's master playlist: uploaded by the owner on 2026-10-20** (`upload.mjs --only clean --playlists`;
   R2 serves BANDWIDTH 6,123,200 for 1080p). The dashboard's URL purge cleared only the cached copy without an
@@ -141,8 +162,19 @@ that needs their eye under "Waiting for the owner".
 - Whether to add Lumos5G (CC BY 4.0) traces next to the Irish 4G ones.
 - Whether to publish the playlist parser or the network simulator as npm packages after launch.
 
-## Lessons from this session worth keeping
+## Lessons worth keeping
 
+- **Lighthouse CI with `staticDistDir` opens `/index.html` unless `url` says otherwise,** and our router shows the
+  not-found screen there: CI scored the wrong page until 2026-10-20 (`lighthouserc.json` now lists `/`).
+- **Lighthouse simulates from what it observed:** scripts that ran before the observed first paint count toward FCP,
+  even with the page's HTML already there. Locally they arrive at once, so the app now starts after the first frame.
+- **TanStack Router renders a Suspense boundary in the browser but not on the server** (without its own SSR set-up):
+  plain `renderToString` + `hydrateRoot` mismatches (React error #418). The build adds the boundary's markers.
+- **Replacing server-rendered markup with `createRoot` counts as a new largest paint;** hydrating keeps the nodes.
+- **Playwright's browsers report a light system theme by default** (`colorScheme: "light"`); pass `dark` to test the
+  dark theme.
+- **Zod 4 probes for `new Function`;** under a CSP without `'unsafe-eval'` Firefox logs it as an error. `jitless`.
+- **`pnpm build` empties `dist/`:** don't build while something serves it (the repeatability job's preview).
 - **GitHub's Linux runners are slower than the owner's Mac**, and Linux WebKit picks lower qualities. Tests must not
   depend on speed: the 20 s synthetic stream fits whole in the buffer at a low quality, so the forced-stall test caps
   the buffer with `set=maxBufferLength:4,maxMaxBufferLength:4`. The CI report artifact (`playwright-report`) has

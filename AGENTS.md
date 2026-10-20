@@ -7,7 +7,8 @@ Studio's _Tears of Steel_ (CC BY 3.0), re-encoded, never cut. Owner: Azamat Jora
 rebuffer.azamatos.com; sample media at media.azamatos.com. Applies to every agent tool; Claude Code also reads
 `CLAUDE.md`.
 
-**Status (2026-10-20): M0–M3 done (live run, report, network editor, inspector); M4 (polish, MVP complete) next.**
+**Status (2026-10-20): M0–M4 done (live run, report, network editor, inspector, polish; a real Safari check waits
+for the owner), and Compare from M5; the case study and launch next.**
 Live at https://rebuffer.azamatos.com (every push to `main` deploys; see `techContext.md`, "Deploying"). Start with
 `docs/memory-bank/activeContext.md`.
 
@@ -27,6 +28,7 @@ Live at https://rebuffer.azamatos.com (every push to `main` deploys; see `techCo
 | `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | Types, ESLint (strict, type-checked), Prettier                                  |
 | `pnpm test`                                          | Vitest: unit tests for `src/core`                                               |
 | `pnpm e2e`                                           | Playwright (Chromium, Firefox, WebKit) with axe; builds and serves on port 4012 |
+| `pnpm repeat`                                        | Repeatability: every preset 5× in Chromium, about an hour (`tests/repeat/`)     |
 | `pnpm build` · `pnpm size`                           | Production build; bundle budgets (`.size-limit.js`, after a build)              |
 | `pnpm media:encode`                                  | Sample streams from _Tears of Steel_ (`scripts/media/README.md`)                |
 

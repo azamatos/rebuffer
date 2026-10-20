@@ -1,7 +1,6 @@
 # Product spec
 
-**Agreed 2026-10-18. Built by 2026-10-20: the shell, Home's hero, and the Run screen (live charts, saved downloads
-for repeat runs); the other screens are placeholders.** Screens follow the design proposal (canvas linked in
+**Agreed 2026-10-18. Built by 2026-10-20: every screen below, including Compare; a light theme next to the dark one.** Screens follow the design proposal (canvas linked in
 `activeContext.md`), accepted on 2026-10-18. The app is Rebuffer, at rebuffer.azamatos.com. The header carries the
 family wordmark shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊`.
 
@@ -135,13 +134,20 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   shows the whole run; each note's "Show on the chart" zooms to it and moves focus to the charts. The three charts
   zoom together, down to 4 s; the time axis, markers, sentences and tables follow the view, and the vertical scales
   stay those of the whole run.
-- _Planned:_ Change network (needs the network editor), Compare (M5).
+- **Change network** (built 2026-10-20) opens the network editor with the run's network; **Compare with…** (built
+  2026-10-20) opens Compare with this run as A.
 
-### Compare (after the MVP)
+### Compare (built 2026-10-20, `/runs/compare`)
 
 - Two saved runs side by side: metric tiles with differences, charts overlaid on one time axis.
+- **Built:** two pickers (native selects) and Swap; without a choice, the newest run is B and the one before it A;
+  from a report, the newest other run is B. A card per run with its report; "What changed" (stream, network, player
+  setup, each setting, hls.js version, browser; "the same setup" points to the run-to-run spread on About); every
+  number with B against A in words and a verdict with a shape and a word (▲ better, ▼ worse, = same); three charts
+  (quality on screen with the network, buffer, stall lanes), A as a solid line in the text colour and B dashed in the
+  accent, each with a sentence, and one table for both runs. The Runs page links to it.
 
-### About
+### About (built 2026-10-20)
 
 - How the simulation works and its limits; how each metric is computed; sources.
 - Credits: *Tears of Steel* and its licence; trace datasets if used; open-source libraries.
@@ -182,4 +188,8 @@ the stream's own host and our static files. Analytics: Cloudflare Web Analytics,
 - Every screen works with the keyboard alone, including the curve editor.
 - Every chart has a text alternative: a summary sentence and a data table.
 - Live updates go to a polite live region (switches and stalls only, not every number).
-- Contrast at least 4.5:1, visible focus, `prefers-reduced-motion` respected.
+- Contrast at least 4.5:1 in both themes (axe checks every screen in each), visible focus, `prefers-reduced-motion`
+  respected.
+- **Light and dark (built 2026-10-20):** System (the default), Light or Dark, from three radios in the header; kept
+  in this browser.
+- **First-run hint (built 2026-10-20):** the Run screen explains what each chart shows until "Got it".
