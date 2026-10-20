@@ -10,7 +10,7 @@
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
 - **Live site = `main` at `dc3fd6f`** plus this note (pushed 2026-10-20 with the owner's "lets push"; CI green; the
-  deployed Inspect chunk matches the local build). One docs commit waits to be pushed (the upload README's cache time). **Every push to `main` deploys on its
+  deployed Inspect chunk matches the local build). Two docs commits wait to be pushed (the upload README's cache notes, and this). **Every push to `main` deploys on its
   own** (Cloudflare builds it in about a minute). Pushing is outward-facing: ask the owner before each push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
@@ -44,8 +44,8 @@
 
 ## Next step (in this order)
 
-1. **Ask whether the owner uploaded the clean film's new `master.m3u8`** (see "Waiting for the owner"); then check
-   `/inspect` on both samples live: the clean one should have no warning about bandwidth.
+1. **Check `/inspect` on our clean sample live:** after the cache expires (from the evening of 2026-10-21) it should
+   show no warning about bandwidth; if it still does, see "Waiting for the owner". Push the two docs commits.
 2. **M4:** About (how it works, limits, credits for the film and the traces), first-run hints, the accessibility
    pass (a live region for switches and stalls on the Run screen), pre-rendered Home (Lighthouse), the determinism
    job, a real Safari check, README.
@@ -90,7 +90,11 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
-- **Upload the clean film's master playlist (blocked for the agent: R2 writes):** the inspector found that our clean
+- **Clean film's master playlist: uploaded by the owner on 2026-10-20** (`upload.mjs --only clean --playlists`;
+  R2 serves BANDWIDTH 6,123,200 for 1080p). The dashboard's URL purge cleared only the cached copy without an
+  `Origin`; browsers still got the old one (`Vary: Origin`), cached until about a day after it was first fetched,
+  so from the evening of 2026-10-21 the live inspector should show no bandwidth warning on our clean sample. Check
+  that first in the next session. The rest of this item is how it was found: the inspector found that our clean
   `master.m3u8` declares each variant's video alone (ffmpeg leaves out the separate audio; RFC 8216 §4.3.4.2 counts
   it): 240p declares 469 kbps and peaks at 600 kbps with its audio. The local copy is fixed
   (`node scripts/media/encode.mjs --only polish`, already run). The owner runs
@@ -158,6 +162,9 @@ that needs their eye under "Waiting for the owner".
   with a letter (`newNetworkId`), and tests accept the quotes for run ids.
 - **ffmpeg's master playlist leaves separate audio out of BANDWIDTH** (and AVERAGE-BANDWIDTH): measure the variant
   with its audio, as `polishMaster` now does. Found by our own inspector on our "clean" sample.
+- **Cloudflare keeps a cached copy per `Origin` for R2 files (`Vary: Origin`):** the dashboard's purge by URL
+  doesn't clear what browsers get. Purge everything, or purge through the API with the `Origin` header, or wait out
+  the cache time.
 - **macOS has no `timeout` command,** and `cat > file` with no input waits forever in the agent's shell.
 - **Keyboard tests only Tab forward:** in Firefox, a control earlier in the page than the focus can be 40+ Tabs
   away. Order a test's steps as a person would fill the page, top to bottom, or load the page afresh.
