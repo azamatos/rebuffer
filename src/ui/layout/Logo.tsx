@@ -1,6 +1,6 @@
 /**
  * The family wordmark shared with azamatos.com and pass.azamatos.com: a shell prompt with the site's name.
- * The cursor blinks four times and then stays solid (WCAG 2.2.2), and not at all with reduced motion.
+ * The cursor keeps blinking, as on pass.azamatos.com, and stays solid with reduced motion.
  */
 export function Wordmark() {
   return (
