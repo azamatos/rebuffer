@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { settle, tabTo } from "./helpers";
+import { settle, switchTheme, tabTo } from "./helpers";
 
 test("a network is picked, edited, saved, exported and run with the keyboard alone", async ({
   page,
@@ -182,8 +182,7 @@ test("the points show as a table, and ? lists the keys without leaving the curve
   await expect(page.getByText("the point before or after")).toBeVisible();
   await expect(curve).toBeFocused();
   for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    await settle(page.locator("body"));
+    await switchTheme(page, colorScheme);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   }
   await page.keyboard.press("Escape");

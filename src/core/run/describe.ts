@@ -181,8 +181,10 @@ export function describeHonesty(honesty: Honesty, curve: NetworkCurve): string[]
  */
 export function honestyWarning(honesty: Honesty): string | undefined {
   const { requests, latency, bandwidth, hiddenS } = honesty;
+  // Late bytes come from a real network that's slower than the simulated one, or from one that pauses; the details
+  // say which, so the headline names neither.
   if (bandwidth.late > 0)
-    return `Your real network was slower than the simulated one at times: ${bandwidth.late} of ${requests} downloads arrived late, so this run is slower than the simulated network alone.`;
+    return `Your real network held downloads back at times: ${bandwidth.late} of ${requests} downloads arrived late, so this run is slower than the simulated network alone.`;
   if (latency.late > 0)
     return `Your real network took longer to answer than the simulated latency at times: ${latency.late} of ${requests} downloads started late, typically by ${formatMs(latency.typicalLateMs)}.`;
   if (hiddenS > 0)

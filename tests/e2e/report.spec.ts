@@ -99,10 +99,11 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await page.keyboard.press("Escape");
   await expect(more).toHaveAttribute("aria-expanded", "false");
   await expect(more).toBeFocused();
+  // Opened from the keyboard, an item still takes a mouse click (Safari and Firefox on macOS don't focus a clicked
+  // button, which once closed the menu before the click landed). Delete, below, is chosen with the keyboard.
   await page.keyboard.press("Enter");
   const download = page.waitForEvent("download");
-  await tabTo(page, browserName, page.getByRole("button", { name: "Export JSON" }));
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Export JSON" }).click();
   const file = await (await download).path();
   const exported = JSON.parse(await readFile(file, "utf8")) as {
     format: string;

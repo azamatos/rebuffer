@@ -1,8 +1,8 @@
 import { useId, useState } from "react";
 import { formatClock } from "@/core/format/time";
-import type { MediaPlaylist } from "@/core/hls";
-import { segmentStats, worstSeverity } from "@/core/inspect/model";
-import { ChartOrTable, ShowAs } from "@/ui/run/chart-parts";
+import type { MediaPlaylist, Severity } from "@/core/hls";
+import { segmentStats } from "@/core/inspect/model";
+import { ChartOrTable, ShowAs, Td, Th } from "@/ui/run/chart-parts";
 import { severityWord } from "./severity";
 import { SeverityIcon } from "./SeverityIcon";
 
@@ -10,6 +10,8 @@ export interface SegmentsChoice {
   key: string;
   label: string;
   playlist: MediaPlaylist;
+  /** Its most serious finding (`playlistSeverities`), shown on its chip. */
+  severity: Severity | undefined;
 }
 
 const shades = ["fill-q0", "fill-q1", "fill-q2", "fill-q3", "fill-q4"] as const;
@@ -46,7 +48,7 @@ export function SegmentsPanel({ choices }: { choices: readonly SegmentsChoice[] 
         <fieldset className="flex flex-wrap gap-1.5">
           <legend className="sr-only">Playlist</legend>
           {choices.map((candidate) => {
-            const worst = worstSeverity(candidate.playlist);
+            const worst = candidate.severity;
             return (
               <label
                 key={candidate.key}
@@ -100,26 +102,25 @@ export function SegmentsPanel({ choices }: { choices: readonly SegmentsChoice[] 
           <table className="w-full text-left">
             <thead>
               <tr>
-                {["Segment", "Starts", "Duration", ""].map((heading, i) => (
-                  <th
-                    key={i}
-                    scope="col"
-                    className="sticky top-0 border-b border-line bg-surface py-1.5 pr-4 font-medium text-fg-2 first:pl-3"
-                  >
-                    {heading || <span className="sr-only">Note</span>}
-                  </th>
-                ))}
+                <Th>Segment</Th>
+                <Th>Starts</Th>
+                <Th>Duration</Th>
+                <Th>
+                  <span className="sr-only">Note</span>
+                </Th>
               </tr>
             </thead>
             <tbody>
               {choice.playlist.segments.map((segment, index) => (
                 <tr key={index} className="border-t border-fg/6">
-                  <td className="py-1.5 pr-4 pl-3">{index + 1}</td>
-                  <td className="py-1.5 pr-4 font-mono">{formatClock(segment.startTime, 1)}</td>
-                  <td className="py-1.5 pr-4">{seconds(segment.duration)}</td>
-                  <td className="py-1.5 pr-4 text-error-text">
-                    {stats.overTarget.includes(index) ? "Over the target" : ""}
-                  </td>
+                  <Td>{index + 1}</Td>
+                  <Td mono>{formatClock(segment.startTime, 1)}</Td>
+                  <Td>{seconds(segment.duration)}</Td>
+                  <Td>
+                    {stats.overTarget.includes(index) && (
+                      <span className="text-error-text">Over the target</span>
+                    )}
+                  </Td>
                 </tr>
               ))}
             </tbody>

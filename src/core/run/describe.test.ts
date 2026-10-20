@@ -254,7 +254,7 @@ describe("describeHonesty", () => {
           }),
         ),
       ).toBe(
-        "Your real network was slower than the simulated one at times: 7 of 94 downloads arrived late, so this run is slower than the simulated network alone.",
+        "Your real network held downloads back at times: 7 of 94 downloads arrived late, so this run is slower than the simulated network alone.",
       );
     });
 

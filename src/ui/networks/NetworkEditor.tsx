@@ -30,7 +30,7 @@ import { runSearchWithNetwork } from "@/core/run/report";
 import { DEFAULT_LADDER, DEFAULT_STREAM } from "@/core/samples";
 import { toast } from "@/ui/feedback/toast";
 import { MenuItem, Popover } from "@/ui/menu/Popover";
-import { ChartOrTable, ShowAs } from "@/ui/run/chart-parts";
+import { ChartOrTable, ShowAs, Td, Th } from "@/ui/run/chart-parts";
 import { CurveEditor } from "./CurveEditor";
 
 /** What the editor opens with. */
@@ -340,15 +340,9 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
           <table className="w-full text-left">
             <thead>
               <tr>
-                {["Point", "Time", "Bandwidth"].map((heading) => (
-                  <th
-                    key={heading}
-                    scope="col"
-                    className="sticky top-0 border-b border-line bg-surface py-1.5 pr-4 font-medium text-fg-2 first:pl-3"
-                  >
-                    {heading}
-                  </th>
-                ))}
+                <Th>Point</Th>
+                <Th>Time</Th>
+                <Th>Bandwidth</Th>
               </tr>
             </thead>
             <tbody>
@@ -358,9 +352,9 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
                   aria-current={i === index ? "true" : undefined}
                   className="border-t border-fg/6 aria-[current]:text-accent-hover"
                 >
-                  <td className="py-1.5 pr-4 pl-3">{i + 1}</td>
-                  <td className="py-1.5 pr-4 font-mono">{clock(point.t)}</td>
-                  <td className="py-1.5 pr-4">{point.mbps} Mbps</td>
+                  <Td>{i + 1}</Td>
+                  <Td mono>{clock(point.t)}</Td>
+                  <Td>{point.mbps} Mbps</Td>
                 </tr>
               ))}
             </tbody>

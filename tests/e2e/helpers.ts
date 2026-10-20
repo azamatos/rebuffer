@@ -57,3 +57,10 @@ export async function steady(target: Locator): Promise<void> {
     )
     .toBe(true);
 }
+
+/** Switches the system theme, waits for the page to follow it, then for the colours to finish fading. */
+export async function switchTheme(page: Page, colorScheme: "light" | "dark"): Promise<void> {
+  await page.emulateMedia({ colorScheme });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", colorScheme);
+  await settle(page.locator("body"));
+}

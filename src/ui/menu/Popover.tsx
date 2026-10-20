@@ -38,6 +38,8 @@ export function Popover({
   };
   const id = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // A press inside it is in progress: the focus it moves (see onBlur) isn't focus leaving.
+  const pressing = useRef(false);
 
   const close = () => {
     setOpen(false);
@@ -75,8 +77,23 @@ export function Popover({
           close();
         }
       }}
+      onPointerDown={() => {
+        pressing.current = true;
+        document.addEventListener(
+          "pointerup",
+          () => {
+            pressing.current = false;
+          },
+          { once: true, capture: true },
+        );
+      }}
       onBlur={(event) => {
-        if (open && !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+        // Only when focus moves somewhere else. Safari and Firefox on macOS don't focus a button that's clicked:
+        // pressing a menu item blurs the focused toggle with no relatedTarget, or (WebKit) moves focus to a focusable
+        // ancestor such as <main>, and closing then would swallow the click.
+        const next = event.relatedTarget;
+        if (open && !pressing.current && next && !event.currentTarget.contains(next))
+          setOpen(false);
       }}
     >
       <button

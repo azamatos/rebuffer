@@ -402,7 +402,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
           {result && <Outcome result={result} savedId={savedId} />}
           <section
             aria-labelledby="log-h"
-            className="flex max-h-96 min-h-24 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-1"
+            className="flex max-h-96 min-h-24 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-[1_1_0px]"
           >
             <h2 id="log-h" className="px-3.5 pt-3 pb-2 text-sm font-semibold">
               Event log <span className="font-normal text-fg-3">· newest first</span>

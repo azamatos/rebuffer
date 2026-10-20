@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { canPlayH264, settle, STREAM, tabTo } from "./helpers";
+import { canPlayH264, settle, STREAM, switchTheme, tabTo } from "./helpers";
 
 // 12 s: 4 Mbps, a drop to 0.4 Mbps from 0:04 to 0:08, then 4 Mbps again; RTT 50 ms.
 const CURVE = "steps,50,12,0:4|4:0.4|8:4";
@@ -37,14 +37,24 @@ test("a run plays the stream through the simulated network and reports it", asyn
     return seen.size;
   });
   expect(frames).toBeGreaterThan(3);
-  // On a wide screen the left column (video, tiles, event log) ends where the charts do.
-  const logBox = await page.getByRole("region", { name: /^Event log/ }).boundingBox();
-  const chartsBox = await page
-    .getByRole("figure")
-    .filter({ hasText: "Segment downloads" })
-    .boundingBox();
-  if (!logBox || !chartsBox) throw new Error("The event log or the charts have no box");
-  expect(Math.abs(logBox.y + logBox.height - (chartsBox.y + chartsBox.height))).toBeLessThan(2);
+  // On a wide screen the left column (video, tiles, event log) ends where the charts do, however long the log gets:
+  // it scrolls on its own.
+  const log = page.getByRole("region", { name: /^Event log/ });
+  const columnsEndTogether = async () => {
+    const logBox = await log.boundingBox();
+    const chartsBox = await page
+      .getByRole("figure")
+      .filter({ hasText: "Segment downloads" })
+      .boundingBox();
+    if (!logBox || !chartsBox) throw new Error("The event log or the charts have no box");
+    expect(Math.abs(logBox.y + logBox.height - (chartsBox.y + chartsBox.height))).toBeLessThan(2);
+  };
+  await columnsEndTogether();
+  await expect
+    .poll(() => log.getByRole("listitem").count(), { timeout: 15_000 })
+    .toBeGreaterThanOrEqual(5);
+  // (Unless the run has finished meanwhile on a slow machine: the result then joins the left column.)
+  if ((await page.getByRole("status").textContent()) === "Running") await columnsEndTogether();
   // Switches and stalls are read out by screen readers as they happen.
   await expect(page.getByRole("log", { name: "Switches and stalls" })).toContainText(/Playing /);
   await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
@@ -129,9 +139,7 @@ test("a run says when the real latency is above the simulated one", async ({ pag
   await details.click();
   await expect(check.getByText(/^Measured before the run, localhost:4013 answered/)).toBeVisible();
   for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    // Colours fade between the themes.
-    await settle(page.locator("body"));
+    await switchTheme(page, colorScheme);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   }
 });

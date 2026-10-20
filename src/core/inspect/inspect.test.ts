@@ -14,8 +14,8 @@ import {
   ladderRows,
   playbackQuery,
   relativeName,
+  playlistSeverities,
   segmentStats,
-  worstSeverity,
 } from "./model";
 import { describeReadError, ReadError, type Reader } from "./read";
 
@@ -196,9 +196,24 @@ describe("the screen's model", () => {
     );
   });
 
-  it("gives each media playlist its most serious finding, for its chip", () => {
-    expect(worstSeverity(parseMedia(problemsMedia, `${BASE}1280/index.m3u8`))).toBe("error");
-    expect(worstSeverity(parseMedia(fmp4Vod, `${BASE}fmp4/index.m3u8`))).toBeUndefined();
+  it("gives each media playlist its most serious finding, its measured bandwidth included", async () => {
+    // Every rung shares the problems playlist, with its 6.6 s segment.
+    expect(playlistSeverities(await problems(), new Map()).get(`${BASE}640/index.m3u8`)).toBe(
+      "error",
+    );
+    // Clean rungs: only the one whose segments peak over its declared bandwidth is marked.
+    const files: Record<string, string> = { [`${BASE}master.m3u8`]: problemsMaster };
+    for (const rung of ["426", "640", "1280", "1920"]) files[`${BASE}${rung}/index.m3u8`] = fmp4Vod;
+    const result = await loadInspection(
+      { url: `${BASE}master.m3u8`, text: problemsMaster },
+      reader(files),
+    );
+    if (!result.ok) throw new Error("not ok");
+    const severities = playlistSeverities(
+      result.inspection,
+      peaks({ [`${BASE}1280/index.m3u8`]: 3.4 }),
+    );
+    expect([...severities]).toEqual([[`${BASE}1280/index.m3u8`, "warning"]]);
   });
 
   it("names media playlists by their folder, and builds the links the screen offers", () => {

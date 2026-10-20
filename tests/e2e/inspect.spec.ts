@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { settle, STREAM, tabTo } from "./helpers";
+import { settle, STREAM, switchTheme, tabTo } from "./helpers";
 
 test("a stream is inspected from a link typed with the keyboard", async ({ page, browserName }) => {
   await page.goto("/inspect");
@@ -53,8 +53,7 @@ test("a stream is inspected from a link typed with the keyboard", async ({ page,
   const run = await page.getByRole("link", { name: "Run this stream" }).getAttribute("href");
   expect(new URL(run ?? "", "http://localhost").searchParams.get("stream")).toBe(STREAM);
   for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    await settle(page.locator("body"));
+    await switchTheme(page, colorScheme);
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   }
 });

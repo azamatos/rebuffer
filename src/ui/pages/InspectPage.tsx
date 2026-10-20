@@ -15,6 +15,7 @@ import {
   describeTracks,
   inspectionFindings,
   ladderRows,
+  playlistSeverities,
   streamRunSearch,
 } from "@/core/inspect/model";
 import { readStreamLink } from "@/core/run/setup";
@@ -76,17 +77,22 @@ export function InspectPage({ search }: { search: InspectSearch }) {
   const navigate = useNavigate();
   const [link, setLink] = useState(search.url ?? "");
   const [linkError, setLinkError] = useState<string>();
-  // A sample link or the back button changes the address: the field follows it.
-  const [seenUrl, setSeenUrl] = useState(search.url);
-  if (seenUrl !== search.url) {
-    setSeenUrl(search.url);
-    if (search.url) setLink(search.url);
-  }
   const [tab, setTab] = useState<SourceTab>("link");
   // The panel fades in when the visitor switches tabs, not when the screen first paints.
   const [switched, setSwitched] = useState(false);
+  // A sample link or the back button changes the address: the field follows it.
+  const [seenUrl, setSeenUrl] = useState(search.url);
+  // The tab follows it too, so the address being inspected is on screen.
+  if (seenUrl !== search.url) {
+    setSeenUrl(search.url);
+    if (search.url) {
+      setLink(search.url);
+      setTab("link");
+    }
+  }
   const [pasted, setPasted] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [fileError, setFileError] = useState<string>();
   const [textSource, setTextSource] = useState<InspectSource>();
   const fileRef = useRef<HTMLInputElement>(null);
   const tabRefs = useRef<Partial<Record<SourceTab, HTMLButtonElement | null>>>({});
@@ -117,11 +123,21 @@ export function InspectPage({ search }: { search: InspectSearch }) {
     if (search.url) void navigate({ to: "/inspect", search: {} });
   };
 
-  const openFile = async (event: ChangeEvent<HTMLInputElement>) => {
+  const inspectFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      setFileError(undefined);
+      inspectText(text, file.name);
+    } catch {
+      setFileError(`This browser couldn't read ${file.name}.`);
+    }
+  };
+
+  const openFile = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = "";
-    if (file) inspectText(await file.text(), file.name);
+    if (file) void inspectFile(file);
   };
 
   /** Shows a tab's panel; `into` also puts focus in its field. */
@@ -317,10 +333,7 @@ export function InspectPage({ search }: { search: InspectSearch }) {
                 event.preventDefault();
                 setDragging(false);
                 const file = event.dataTransfer.files[0];
-                if (file)
-                  void file.text().then((text) => {
-                    inspectText(text, file.name);
-                  });
+                if (file) void inspectFile(file);
               }}
               className="flex flex-col items-center gap-2 rounded-[10px] border border-dashed border-line-strong px-4 py-6 text-center transition-colors data-dragging:border-accent data-dragging:bg-accent/6"
             >
@@ -341,6 +354,11 @@ export function InspectPage({ search }: { search: InspectSearch }) {
                 It&apos;s read in this browser and goes nowhere. Its relative links can&apos;t be
                 followed.
               </p>
+              {fileError && (
+                <p role="alert" className="text-sm text-error-text">
+                  {fileError}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -349,7 +367,7 @@ export function InspectPage({ search }: { search: InspectSearch }) {
           type="file"
           accept=".m3u8,.m3u,.txt,application/vnd.apple.mpegurl,audio/mpegurl,text/plain"
           className="hidden"
-          onChange={(event) => void openFile(event)}
+          onChange={openFile}
         />
         <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
           <span className="text-fg-3">Or try</span>
@@ -407,14 +425,25 @@ function Results({ state }: { state: Extract<InspectState, { status: "ready" }> 
   const findings = useMemo(() => inspectionFindings(inspection, measured), [inspection, measured]);
   const counts = countFindings(findings);
   const unread = inspection.media.filter((media) => !media.playlist);
-  const choices: SegmentsChoice[] =
-    inspection.top.kind === "media"
-      ? [{ key: "top", label: inspection.file, playlist: inspection.top }]
-      : inspection.media.flatMap((media) =>
-          media.playlist
-            ? [{ key: media.url ?? media.label, label: media.label, playlist: media.playlist }]
-            : [],
-        );
+  const choices = useMemo<SegmentsChoice[]>(() => {
+    if (inspection.top.kind === "media")
+      return [
+        { key: "top", label: inspection.file, playlist: inspection.top, severity: undefined },
+      ];
+    const severities = playlistSeverities(inspection, measured);
+    return inspection.media.flatMap((media) =>
+      media.playlist
+        ? [
+            {
+              key: media.url ?? media.label,
+              label: media.label,
+              playlist: media.playlist,
+              severity: media.url === undefined ? undefined : severities.get(media.url),
+            },
+          ]
+        : [],
+    );
+  }, [inspection, measured]);
 
   return (
     <>

@@ -13,6 +13,7 @@ import {
   type MultivariantPlaylist,
   type Resolution,
   type Severity,
+  type Variant,
 } from "@/core/hls";
 import { networkSearch, type NetworkSearch } from "@/core/run/links";
 import { DEFAULT_STREAM } from "@/core/samples";
@@ -219,6 +220,21 @@ export function relativeName(url: string | undefined, base: string | undefined):
 
 const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, note: 2 };
 
+/** Each measured variant whose segments peak over the bandwidth it declares, with that finding. */
+function bandwidthFindings(
+  inspection: Inspection,
+  measured: Measurements,
+): { variant: Variant; finding: Finding }[] {
+  if (inspection.top.kind !== "multivariant") return [];
+  const rows = ladderRows(inspection, measured);
+  return inspection.top.variants.flatMap((variant) => {
+    const row = rows.find((candidate) => candidate.line === variant.line);
+    const finding =
+      row?.measuredBps === undefined ? undefined : lintMeasuredBandwidth(variant, row.measuredBps);
+    return finding ? [{ variant, finding }] : [];
+  });
+}
+
 /** Every finding: the top playlist's, each measured variant's bandwidth, and each media playlist's, grouped. */
 export function inspectionFindings(
   inspection: Inspection,
@@ -228,18 +244,12 @@ export function inspectionFindings(
   const found: (Finding & { file: string; declaredBps?: number })[] = [];
   if (top.kind === "multivariant") {
     for (const finding of lintMultivariant(top)) found.push({ ...finding, file: inspection.file });
-    const rows = ladderRows(inspection, measured);
-    for (const variant of top.variants) {
-      const row = rows.find((candidate) => candidate.line === variant.line);
-      if (row?.measuredBps === undefined) continue;
-      const finding = lintMeasuredBandwidth(variant, row.measuredBps);
-      if (finding) {
-        found.push({
-          ...finding,
-          file: inspection.file,
-          ...(variant.bandwidth === undefined ? {} : { declaredBps: variant.bandwidth }),
-        });
-      }
+    for (const { variant, finding } of bandwidthFindings(inspection, measured)) {
+      found.push({
+        ...finding,
+        file: inspection.file,
+        ...(variant.bandwidth === undefined ? {} : { declaredBps: variant.bandwidth }),
+      });
     }
     for (const media of inspection.media) {
       if (!media.playlist) continue;
@@ -280,12 +290,28 @@ export function countFindings(findings: readonly SourcedFinding[]): Record<Sever
   return counts;
 }
 
-/** A media playlist's most serious finding, for its chip in the Segments panel; undefined when it has none. */
-export function worstSeverity(playlist: MediaPlaylist): Severity | undefined {
-  let worst: Severity | undefined;
-  for (const { severity } of lintMedia(playlist)) {
-    if (worst === undefined || SEVERITY_ORDER[severity] < SEVERITY_ORDER[worst]) worst = severity;
+/**
+ * Each media playlist's most serious finding, by its address, for the Segments panel's chips: its own findings, and
+ * for a variant also its measured peak against the bandwidth it declares (which the Findings list files under the
+ * multivariant playlist, where BANDWIDTH is written). A playlist with no findings isn't in the map.
+ */
+export function playlistSeverities(
+  inspection: Inspection,
+  measured: Measurements,
+): Map<string, Severity> {
+  const worst = new Map<string, Severity>();
+  const add = (url: string | undefined, severity: Severity) => {
+    if (url === undefined) return;
+    const current = worst.get(url);
+    if (current === undefined || SEVERITY_ORDER[severity] < SEVERITY_ORDER[current])
+      worst.set(url, severity);
+  };
+  for (const media of inspection.media) {
+    if (!media.playlist) continue;
+    for (const { severity } of lintMedia(media.playlist)) add(media.url, severity);
   }
+  for (const { variant, finding } of bandwidthFindings(inspection, measured))
+    add(variant.resolvedUri, finding.severity);
   return worst;
 }
 
