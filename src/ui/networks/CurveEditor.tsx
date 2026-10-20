@@ -271,7 +271,7 @@ export function CurveEditor({
       <p id={helpId} className="sr-only">
         {curve.points.length} points over {formatClock(curve.lengthS)}. Selected:{" "}
         {describePoint(curve, selected)}. Arrows move it, with Shift in bigger steps; [ and ] choose
-        another point; N adds one, Delete removes it.
+        another point; N adds one, Delete removes it; ? lists every key.
       </p>
       <p role="status" className="sr-only">
         {announcement}

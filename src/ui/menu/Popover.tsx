@@ -17,7 +17,8 @@ interface PopoverProps {
 
 /**
  * A button that shows a panel below it (a disclosure: `aria-expanded`, not an ARIA menu, so Tab moves through what's
- * in it as anywhere else). Escape, a click outside it or focus leaving it closes it.
+ * in it as anywhere else). Escape, a click outside it or focus leaving it closes it; Escape from inside it puts focus
+ * back on the button.
  */
 export function Popover({
   button,
@@ -52,9 +53,15 @@ export function Popover({
     const onPointerDown = (event: PointerEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) dismiss();
     };
+    // Opened from elsewhere (a shortcut key), focus may not be in it: Escape closes it from anywhere too.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
     document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
 

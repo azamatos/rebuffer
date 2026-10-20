@@ -10,6 +10,7 @@ export function Toaster() {
   const shown = useSyncExternalStore(subscribeToasts, currentToast, () => undefined);
   return (
     <div
+      id="toasts"
       aria-live="polite"
       className="pointer-events-none fixed right-4 bottom-4 z-30 flex justify-end sm:right-8 sm:bottom-6"
     >

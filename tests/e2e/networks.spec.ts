@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { tabTo } from "./helpers";
+import { settle, tabTo } from "./helpers";
 
 test("a network is picked, edited, saved, exported and run with the keyboard alone", async ({
   page,
@@ -66,7 +66,9 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await latency.fill("120");
   await page.keyboard.press("Enter");
 
-  // Export JSON.
+  // Export JSON, from the Import / Export menu.
+  await tabTo(page, browserName, page.getByRole("button", { name: "Import / Export" }));
+  await page.keyboard.press("Enter");
   const download = page.waitForEvent("download");
   await tabTo(page, browserName, page.getByRole("button", { name: "Export JSON" }));
   await page.keyboard.press("Enter");
@@ -84,18 +86,24 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
     { t: 56, mbps: 0 },
   ]);
 
-  // Saved in this browser; the address names it, and focus stays put.
-  await tabTo(page, browserName, page.getByRole("button", { name: "Save to my networks" }));
+  // Saved in this browser (Save is at the top, which Tab reached on the way to the curve); the address names it, a
+  // toast says so, and focus stays put.
+  const save = page.getByRole("button", { name: "Save", exact: true });
+  await save.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Saved in this browser, under “Yours”.")).toBeVisible();
+  await expect(
+    page.locator("#toasts").getByText("Saved in this browser, under “Yours”."),
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/networks\?saved=n[0-9a-f]{7}$/);
-  await expect(page.getByRole("button", { name: "Save changes" })).toBeFocused();
+  await expect(save).toBeFocused();
   const list = page.getByRole("navigation", { name: "Networks" });
   await expect(list.getByRole("link", { name: /^My tunnel/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Delete network" })).toBeVisible();
+  await settle(page.locator("#toasts"));
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-  // Use in a run: the Run screen gets the curve and the name.
-  const use = page.getByRole("link", { name: "Use in a run" });
+  // Run with this network: the Run screen gets the curve and the name.
+  const use = page.getByRole("link", { name: "Run with this network" });
   const href = new URL((await use.getAttribute("href")) ?? "", "http://localhost");
   expect(href.pathname).toBe("/run");
   expect(href.searchParams.get("name")).toBe("My tunnel");
@@ -113,6 +121,8 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
   await page.goto("/networks?new=blank");
   await expect(page.getByRole("heading", { level: 2, name: "My network" })).toBeVisible();
 
+  await tabTo(page, browserName, page.getByRole("button", { name: "Import / Export" }));
+  await page.keyboard.press("Enter");
   const chooser = page.waitForEvent("filechooser");
   await tabTo(page, browserName, page.getByRole("button", { name: "Import JSON or CSV" }));
   await page.keyboard.press("Enter");
@@ -140,4 +150,56 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Point 1 of 3" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("the points show as a table, and ? lists the keys without leaving the curve", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/networks");
+  const curve = page.getByRole("application", { name: "Network curve" });
+  await expect(curve).toBeVisible();
+
+  // Chart | Table: the points take the curve's place, the selected one marked.
+  const showAs = page.getByRole("group", { name: "Points: show as" });
+  await tabTo(page, browserName, showAs.getByRole("button", { name: "Table" }));
+  await page.keyboard.press("Enter");
+  const table = page.getByRole("region", { name: "Points as a table" });
+  await expect(table.getByRole("row").nth(1)).toHaveText(/^1\s*0:00\s*6 Mbps$/);
+  await expect(table.getByRole("row").nth(1)).toHaveAttribute("aria-current", "true");
+  await expect(curve).toBeHidden();
+  await settle(table);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await showAs.getByRole("button", { name: "Chart" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(curve).toBeVisible();
+
+  // ? opens the shortcuts while focus stays on the curve; Escape closes them; the button opens them too.
+  await tabTo(page, browserName, curve);
+  const shortcuts = page.getByRole("button", { name: "Keyboard shortcuts" });
+  await page.keyboard.press("?");
+  await expect(shortcuts).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("the point before or after")).toBeVisible();
+  await expect(curve).toBeFocused();
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await settle(page.locator("body"));
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  }
+  await page.keyboard.press("Escape");
+  await expect(shortcuts).toHaveAttribute("aria-expanded", "false");
+  await expect(curve).toBeFocused();
+  await shortcuts.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("the point before or after")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("the point before or after")).toBeHidden();
+  await expect(shortcuts).toBeFocused();
+
+  // In a field, ? is just a character.
+  const name = page.getByLabel("Name");
+  await name.fill("Tunnel");
+  await name.press("?");
+  await expect(name).toHaveValue("Tunnel?");
+  await expect(shortcuts).toHaveAttribute("aria-expanded", "false");
 });

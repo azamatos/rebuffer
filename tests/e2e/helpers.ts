@@ -18,7 +18,7 @@ export async function tabTo(page: Page, browserName: string, target: Locator): P
     await target.focus();
     return;
   }
-  for (let i = 0; i < 40 && !(await target.evaluate((el) => el === document.activeElement)); i++) {
+  for (let i = 0; i < 60 && !(await target.evaluate((el) => el === document.activeElement)); i++) {
     await page.keyboard.press("Tab");
   }
   await expect(target).toBeFocused();

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useId, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { formatClock, parseClock } from "@/core/format/time";
 import { curveToJson } from "@/core/netsim/curve";
 import type { NetworkCurve } from "@/core/netsim/curve-math";
@@ -28,6 +28,9 @@ import type { SavedRun } from "@/core/persist/runs";
 import { MAX_NETWORK_NAME, networkSearch } from "@/core/run/links";
 import { runSearchWithNetwork } from "@/core/run/report";
 import { DEFAULT_LADDER, DEFAULT_STREAM } from "@/core/samples";
+import { toast } from "@/ui/feedback/toast";
+import { MenuItem, Popover } from "@/ui/menu/Popover";
+import { ChartOrTable, ShowAs } from "@/ui/run/chart-parts";
 import { CurveEditor } from "./CurveEditor";
 
 /** What the editor opens with. */
@@ -52,11 +55,10 @@ interface NetworkEditorProps {
   onDeleted: () => void;
 }
 
-const card = "rounded-2xl border border-line bg-surface px-5 py-4.5";
 const button =
-  "inline-flex min-h-10 items-center rounded-lg border border-line-strong px-3 text-sm text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3";
+  "inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-strong px-3 text-sm text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3 aria-expanded:border-fg-3";
 const field =
-  "min-h-10 w-full rounded-lg border border-line-strong bg-ground px-2.5 font-mono text-sm text-fg aria-invalid:border-error";
+  "min-h-9 w-full rounded-lg border border-line-strong bg-ground px-2.5 font-mono text-[13px] text-fg aria-invalid:border-error";
 
 const clock = (t: number) => formatClock(t, t % 1 === 0 ? 0 : 1);
 
@@ -89,7 +91,24 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
   // The curve as last loaded or saved: anything else is an edit.
   const [baseline, setBaseline] = useState(start.curve);
   const [notice, setNotice] = useState<{ text: string; error?: boolean }>();
+  const [table, setTable] = useState(false);
+  const [shortcuts, setShortcuts] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // `?` opens and closes the list of keyboard shortcuts, except while typing in a field.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "?" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement;
+      if (target.closest("input, textarea, select, [contenteditable]")) return;
+      event.preventDefault();
+      setShortcuts((open) => !open);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
 
   const curve = history.present;
   const index = Math.min(selected, curve.points.length - 1);
@@ -134,7 +153,8 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
     setSavedId(id);
     setBaseline(curve);
     setName(saved.name);
-    setNotice({ text: savedId ? "Saved." : "Saved in this browser, under “Yours”." });
+    setNotice(undefined);
+    toast(savedId ? "Saved." : "Saved in this browser, under “Yours”.");
     onSaved(saved);
   };
 
@@ -159,16 +179,17 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
     }
     edit(result.curve, 0);
     setName(file.name.replace(/\.[^.]+$/, "").slice(0, MAX_NETWORK_NAME));
-    setNotice({
-      text: `Imported ${result.curve.points.length} points from ${file.name}. Undo brings the last network back.`,
-    });
+    setNotice(undefined);
+    toast(
+      `Imported ${result.curve.points.length} points from ${file.name}. Undo brings the last network back.`,
+    );
   };
 
   const exportAs = (kind: "json" | "csv") => {
     const named = fileName(name, kind);
     if (kind === "json") download(curveToJson(curve), "application/json", named);
     else download(curveToCsv(curve), "text/csv", named);
-    setNotice({ text: `Downloaded ${named}.` });
+    toast(`Downloaded ${named}.`);
   };
 
   const changeLength = (lengthS: number) => {
@@ -183,91 +204,169 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
   };
 
   return (
-    <div className="flex min-w-0 flex-[999_1_720px] flex-col gap-4">
-      <section aria-labelledby="editor-h" className={card}>
-        <div className="mb-1 flex flex-wrap items-center gap-3">
-          <h2 id="editor-h" className="min-w-0 flex-[1_1_260px] text-[22px] font-semibold">
-            {name || "Untitled network"}
-            {edited && (
-              <span className="text-base font-normal text-fg-3">
-                {" "}
-                · {savedId ? "unsaved changes" : "edited copy"}
-              </span>
-            )}
-          </h2>
-          <div
-            role="group"
-            aria-label="Between points"
-            className="inline-flex overflow-hidden rounded-lg border border-line-strong"
-          >
-            {(["steps", "slopes"] as const).map((shape) => (
-              <button
-                key={shape}
-                type="button"
-                aria-pressed={curve.shape === shape}
-                onClick={() => {
-                  edit(setShape(curve, shape));
-                }}
-                className="min-h-9 px-3 text-sm text-fg-2 aria-pressed:bg-fg/10 aria-pressed:text-fg"
-              >
-                {shape === "steps" ? "Steps" : "Slopes"}
-              </button>
-            ))}
-          </div>
-          <IconButton
-            label="Undo"
-            off={history.past.length === 0}
-            onPress={() => {
-              step(undo, "Undone.");
-            }}
-          >
-            <path d="M5 3 L2 6 L5 9" />
-            <path d="M2 6 H10 A4 4 0 0 1 10 14 H7" />
-          </IconButton>
-          <IconButton
-            label="Redo"
-            off={history.future.length === 0}
-            onPress={() => {
-              step(redo, "Redone.");
-            }}
-          >
-            <path d="M11 3 L14 6 L11 9" />
-            <path d="M14 6 H6 A4 4 0 0 0 6 14 H9" />
-          </IconButton>
-        </div>
-        {start.description && <p className="mb-2 text-sm text-fg-2">{start.description}</p>}
-        {start.trace && (
-          <p className="mb-2 text-[13px] text-fg-3">
-            Recorded by {TRACE_CREDIT.authors} ({TRACE_CREDIT.citation}),{" "}
-            <a
-              href={TRACE_CREDIT.licenceUrl}
-              className="text-fg-2 underline underline-offset-2 hover:text-fg"
+    <section
+      aria-labelledby="editor-h"
+      className="flex min-w-0 flex-[999_1_640px] flex-col gap-2.5 rounded-xl border border-line bg-surface px-[18px] pt-3.5 pb-4"
+    >
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h2 id="editor-h" className="min-w-0 text-xl font-semibold">
+          {name || "Untitled network"}
+          {edited && (
+            <span className="ml-2.5 inline-block rounded-full bg-warning/12 px-2 py-px align-[3px] text-xs font-normal text-warning-text">
+              {savedId ? "unsaved changes" : "edited copy"}
+            </span>
+          )}
+        </h2>
+        <span className="flex-auto" />
+        <div
+          role="group"
+          aria-label="Between points"
+          className="inline-flex rounded-lg bg-fg/6 p-0.5 text-[13px]"
+        >
+          {(["steps", "slopes"] as const).map((shape) => (
+            <button
+              key={shape}
+              type="button"
+              aria-pressed={curve.shape === shape}
+              onClick={() => {
+                edit(setShape(curve, shape));
+              }}
+              className="min-h-[30px] rounded-md px-2.5 text-fg-2 transition-colors duration-150 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)] motion-reduce:transition-none"
             >
-              {TRACE_CREDIT.licence}
-            </a>
-            . {TRACE_CREDIT.changes}
-          </p>
-        )}
-        {start.run && (
-          <p className="mb-2 text-sm text-fg-2">
-            Changing the network of a run of {start.run.setup.streamName}. “Use in a run” keeps its
-            stream and player.
-          </p>
-        )}
-        <div className="mb-1.5 flex flex-wrap gap-3.5 text-[13px] text-fg-2">
-          <span className="inline-flex items-center gap-1.5">
-            <svg width="14" height="10" aria-hidden="true">
-              <rect width="14" height="10" rx="2" className="fill-net/45" />
-            </svg>
-            Bandwidth
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <svg width="16" height="10" aria-hidden="true">
-              <path d="M0 5 H16" strokeDasharray="3 3" className="stroke-fg-3" />
-            </svg>
-            Qualities of {DEFAULT_STREAM.name}
-          </span>
+              {shape === "steps" ? "Steps" : "Slopes"}
+            </button>
+          ))}
         </div>
+        <IconButton
+          label="Undo"
+          off={history.past.length === 0}
+          onPress={() => {
+            step(undo, "Undone.");
+          }}
+        >
+          <path d="M5 3 L2 6 L5 9" />
+          <path d="M2 6 H10 A4 4 0 0 1 10 14 H7" />
+        </IconButton>
+        <IconButton
+          label="Redo"
+          off={history.future.length === 0}
+          onPress={() => {
+            step(redo, "Redone.");
+          }}
+        >
+          <path d="M11 3 L14 6 L11 9" />
+          <path d="M14 6 H6 A4 4 0 0 0 6 14 H9" />
+        </IconButton>
+        <Popover
+          label="Keyboard shortcuts"
+          align="end"
+          open={shortcuts}
+          onOpenChange={setShortcuts}
+          buttonClassName="inline-flex size-[34px] items-center justify-center rounded-lg border border-line-strong font-semibold text-fg hover:border-fg-3 aria-expanded:border-accent aria-expanded:bg-accent/10 aria-expanded:text-accent-hover"
+          panelClassName="w-[min(22rem,calc(100vw-2rem))] px-3.5 py-3"
+          button={<span aria-hidden="true">?</span>}
+        >
+          {() => (
+            <>
+              <p className="mb-1.5 text-sm font-semibold">Keyboard, with the curve focused</p>
+              <dl className="grid grid-cols-[76px_minmax(0,1fr)] gap-x-2.5 gap-y-1 text-[13px]">
+                <Key keys="← →">move in time, 1 s (Shift: 5 s)</Key>
+                <Key keys="↑ ↓">bandwidth ±10% (Shift: to the next quality line)</Key>
+                <Key keys="[ ]">the point before or after</Key>
+                <Key keys="N · Del">add a point after · delete this one</Key>
+                <Key keys="⌘Z ⇧⌘Z">undo · redo (Ctrl on Windows and Linux)</Key>
+                <Key keys="?">show or hide this list</Key>
+              </dl>
+            </>
+          )}
+        </Popover>
+        <span aria-hidden="true" className="mx-0.5 h-6 w-px bg-line max-sm:hidden" />
+        <button
+          type="button"
+          onClick={() => void save()}
+          className="inline-flex min-h-9 items-center rounded-[9px] border border-line-strong px-3.5 text-fg hover:border-fg-3"
+        >
+          Save
+        </button>
+        <Link
+          to="/run"
+          search={runSearch}
+          className="inline-flex min-h-9 items-center rounded-[9px] bg-accent px-3.5 font-semibold text-accent-ink hover:bg-accent-hover"
+        >
+          Run with this network
+        </Link>
+      </div>
+
+      {start.description && <p className="text-sm text-fg-2">{start.description}</p>}
+      {start.trace && (
+        <p className="text-[13px] text-fg-3">
+          Recorded by {TRACE_CREDIT.authors} ({TRACE_CREDIT.citation}),{" "}
+          <a
+            href={TRACE_CREDIT.licenceUrl}
+            className="text-fg-2 underline underline-offset-2 hover:text-fg"
+          >
+            {TRACE_CREDIT.licence}
+          </a>
+          . {TRACE_CREDIT.changes}
+        </p>
+      )}
+      {start.run && (
+        <p className="text-sm text-fg-2">
+          Changing the network of a run of {start.run.setup.streamName}. “Run with this network”
+          keeps its stream and player.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-fg-2">
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="12" height="8" aria-hidden="true">
+            <rect width="12" height="8" rx="2" className="fill-net/45" />
+          </svg>
+          Bandwidth
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="14" height="8" aria-hidden="true">
+            <path d="M0 4 H14" strokeDasharray="3 3" className="stroke-fg-3" />
+          </svg>
+          Qualities of {DEFAULT_STREAM.name}
+        </span>
+        <span className="flex-auto" />
+        <ShowAs name="Points" table={table} onChange={setTable} />
+      </div>
+      <ChartOrTable
+        table={table}
+        label="Points as a table"
+        renderTable={() => (
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                {["Point", "Time", "Bandwidth"].map((heading) => (
+                  <th
+                    key={heading}
+                    scope="col"
+                    className="sticky top-0 border-b border-line bg-surface py-1.5 pr-4 font-medium text-fg-2 first:pl-3"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {curve.points.map((point, i) => (
+                <tr
+                  key={i}
+                  aria-current={i === index ? "true" : undefined}
+                  className="border-t border-fg/6 aria-[current]:text-accent-hover"
+                >
+                  <td className="py-1.5 pr-4 pl-3">{i + 1}</td>
+                  <td className="py-1.5 pr-4 font-mono">{clock(point.t)}</td>
+                  <td className="py-1.5 pr-4">{point.mbps} Mbps</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      >
         <CurveEditor
           curve={curve}
           ladder={DEFAULT_LADDER}
@@ -281,54 +380,20 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             step(redo, "Redone.");
           }}
         />
-        <p className="mt-2.5 text-sm text-fg-2">
-          Where the curve dips below a dashed line, that quality downloads slower than it plays.
-          Below the 240p line, every quality does.
-        </p>
-        <details className="mt-2 text-sm">
-          <summary className="w-fit cursor-pointer text-[13px] text-fg-2 hover:text-fg">
-            Points as a table
-          </summary>
-          <div
-            role="region"
-            aria-label="Points as a table"
-            tabIndex={0}
-            className="mt-2 max-h-72 overflow-auto tabular-nums"
-          >
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  {["Point", "Time", "Bandwidth"].map((heading) => (
-                    <th
-                      key={heading}
-                      scope="col"
-                      className="sticky top-0 bg-surface py-1.5 pr-4 font-medium text-fg-2"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {curve.points.map((point, i) => (
-                  <tr
-                    key={i}
-                    aria-current={i === index ? "true" : undefined}
-                    className="border-t border-fg/6 aria-[current]:text-accent"
-                  >
-                    <td className="py-1.5 pr-4">{i + 1}</td>
-                    <td className="py-1.5 pr-4 font-mono">{clock(point.t)}</td>
-                    <td className="py-1.5 pr-4">{point.mbps} Mbps</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-      </section>
+      </ChartOrTable>
+      <p className="text-[13px] text-fg-3">
+        Where the curve dips below a dashed line, that quality downloads slower than it plays. Below
+        the 240p line, every quality does.
+      </p>
+      <p
+        aria-live="polite"
+        className={`text-sm empty:hidden ${notice?.error ? "text-error-text" : "text-fg-2"}`}
+      >
+        {notice?.text}
+      </p>
 
-      <div className="flex flex-wrap items-stretch gap-4">
-        <PointCard
+      <div className="flex flex-wrap gap-x-7 gap-y-4 border-t border-fg/6 pt-3">
+        <PointPanel
           curve={curve}
           index={index}
           onPlace={(next) => {
@@ -351,26 +416,27 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
 
         <section
           aria-labelledby="whole-h"
-          className={`${card} flex min-w-0 flex-[1_1_300px] flex-col gap-3`}
+          className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5"
         >
-          <h2 id="whole-h" className="text-base font-semibold">
+          <h3 id="whole-h" className="text-[13px] font-semibold">
             Whole network
-          </h2>
-          <label className="flex flex-col gap-1 text-[13px] text-fg-2">
-            Name
-            <input
-              type="text"
-              value={name}
-              maxLength={MAX_NETWORK_NAME}
-              onChange={(event) => {
-                setName(event.target.value);
-              }}
-              className={`${field} font-sans`}
-            />
-          </label>
-          <div className="flex flex-wrap gap-3">
+          </h3>
+          <div className="flex flex-wrap items-start gap-2.5">
+            <label className="flex w-44 flex-col gap-[3px] text-xs text-fg-2">
+              Name
+              <input
+                type="text"
+                value={name}
+                maxLength={MAX_NETWORK_NAME}
+                onChange={(event) => {
+                  setName(event.target.value);
+                }}
+                className={`${field} font-sans text-sm`}
+              />
+            </label>
             <NumberField
               label="Latency (RTT), ms"
+              width="w-[7.5rem]"
               value={String(curve.rttMs)}
               read={(text): Read<number> => {
                 const ms = text.trim() === "" ? Number.NaN : Number(text);
@@ -384,6 +450,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             />
             <NumberField
               label="Length"
+              width="w-[4.5rem]"
               value={formatClock(curve.lengthS)}
               read={(text): Read<number> => {
                 const t = parseClock(text);
@@ -393,92 +460,73 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
               }}
               apply={changeLength}
             />
+            <div className="flex w-full flex-wrap gap-2 pt-0.5">
+              <Popover
+                buttonClassName={button}
+                button={
+                  <>
+                    Import / Export
+                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                      <path
+                        d="M2 3.5 L5 6.5 L8 3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                  </>
+                }
+              >
+                {(close) => (
+                  <>
+                    <MenuItem
+                      onSelect={() => {
+                        close();
+                        fileRef.current?.click();
+                      }}
+                    >
+                      Import JSON or CSV
+                    </MenuItem>
+                    <MenuItem
+                      onSelect={() => {
+                        exportAs("json");
+                        close();
+                      }}
+                    >
+                      Export JSON
+                    </MenuItem>
+                    <MenuItem
+                      onSelect={() => {
+                        exportAs("csv");
+                        close();
+                      }}
+                    >
+                      Export CSV
+                    </MenuItem>
+                  </>
+                )}
+              </Popover>
+              {savedId && (
+                <button
+                  type="button"
+                  onClick={() => void remove()}
+                  className="inline-flex min-h-9 items-center rounded-lg border border-error/50 px-3 text-sm text-error-text hover:border-error"
+                >
+                  Delete network
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={button}
-              onClick={() => {
-                fileRef.current?.click();
-              }}
-            >
-              Import JSON or CSV
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json,.csv,.txt,application/json,text/csv,text/plain"
-              className="hidden"
-              onChange={(event) => void importFile(event)}
-            />
-            <button
-              type="button"
-              className={button}
-              onClick={() => {
-                exportAs("json");
-              }}
-            >
-              Export JSON
-            </button>
-            <button
-              type="button"
-              className={button}
-              onClick={() => {
-                exportAs("csv");
-              }}
-            >
-              Export CSV
-            </button>
-          </div>
-        </section>
-
-        <section aria-labelledby="keys-h" className={`${card} min-w-0 flex-[1_1_300px]`}>
-          <h2 id="keys-h" className="mb-2.5 text-base font-semibold">
-            Keyboard
-          </h2>
-          <p className="mb-2 text-[13px] text-fg-3">With the curve focused (Tab to it):</p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[13px]">
-            <Key keys="← →">move in time, 1 s (Shift: 5 s)</Key>
-            <Key keys="↑ ↓">bandwidth up or down 10% (Shift: to the next quality line)</Key>
-            <Key keys="[ ]">the point before or after</Key>
-            <Key keys="N · Delete">add a point after this one · delete this one</Key>
-            <Key keys="⌘Z · ⇧⌘Z">undo · redo (Ctrl on Windows and Linux)</Key>
-          </dl>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,.csv,.txt,application/json,text/csv,text/plain"
+            className="hidden"
+            onChange={(event) => void importFile(event)}
+          />
         </section>
       </div>
-
-      <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <p
-          aria-live="polite"
-          className={`mr-auto text-sm empty:hidden ${notice?.error ? "text-error-text" : "text-fg-2"}`}
-        >
-          {notice?.text}
-        </p>
-        {savedId && (
-          <button
-            type="button"
-            onClick={() => void remove()}
-            className="inline-flex min-h-11 items-center rounded-[10px] border border-error/50 px-4 text-error-text hover:border-error"
-          >
-            Delete
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => void save()}
-          className="inline-flex min-h-11 items-center rounded-[10px] border border-line-strong px-4.5 text-fg hover:border-fg-3"
-        >
-          {savedId ? "Save changes" : "Save to my networks"}
-        </button>
-        <Link
-          to="/run"
-          search={runSearch}
-          className="inline-flex min-h-11 items-center rounded-[10px] bg-accent px-5 font-semibold text-accent-ink hover:bg-accent-hover"
-        >
-          Use in a run
-        </Link>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -501,7 +549,7 @@ function IconButton({
       onClick={() => {
         if (!off) onPress();
       }}
-      className="inline-flex size-9 items-center justify-center rounded-lg border border-line-strong text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3"
+      className="inline-flex size-[34px] items-center justify-center rounded-lg border border-line-strong text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3"
     >
       <svg
         width="16"
@@ -537,11 +585,14 @@ type Read<T> = { ok: true; value: T } | { ok: false; error: string };
  */
 function NumberField<T>({
   label,
+  width,
   value,
   read,
   apply,
 }: {
   label: string;
+  /** The field's width class; its error message wraps under it. */
+  width: string;
   value: string;
   read: (text: string) => Read<T>;
   apply: (value: T) => void;
@@ -566,8 +617,8 @@ function NumberField<T>({
     apply(result.value);
   };
   return (
-    <div className="flex min-w-[120px] flex-[1_1_120px] flex-col gap-1">
-      <label className="flex flex-col gap-1 text-[13px] text-fg-2">
+    <div className={`flex flex-col gap-1 ${error ? "max-w-60 min-w-40" : ""}`}>
+      <label className={`flex flex-col gap-[3px] text-xs whitespace-nowrap text-fg-2 ${width}`}>
         {label}
         <input
           type="text"
@@ -588,7 +639,7 @@ function NumberField<T>({
         />
       </label>
       {error && (
-        <p id={errorId} role="alert" className="text-[13px] text-error-text">
+        <p id={errorId} role="alert" className="text-xs text-error-text">
           {error}
         </p>
       )}
@@ -597,7 +648,7 @@ function NumberField<T>({
 }
 
 /** The selected point: its time and bandwidth as fields, and buttons to add a point after it or delete it. */
-function PointCard({
+function PointPanel({
   curve,
   index,
   onPlace,
@@ -613,16 +664,14 @@ function PointCard({
   const point = curve.points[index];
   if (!point) return null;
   return (
-    <section
-      aria-labelledby="point-h"
-      className={`${card} flex min-w-0 flex-[1_1_300px] flex-col gap-3`}
-    >
-      <h2 id="point-h" className="text-base font-semibold">
+    <section aria-labelledby="point-h" className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
+      <h3 id="point-h" className="text-[13px] font-semibold">
         Point {index + 1} of {curve.points.length}
-      </h2>
-      <div className="flex flex-wrap gap-3">
+      </h3>
+      <div className="flex flex-wrap items-start gap-2.5">
         <NumberField
           label="Time"
+          width="w-[5.25rem]"
           value={clock(point.t)}
           read={(text): Read<NetworkCurve> => {
             const t = parseClock(text);
@@ -634,6 +683,7 @@ function PointCard({
         />
         <NumberField
           label="Bandwidth, Mbps"
+          width="w-[6.5rem]"
           value={String(point.mbps)}
           read={(text): Read<NetworkCurve> => {
             const mbps = text.trim() === "" ? Number.NaN : Number(text.replace(",", "."));
@@ -645,18 +695,18 @@ function PointCard({
           }}
           apply={onPlace}
         />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={button} onClick={onAdd}>
-          Add point after
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="inline-flex min-h-10 items-center rounded-lg border border-error/50 px-3 text-sm text-error-text hover:border-error"
-        >
-          Delete point
-        </button>
+        <div className="flex w-full flex-wrap gap-2 pt-0.5">
+          <button type="button" className={button} onClick={onAdd}>
+            + Add point after
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex min-h-9 items-center rounded-lg border border-error/50 px-3 text-sm text-error-text hover:border-error"
+          >
+            Delete<span className="sr-only"> point</span>
+          </button>
+        </div>
       </div>
     </section>
   );

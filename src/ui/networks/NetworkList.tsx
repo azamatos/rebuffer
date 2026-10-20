@@ -45,21 +45,36 @@ function NetworkLink({
         to="/networks"
         search={search}
         aria-current={current ? "true" : undefined}
-        className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface px-3.5 py-3 text-fg hover:border-fg-3 aria-[current]:border-accent aria-[current]:bg-accent/8"
+        className="group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 rounded-[9px] px-2 py-[7px] text-fg hover:bg-fg/4 aria-[current]:bg-accent/10"
       >
-        <span className="font-medium">{name}</span>
-        <CurveThumb curve={curve} className="h-5 w-full" />
-        <span className="font-mono text-xs text-fg-3 tabular-nums">{summary(curve)}</span>
+        <CurveThumb curve={curve} className="h-5 w-16" />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium">{name}</span>
+          <span className="block font-mono text-[11px] text-fg-3 tabular-nums group-aria-[current]:text-fg-2">
+            {summary(curve)}
+          </span>
+        </span>
       </Link>
     </li>
   );
 }
 
-function Group({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Group({
+  id,
+  title,
+  count,
+  children,
+}: {
+  id: string;
+  title: string;
+  count?: number;
+  children: ReactNode;
+}) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-2.5">
-      <h2 id={id} className="text-[15px] font-semibold text-fg-2">
+    <section aria-labelledby={id} className="flex flex-col gap-0.5">
+      <h2 id={id} className="mx-2 mb-1 text-xs font-semibold tracking-[0.04em] text-fg-3 uppercase">
         {title}
+        {count !== undefined && ` · ${count}`}
       </h2>
       {children}
     </section>
@@ -75,9 +90,9 @@ export function NetworkList({
   saved: SavedNetwork[] | "unavailable" | undefined;
 }) {
   return (
-    <nav aria-label="Networks" className="flex min-w-0 flex-[1_1_260px] flex-col gap-5">
-      <Group id="presets-h" title="Presets">
-        <ul className="flex flex-col gap-2">
+    <nav aria-label="Networks" className="flex flex-col gap-3">
+      <Group id="presets-h" title="Presets" count={presets.length}>
+        <ul className="flex flex-col gap-0.5">
           {presets.map((preset) => (
             <NetworkLink
               key={preset.id}
@@ -89,8 +104,8 @@ export function NetworkList({
           ))}
         </ul>
       </Group>
-      <Group id="traces-h" title="Recorded traces">
-        <ul className="flex flex-col gap-2">
+      <Group id="traces-h" title="Recorded 4G" count={recordedTraces.length}>
+        <ul className="flex flex-col gap-0.5">
           {recordedTraces.map((trace) => (
             <NetworkLink
               key={trace.id}
@@ -101,7 +116,7 @@ export function NetworkList({
             />
           ))}
         </ul>
-        <p className="text-xs text-fg-3">
+        <p className="mx-2 mt-1 text-[11px] leading-snug text-fg-3">
           Real 4G recordings: {TRACE_CREDIT.citation},{" "}
           <a
             href={TRACE_CREDIT.licenceUrl}
@@ -121,9 +136,11 @@ export function NetworkList({
       </Group>
       <Group id="yours-h" title="Yours">
         {saved === "unavailable" ? (
-          <p className="text-sm text-fg-3">This browser doesn't let the lab save networks.</p>
+          <p className="mx-2 text-[13px] text-fg-3">
+            This browser doesn&apos;t let the lab save networks.
+          </p>
         ) : saved && saved.length > 0 ? (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-0.5">
             {saved.map((network) => (
               <NetworkLink
                 key={network.id}
@@ -135,13 +152,13 @@ export function NetworkList({
             ))}
           </ul>
         ) : (
-          saved && <p className="text-sm text-fg-3">None saved in this browser yet.</p>
+          saved && <p className="mx-2 text-[13px] text-fg-3">None saved in this browser yet.</p>
         )}
         <Link
           to="/networks"
           search={{ new: "blank" }}
           aria-current={current.new === "blank" ? "true" : undefined}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-dashed border-line-strong text-fg-2 hover:border-fg-3 hover:text-fg aria-[current]:border-accent aria-[current]:text-fg"
+          className="mx-1 mt-1 inline-flex min-h-[38px] items-center justify-center rounded-[9px] border border-dashed border-line-strong text-sm text-fg-2 hover:border-fg-3 hover:text-fg aria-[current]:border-accent aria-[current]:text-fg"
         >
           + New network
         </Link>

@@ -68,7 +68,7 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(page).toHaveURL(/\/networks\?run=(%22)?[0-9a-f]{8}(%22)?$/);
   await expect(page.getByRole("heading", { level: 2, name: "Custom network" })).toBeVisible();
   await expect(page.getByText(/^Changing the network of a run of localhost:4013\./)).toBeVisible();
-  const use = await page.getByRole("link", { name: "Use in a run" }).getAttribute("href");
+  const use = await page.getByRole("link", { name: "Run with this network" }).getAttribute("href");
   expect(Object.fromEntries(new URL(use ?? "", "http://localhost").searchParams)).toEqual({
     stream: STREAM,
     curve: CURVE,
@@ -112,11 +112,9 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   expect(exported.events.length).toBeGreaterThan(10);
   await expect(more).toHaveAttribute("aria-expanded", "false");
   // A toast confirms it, read out politely; the zoom keeps the page's one status.
-  await expect(
-    page.locator("[aria-live=polite]").getByText("Downloaded the run as JSON."),
-  ).toBeVisible();
+  await expect(page.locator("#toasts").getByText("Downloaded the run as JSON.")).toBeVisible();
   await expect(page.getByRole("status")).toHaveCount(1);
-  await settle(page.locator("[aria-live=polite]"));
+  await settle(page.locator("#toasts"));
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   // The run is listed on Home and on the Runs page, which opens its report from the keyboard.

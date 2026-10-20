@@ -141,34 +141,31 @@ export function NetworksPage({ search }: { search: NetworksSearch }) {
       : search;
 
   return (
-    <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 py-7 sm:px-8">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="text-[32px] font-semibold tracking-tight outline-none"
-        >
-          Networks
-        </h1>
-        <p className="text-sm text-fg-3">
-          Pick a network, change it, keep it in this browser, then use it in a run.
-        </p>
-      </div>
-      <div className="flex flex-wrap items-start gap-5">
-        <NetworkList current={current} saved={saved} />
-        {loaded.status === "ready" ? (
-          <NetworkEditor
-            key={editorKey}
-            start={loaded.start}
-            onSaved={onSaved}
-            onDeleted={onDeleted}
-          />
-        ) : (
-          <p className="min-w-0 flex-[999_1_720px] text-fg-2">
-            {loaded.status === "loading" ? "Loading the network…" : loaded.message}
+    <div className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 px-4 pt-5 pb-10 sm:px-8">
+      {/* On wide screens the list stays in view and scrolls on its own beside the editor. */}
+      <div className="flex max-w-full min-w-0 flex-[1_1_260px] flex-col gap-2 rounded-xl border border-line bg-surface p-3 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:max-w-[300px] lg:overflow-auto">
+        <div className="mx-1.5 mt-0.5 mb-1">
+          <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
+            Networks
+          </h1>
+          <p className="mt-0.5 text-[13px] text-fg-3">
+            Pick one, change it, keep it in this browser, run with it.
           </p>
-        )}
+        </div>
+        <NetworkList current={current} saved={saved} />
       </div>
+      {loaded.status === "ready" ? (
+        <NetworkEditor
+          key={editorKey}
+          start={loaded.start}
+          onSaved={onSaved}
+          onDeleted={onDeleted}
+        />
+      ) : (
+        <p className="min-w-0 flex-[999_1_640px] text-fg-2">
+          {loaded.status === "loading" ? "Loading the network…" : loaded.message}
+        </p>
+      )}
     </div>
   );
 }
