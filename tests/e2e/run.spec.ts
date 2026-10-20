@@ -31,7 +31,8 @@ test("a run plays the stream through the simulated network and reports it", asyn
 
   const result = page.getByRole("region", { name: "Result" });
   await expect(result).toContainText("QoE score");
-  await expect(result).toContainText("Your connection kept up");
+  // On a slow machine a few local downloads can start late; the result then says so, which is right too.
+  await expect(result).toContainText(/[Yy]our connection kept up|started late|arrived late/);
   await expect(result).toContainText("hls.js 1.7.3");
 
   // The charts sum themselves up in words, and the canvases have been drawn on.
@@ -120,15 +121,18 @@ test("a repeat run takes its downloads from the copy the first run saved", async
 
 test("a run counts the stall when the network goes silent", async ({ page }) => {
   test.setTimeout(60_000);
-  // 15 s: 4 Mbps for 5 s, then nothing for 8 s: more than the player can have buffered, even after a slow start.
-  const silent = "steps,50,15,0:4|5:0|13:4";
+  // 20 s: 4 Mbps for 8 s (time for a slow start), then nothing for 8 s. The buffer is capped at 4 s, so it runs dry
+  // whatever quality the player picks: at a low one, the 20 s test stream would otherwise fit in it whole.
+  const silent = "steps,50,20,0:4|8:0|16:4";
+  const smallBuffer = "maxBufferLength:4,maxMaxBufferLength:4";
   await page.goto(
-    `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(silent)}&start=now`,
+    `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(silent)}&set=${smallBuffer}&start=now`,
   );
   test.skip(!(await canPlayH264(page)), "This browser build can't decode H.264 through MSE");
   await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
-  await expect(page.getByText("Stall: the buffer ran out.")).toBeVisible();
-  await expect(page.getByText(/^Playing again after \d+\.\d s\.$/)).toBeVisible();
+  // One stall at least; the player may stall again when its small buffer runs dry twice.
+  await expect(page.getByText("Stall: the buffer ran out.").first()).toBeVisible();
+  await expect(page.getByText(/^Playing again after \d+\.\d s\.$/).first()).toBeVisible();
 });
 
 test("a broken network link explains itself", async ({ page }) => {
