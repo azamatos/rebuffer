@@ -6,28 +6,10 @@ import {
   MAX_SAVED_RUNS,
   RUN_FORMAT,
   RUN_VERSION,
-  type KeyValueStore,
   type SavedRun,
 } from "./runs";
 import { summarize } from "./summary";
-
-function memoryStore(): KeyValueStore & { size: () => number } {
-  const map = new Map<string, unknown>();
-  return {
-    get: (key) => Promise.resolve(map.get(key)),
-    getMany: (list) => Promise.resolve(list.map((key) => map.get(key))),
-    set: (key, value) => {
-      map.set(key, structuredClone(value));
-      return Promise.resolve();
-    },
-    del: (key) => {
-      map.delete(key);
-      return Promise.resolve();
-    },
-    keys: () => Promise.resolve([...map.keys()]),
-    size: () => map.size,
-  };
-}
+import { memoryStore } from "./testing";
 
 const events: RunEvent[] = [
   { type: "levels", t: 0.1, levels: [{ index: 0, bitrate: 2_000_000, name: "720p" }] },

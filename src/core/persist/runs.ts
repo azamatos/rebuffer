@@ -63,8 +63,12 @@ export interface KeyValueStore {
   keys(): Promise<string[]>;
 }
 
-export function indexedDbStore(): KeyValueStore {
-  const store = createStore("rebuffer", "runs");
+/**
+ * An IndexedDB store. Each kind of record gets a database of its own: idb-keyval creates a store only along with its
+ * database, so a second store in an existing database would never be created.
+ */
+export function indexedDbStore(database = "rebuffer", name = "runs"): KeyValueStore {
+  const store = createStore(database, name);
   return {
     get: (key) => get(key, store),
     getMany: (list) => getMany(list, store),
