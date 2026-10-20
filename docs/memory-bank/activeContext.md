@@ -10,7 +10,7 @@
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
 - **Live site = `main` at `dc3fd6f`** plus this note (pushed 2026-10-20 with the owner's "lets push"; CI green; the
-  deployed Inspect chunk matches the local build). Nothing waits to be pushed. **Every push to `main` deploys on its
+  deployed Inspect chunk matches the local build). One docs commit waits to be pushed (the upload README's cache time). **Every push to `main` deploys on its
   own** (Cloudflare builds it in about a minute). Pushing is outward-facing: ask the owner before each push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS

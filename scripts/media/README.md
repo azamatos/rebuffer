@@ -33,7 +33,8 @@ node scripts/media/upload.mjs --dry-run   # what would go where, with content ty
 node scripts/media/upload.mjs             # media/out/tears-of-steel → azamatos-media/tears-of-steel
 ```
 
-Segments are cached for a year (`immutable`), playlists for five minutes; master playlists go last. CORS lets any
+Segments are cached for a year (`immutable`), playlists for a day (since 2026-10-20; purge one in Cloudflare to
+replace it at once); master playlists go last. `--playlists` uploads playlists only, `--only clean` one version. CORS lets any
 site read the files (GET and HEAD, `Range`), like public test streams; it's set once:
 
 ```sh
