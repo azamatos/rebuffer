@@ -29,6 +29,7 @@ import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
+import { Hint } from "@/ui/hints/Hint";
 import { RunCharts } from "@/ui/run/RunCharts";
 
 export interface RunSearch {
@@ -326,6 +327,25 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
           {error}
         </p>
       )}
+
+      <Hint id="run-charts" title="What to watch">
+        <ul className="flex list-disc flex-col gap-1 pl-4.5">
+          <li>
+            <span className="text-fg">Bandwidth and quality:</span> the blue area is the network
+            (dashed ahead of the run), the pink dashed line is the player&apos;s estimate of it, and
+            the green steps are the quality on screen.
+          </li>
+          <li>
+            <span className="text-fg">Buffer:</span> seconds of video ready to play. When it runs
+            out, playback stalls, marked by a red band.
+          </li>
+          <li>
+            <span className="text-fg">Segment downloads:</span> one bar per segment, coloured by the
+            quality it was downloaded at.
+          </li>
+        </ul>
+        <p className="mt-1.5">At the end you get a score, and the report explains what happened.</p>
+      </Hint>
 
       <div className="flex flex-wrap items-start gap-5">
         <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-4">

@@ -144,3 +144,18 @@ test("a broken network link explains itself", async ({ page }) => {
   await page.goto(`/run?curve=${encodeURIComponent("steps,50")}`);
   await expect(page.getByRole("alert")).toContainText("The network in this link is broken");
 });
+
+test("the first-run hint explains the charts until it's dismissed by keyboard", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/run");
+  const hint = page.getByRole("note", { name: "What to watch" });
+  await expect(hint).toContainText("the blue area is the network");
+  await tabTo(page, browserName, hint.getByRole("button", { name: "Got it" }));
+  await page.keyboard.press("Enter");
+  await expect(hint).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(hint).toHaveCount(0);
+});
