@@ -51,3 +51,28 @@ export function bufferAhead(ranges: TimeRangesLike, position: number, maxHole = 
   }
   return end === undefined ? 0 : Math.max(0, end - position);
 }
+
+/** The parts of a video element the stall check reads. */
+export interface PlaybackLike {
+  readonly currentTime: number;
+  readonly paused: boolean;
+  readonly ended: boolean;
+  readonly readyState: number;
+}
+
+/** HTMLMediaElement.HAVE_FUTURE_DATA: enough data to play on from the current position. */
+const HAVE_FUTURE_DATA = 3;
+
+/**
+ * Whether playback is stuck: it should be playing but hasn't moved since `previousPosition` and lacks the data to go
+ * on. A backstop for the `waiting` event, which a browser can skip (say, when a stall begins during one of the
+ * player's own small seeks over a gap).
+ */
+export function isStuck(video: PlaybackLike, previousPosition: number): boolean {
+  return (
+    !video.paused &&
+    !video.ended &&
+    video.currentTime === previousPosition &&
+    video.readyState < HAVE_FUTURE_DATA
+  );
+}

@@ -118,6 +118,19 @@ test("a repeat run takes its downloads from the copy the first run saved", async
   expect(await page.evaluate(() => caches.has("rebuffer-saved-v1"))).toBe(false);
 });
 
+test("a run counts the stall when the network goes silent", async ({ page }) => {
+  test.setTimeout(60_000);
+  // 15 s: 4 Mbps for 5 s, then nothing for 8 s: more than the player can have buffered, even after a slow start.
+  const silent = "steps,50,15,0:4|5:0|13:4";
+  await page.goto(
+    `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(silent)}&start=now`,
+  );
+  test.skip(!(await canPlayH264(page)), "This browser build can't decode H.264 through MSE");
+  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(page.getByText("Stall: the buffer ran out.")).toBeVisible();
+  await expect(page.getByText(/^Playing again after \d+\.\d s\.$/)).toBeVisible();
+});
+
 test("a broken network link explains itself", async ({ page }) => {
   await page.goto(`/run?curve=${encodeURIComponent("steps,50")}`);
   await expect(page.getByRole("alert")).toContainText("The network in this link is broken");

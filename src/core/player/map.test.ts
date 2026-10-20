@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bufferAhead, levelsFromHls, type TimeRangesLike } from "./map";
+import { bufferAhead, isStuck, levelsFromHls, type TimeRangesLike } from "./map";
 
 function ranges(...pairs: [number, number][]): TimeRangesLike {
   return {
@@ -56,5 +56,20 @@ describe("bufferAhead", () => {
 
   it("is zero when the position is past every range", () => {
     expect(bufferAhead(ranges([0, 8]), 9)).toBe(0);
+  });
+});
+
+describe("isStuck", () => {
+  const playing = { currentTime: 19.96, paused: false, ended: false, readyState: 2 };
+
+  it("is stuck when playback should move but has no data to move on", () => {
+    expect(isStuck(playing, 19.96)).toBe(true);
+  });
+
+  it("isn't when it moved, has data, is paused or has ended", () => {
+    expect(isStuck(playing, 19.7)).toBe(false);
+    expect(isStuck({ ...playing, readyState: 4 }, 19.96)).toBe(false);
+    expect(isStuck({ ...playing, paused: true }, 19.96)).toBe(false);
+    expect(isStuck({ ...playing, ended: true }, 19.96)).toBe(false);
   });
 });

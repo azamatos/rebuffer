@@ -5,7 +5,7 @@ import type {
   FragLoadingData,
 } from "hls.js";
 import type { RunEvent } from "@/core/run/events";
-import { bufferAhead, levelsFromHls } from "./map";
+import { bufferAhead, isStuck, levelsFromHls } from "./map";
 import type { PlayerSettings } from "./settings";
 
 /** Turns clock readings into run time (seconds since the run started). */
@@ -142,10 +142,15 @@ export async function startHlsJs({
   } else {
     listen("playing", markFirstFrame);
   }
-  listen("waiting", () => {
-    if (!firstFrameShown || stalled || video.seeking) return;
+  const stall = (t: number) => {
+    if (!firstFrameShown || stalled) return;
     stalled = true;
-    emit({ type: "stall-start", t: clock.now() });
+    emit({ type: "stall-start", t });
+  };
+  // No seek exception: the lab never seeks, so a seek is the player's own jump over a gap, and waiting during one
+  // is still a frozen picture.
+  listen("waiting", () => {
+    stall(clock.now());
   });
   const resume = () => {
     if (!stalled) return;
@@ -162,7 +167,11 @@ export async function startHlsJs({
     emit({ type: "end", t: clock.now(), reason: "complete" });
   });
 
+  let previousSample = { t: clock.now(), position: video.currentTime };
   const timer = setInterval(() => {
+    // The backstop for a `waiting` event that never came: stuck since the previous sample at the latest.
+    if (isStuck(video, previousSample.position)) stall(previousSample.t);
+    previousSample = { t: clock.now(), position: video.currentTime };
     const estimate = hls.bandwidthEstimate;
     emit({
       type: "sample",
