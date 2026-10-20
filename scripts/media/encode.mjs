@@ -16,8 +16,8 @@
  */
 import { spawn } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { parseArgs } from "node:util";
@@ -260,23 +260,73 @@ async function encodeProblems(input) {
 
 /**
  * Adds what ffmpeg leaves out of the master playlist, so the inspector's findings point only at the planted
- * mistakes: EXT-X-INDEPENDENT-SEGMENTS (every segment starts with a keyframe) and FRAME-RATE on video variants.
- * Safe to run twice.
+ * mistakes: EXT-X-INDEPENDENT-SEGMENTS (every segment starts with a keyframe), FRAME-RATE on video variants, and
+ * the separate audio in BANDWIDTH and AVERAGE-BANDWIDTH (ffmpeg counts the video alone, but RFC 8216 §4.3.4.2 means
+ * the whole variant: the inspector found this on 2026-10-20). Safe to run twice: the bit rates are measured afresh
+ * from the segment files.
  */
 async function polishMaster(dir) {
   const masterPath = join(dir, "master.m3u8");
   if (!existsSync(masterPath)) return;
   const lines = (await readFile(masterPath, "utf8")).split("\n");
-  const polished = lines.map((line) =>
-    line.startsWith("#EXT-X-STREAM-INF:") && line.includes("RESOLUTION=") && !line.includes("FRAME-RATE=")
-      ? line.replace(/(RESOLUTION=\d+x\d+)/, `$1,FRAME-RATE=${FPS.toFixed(3)}`)
-      : line,
+  const audioUris = new Map(
+    lines.flatMap((line) => {
+      const group = /^#EXT-X-MEDIA:TYPE=AUDIO,.*GROUP-ID="([^"]+)".*URI="([^"]+)"/.exec(line);
+      return group ? [[group[1], group[2]]] : [];
+    }),
   );
+  const polished = [];
+  for (const [i, line] of lines.entries()) {
+    let next =
+      line.startsWith("#EXT-X-STREAM-INF:") && line.includes("RESOLUTION=") && !line.includes("FRAME-RATE=")
+        ? line.replace(/(RESOLUTION=\d+x\d+)/, `$1,FRAME-RATE=${FPS.toFixed(3)}`)
+        : line;
+    const audio = /AUDIO="([^"]+)"/.exec(next)?.[1];
+    if (next.startsWith("#EXT-X-STREAM-INF:") && audio && audioUris.has(audio)) {
+      const { peak, average } = await variantBitrates(dir, lines[i + 1] ?? "", audioUris.get(audio));
+      next = next
+        .replace(/(^#EXT-X-STREAM-INF:|,)BANDWIDTH=\d+/, `$1BANDWIDTH=${peak}`)
+        .replace(/AVERAGE-BANDWIDTH=\d+/, `AVERAGE-BANDWIDTH=${average}`);
+    }
+    polished.push(next);
+  }
   if (!polished.includes("#EXT-X-INDEPENDENT-SEGMENTS")) {
     const version = polished.findIndex((line) => line.startsWith("#EXT-X-VERSION"));
     polished.splice(version + 1, 0, "#EXT-X-INDEPENDENT-SEGMENTS");
   }
   await writeFile(masterPath, polished.join("\n"));
+}
+
+/** Each segment's bit rate in a media playlist, from the files on disk, and the playlist's total bits and seconds. */
+async function segmentBitrates(dir, playlistPath) {
+  const folder = dirname(join(dir, playlistPath));
+  const lines = (await readFile(join(dir, playlistPath), "utf8")).split("\n");
+  const rates = [];
+  let bits = 0;
+  let seconds = 0;
+  let duration;
+  for (const line of lines) {
+    if (line.startsWith("#EXTINF:")) duration = Number.parseFloat(line.slice(8));
+    else if (line && !line.startsWith("#") && duration) {
+      const size = (await stat(join(folder, line))).size * 8;
+      rates.push(size / duration);
+      bits += size;
+      seconds += duration;
+    }
+  }
+  return { rates, bits, seconds };
+}
+
+/** A variant's peak and average bit rate with its separate audio: segment by segment, as RFC 8216 defines them. */
+async function variantBitrates(dir, videoPath, audioPath) {
+  const video = await segmentBitrates(dir, videoPath);
+  const audio = await segmentBitrates(dir, audioPath);
+  const audioPeak = Math.max(...audio.rates);
+  const peak = Math.max(...video.rates.map((rate, i) => rate + (audio.rates[i] ?? audioPeak)));
+  return {
+    peak: Math.ceil(peak),
+    average: Math.round((video.bits + audio.bits) / video.seconds),
+  };
 }
 
 // --- ffmpeg helpers ---------------------------------------------------------------------------

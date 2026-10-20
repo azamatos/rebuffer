@@ -30,14 +30,14 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await page.keyboard.press("ArrowRight");
   await expect(said).toHaveText("Point 7 of 10: 0:44, 0 Mbps");
   await page.keyboard.press("Shift+ArrowUp");
-  await expect(said).toHaveText("Point 7 of 10: 0:44, 0.47 Mbps");
+  await expect(said).toHaveText("Point 7 of 10: 0:44, 0.6 Mbps");
   await expect(page.getByLabel("Time")).toHaveValue("0:44");
-  await expect(page.getByLabel("Bandwidth, Mbps")).toHaveValue("0.47");
+  await expect(page.getByLabel("Bandwidth, Mbps")).toHaveValue("0.6");
   await expect(page.getByRole("heading", { level: 2, name: /edited copy$/ })).toBeVisible();
 
   // Add a point after it and delete it; undo brings each step back.
   await page.keyboard.press("n");
-  await expect(said).toHaveText(/^Added\. Point 8 of 11: 0:49, 0\.2\d Mbps$/);
+  await expect(said).toHaveText("Added. Point 8 of 11: 0:49, 0.3 Mbps");
   await page.keyboard.press("Delete");
   await expect(said).toHaveText("Deleted. Point 8 of 10: 0:54, 0 Mbps");
   await page.keyboard.press("ControlOrMeta+z");
@@ -80,7 +80,7 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   expect(exported.format).toBe("rebuffer-network");
   expect(exported.rttMs).toBe(120);
   expect(exported.points.slice(6, 8)).toEqual([
-    { t: 44, mbps: 0.47 },
+    { t: 44, mbps: 0.6 },
     { t: 56, mbps: 0 },
   ]);
 
