@@ -108,6 +108,37 @@ test("a run says when the real latency is above the simulated one", async ({ pag
   expect(results.violations).toEqual([]);
 });
 
+test("a repeat run takes its downloads from the copy the first run saved", async ({ page }) => {
+  test.setTimeout(90_000);
+  // The same stream, served as cacheable, on a 6 s network.
+  const keptStream = STREAM.replace("/hls/", "/keep/hls/");
+  await page.goto(
+    `/run?stream=${encodeURIComponent(keptStream)}&curve=${encodeURIComponent("steps,50,6,0:4")}`,
+  );
+  test.skip(!(await canPlayH264(page)), "This browser build can't decode H.264 through MSE");
+  const status = page.getByRole("status");
+  const result = page.getByRole("region", { name: "Result" });
+  const savedCount = () =>
+    page.evaluate(async () => (await (await caches.open("rebuffer-saved-v1")).keys()).length);
+
+  await page.getByRole("button", { name: "Start run" }).click();
+  await expect(status).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(result).not.toContainText("came from the copy saved");
+  // Each download is saved just after it ends.
+  await expect.poll(savedCount).toBeGreaterThan(3);
+
+  await page.getByRole("button", { name: "Run again" }).click();
+  await expect(status).toHaveText("Running.", { timeout: 15_000 });
+  await expect(status).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(result).toContainText(
+    /(All \d+|\d+ of \d+) downloads came from the copy saved in this browser by an earlier run/,
+  );
+
+  await page.getByRole("button", { name: "Forget saved downloads" }).click();
+  await expect(result).toContainText("Forgotten: the next run downloads everything");
+  expect(await page.evaluate(() => caches.has("rebuffer-saved-v1"))).toBe(false);
+});
+
 test("a broken network link explains itself", async ({ page }) => {
   await page.goto(`/run?curve=${encodeURIComponent("steps,50")}`);
   await expect(page.getByRole("alert")).toContainText("The network in this link is broken");

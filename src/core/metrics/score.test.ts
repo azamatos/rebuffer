@@ -27,6 +27,7 @@ function metrics(overrides: Partial<RunMetrics>): RunMetrics {
     segmentS: 4,
     honesty: {
       requests: 0,
+      saved: 0,
       latency: { host: undefined, realMs: undefined, late: 0, typicalLateMs: 0, worstLateMs: 0 },
       bandwidth: { late: 0, typicalLateMs: 0, worstLateMs: 0, realBps: undefined },
       hiddenS: 0,

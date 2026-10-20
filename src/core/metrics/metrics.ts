@@ -45,6 +45,8 @@ const MIN_BUSY_S = 0.1;
 export interface Honesty {
   /** Downloads through the simulated network. */
   requests: number;
+  /** Of those, the ones answered from the copy saved in this browser by an earlier run, not the real network. */
+  saved: number;
   /** The real network answered slower than the simulated RTT, so downloads started late. */
   latency: {
     /** The stream's host and its latency measured before the run, ms (undefined if it didn't answer). */
@@ -133,6 +135,7 @@ function honesty(events: readonly RunEvent[], endS: number): Honesty {
   const check = eventsOfType(events, "network-check")[0];
   return {
     requests: requests.length,
+    saved: requests.filter((request) => request.saved === true).length,
     latency: {
       host: check?.host,
       realMs: check?.latencyMs,

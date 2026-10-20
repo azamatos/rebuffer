@@ -5,8 +5,9 @@
 //   GET /hls/<path>        files of the synthetic test stream in media/e2e/ (tests/e2e/fixtures/make-stream.mjs)
 //   GET /slow/<ms>/<path>  any of the above, answered <ms> later: a server farther away than the simulated RTT.
 //                          Relative links in a playlist keep the prefix, so a whole stream can be slow.
+//   GET /keep/<path>       any of the above, cacheable: the lab may save it for repeat runs.
 //   GET /                  "ok", for Playwright's readiness check
-// Every response allows any origin and is never cached, so each download really goes over the wire.
+// Every response allows any origin. Outside /keep/ none may be stored, so each download really goes over the wire.
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
@@ -51,11 +52,15 @@ function parseRange(header, size) {
   return start < end ? [start, end] : null;
 }
 
-function sendBytes(request, response, size) {
+/** The common headers; `keep` lets caches store the response. */
+const commonHeaders = (keep) =>
+  keep ? { ...corsHeaders, "Cache-Control": "public, max-age=3600" } : corsHeaders;
+
+function sendBytes(request, response, size, keep) {
   const range = request.headers.range;
   let [start, end, status] = [0, size, 200];
   const headers = {
-    ...corsHeaders,
+    ...commonHeaders(keep),
     "Content-Type": "application/octet-stream",
     "Accept-Ranges": "bytes",
   };
@@ -74,7 +79,7 @@ function sendBytes(request, response, size) {
   response.end(request.method === "HEAD" ? undefined : bytes(start, end));
 }
 
-async function sendHlsFile(response, path) {
+async function sendHlsFile(response, path, keep) {
   const file = normalize(join(HLS_ROOT, path));
   const type = HLS_TYPES[extname(file)];
   if (!file.startsWith(HLS_ROOT + "/") || !type) {
@@ -84,7 +89,7 @@ async function sendHlsFile(response, path) {
   try {
     const body = await readFile(file);
     response.writeHead(200, {
-      ...corsHeaders,
+      ...commonHeaders(keep),
       "Content-Type": type,
       "Content-Length": body.length,
     });
@@ -94,16 +99,22 @@ async function sendHlsFile(response, path) {
   }
 }
 
-function handle(request, response, url) {
+function handle(request, response, url, keep = false) {
   const slow = /^\/slow\/(\d+)(\/.*)$/.exec(url.pathname);
   if (slow) {
     url.pathname = slow[2];
     setTimeout(
       () => {
-        handle(request, response, url);
+        handle(request, response, url, keep);
       },
       Math.min(Number(slow[1]), 10_000),
     );
+    return;
+  }
+  const kept = /^\/keep(\/.*)$/.exec(url.pathname);
+  if (kept) {
+    url.pathname = kept[1];
+    handle(request, response, url, true);
     return;
   }
   if (request.method === "OPTIONS") {
@@ -111,7 +122,7 @@ function handle(request, response, url) {
     return;
   }
   if (url.pathname.startsWith("/hls/")) {
-    void sendHlsFile(response, url.pathname.slice("/hls/".length));
+    void sendHlsFile(response, url.pathname.slice("/hls/".length), keep);
     return;
   }
   const match = /^\/(bytes|redirect)\/(\d+)$/.exec(url.pathname);
@@ -123,7 +134,7 @@ function handle(request, response, url) {
   } else if (match[1] === "redirect") {
     response.writeHead(302, { ...corsHeaders, Location: `/bytes/${size}${url.search}` }).end();
   } else {
-    sendBytes(request, response, size);
+    sendBytes(request, response, size, keep);
   }
 }
 

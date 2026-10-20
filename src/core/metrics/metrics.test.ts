@@ -118,6 +118,7 @@ describe("honesty", () => {
         host: "media.example",
         latencyMs: 85,
         samplesMs: [300, 85, 90, 80],
+        streamSaved: false,
       },
       { ...request("a", 1), phase: "start" },
       request("a", 2, { firstByteLateMs: 45, bodyLateMs: 10 }),
@@ -128,6 +129,7 @@ describe("honesty", () => {
     ]);
     expect(honesty).toMatchObject({
       requests: 3,
+      saved: 0,
       latency: { host: "media.example", realMs: 85, late: 2, typicalLateMs: 33, worstLateMs: 45 },
       bandwidth: { late: 2, typicalLateMs: 225.5, worstLateMs: 400 },
       hiddenS: 0,
@@ -162,6 +164,24 @@ describe("honesty", () => {
     expect(honesty.bandwidth.realBps).toBeUndefined();
   });
 
+  it("counts the downloads answered from the copy saved by an earlier run, and leaves them out of the real speed", () => {
+    const { honesty } = computeMetrics([
+      { ...request("a", 1), saved: true },
+      { ...request("b", 2), saved: true },
+      {
+        ...request("c", 3),
+        bytes: 1_000_000,
+        totalBytes: 1_000_000,
+        realFirstByteAt: 2,
+        realEndAt: 3,
+      },
+      { type: "end", t: 4, reason: "complete" },
+    ]);
+    expect(honesty.requests).toBe(3);
+    expect(honesty.saved).toBe(2);
+    expect(honesty.bandwidth.realBps).toBeCloseTo(8_000_000, 6);
+  });
+
   it("adds up the time the tab spent in the background", () => {
     const { honesty } = computeMetrics([
       { type: "visibility", t: 2, hidden: true },
@@ -175,6 +195,7 @@ describe("honesty", () => {
   it("is clean when nothing was shaped", () => {
     expect(computeMetrics([{ type: "end", t: 1, reason: "stopped" }]).honesty).toEqual({
       requests: 0,
+      saved: 0,
       latency: { host: undefined, realMs: undefined, late: 0, typicalLateMs: 0, worstLateMs: 0 },
       bandwidth: { late: 0, typicalLateMs: 0, worstLateMs: 0, realBps: undefined },
       hiddenS: 0,

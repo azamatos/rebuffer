@@ -9,7 +9,9 @@ import {
   type Delivery,
 } from "@/core/netsim/link";
 import { ALL_OTHER_ORIGINS, type RequestPhase, type WorkerMessage } from "@/core/netsim/protocol";
+import { isPlainGet } from "@/core/netsim/saved";
 import { createByteQueue, type ByteQueue } from "./bytes";
+import type { SavedCopy } from "./saved";
 
 /** How often the link releases bytes. Short enough for smooth progress events, long enough to be cheap. */
 const TICK_MS = 10;
@@ -23,6 +25,8 @@ export interface SessionOptions {
   /** Epoch milliseconds at simulated time 0. */
   startAt: number;
   post: (message: WorkerMessage) => void;
+  /** Downloads saved by earlier runs: answers from here skip the real network, and new downloads are saved. */
+  saved?: SavedCopy;
 }
 
 export interface Session {
@@ -56,6 +60,8 @@ interface Shaped {
   /** Simulated-clock seconds when the real response arrived, and when its last byte did. */
   realFirstByteAt: number | undefined;
   realEndAt: number | undefined;
+  /** Answered from the copy saved by an earlier run, not the real network. */
+  fromSaved: boolean;
   responded: boolean;
   supplyDone: boolean;
   /** Off the link: the session ended, so bytes pass straight through. */
@@ -147,7 +153,7 @@ export function createSession(options: SessionOptions): Session {
 
   function post(shaped: Shaped, phase: RequestPhase, at: number, lateness: Lateness): void {
     if (ended) return;
-    const { totalBytes, realFirstByteAt, realEndAt } = shaped;
+    const { totalBytes, realFirstByteAt, realEndAt, fromSaved } = shaped;
     options.post({
       type: "request",
       sessionId: options.id,
@@ -161,6 +167,7 @@ export function createSession(options: SessionOptions): Session {
       bodyLateMs: lateness.bodyLateMs,
       ...(realFirstByteAt === undefined ? {} : { realFirstByteAt }),
       ...(realEndAt === undefined ? {} : { realEndAt }),
+      ...(fromSaved ? { saved: true } : {}),
     });
   }
 
@@ -225,9 +232,16 @@ export function createSession(options: SessionOptions): Session {
   }
 
   async function pump(shaped: Shaped, request: Request): Promise<void> {
-    const response = await fetch(request, { signal: shaped.upstream.signal });
+    const plain = isPlainGet(request);
+    const saved = plain ? await options.saved?.find(request.url) : undefined;
+    if (isSettled(shaped)) return;
+    const response = saved ?? (await fetch(request, { signal: shaped.upstream.signal }));
     if (shaped.settled) return;
-    shaped.realFirstByteAt = now();
+    shaped.fromSaved = saved !== undefined;
+    if (!saved && plain) options.saved?.keep(request.url, response);
+    // The real network's timings; a saved copy has none.
+    const real = () => (shaped.fromSaved ? undefined : now());
+    shaped.realFirstByteAt = real();
     shaped.totalBytes = contentLength(response.headers);
     shaped.init = {
       status: response.status,
@@ -270,7 +284,7 @@ export function createSession(options: SessionOptions): Session {
       }
     }
     shaped.supplyDone = true;
-    shaped.realEndAt = now();
+    shaped.realEndAt = real();
     if (shaped.passthrough) close(shaped);
     else finishSupply(link, shaped.id, total);
   }
@@ -300,6 +314,7 @@ export function createSession(options: SessionOptions): Session {
       released: 0,
       realFirstByteAt: undefined,
       realEndAt: undefined,
+      fromSaved: false,
       responded: false,
       supplyDone: false,
       passthrough: false,

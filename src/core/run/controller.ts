@@ -2,6 +2,7 @@ import { startShaping, type ShapingOptions, type ShapingSession } from "@/core/n
 import type { NetworkCurve } from "@/core/netsim/curve";
 import { checkLatency, type LatencyCheckOptions } from "@/core/netsim/latency";
 import { ALL_OTHER_ORIGINS } from "@/core/netsim/protocol";
+import { hasSavedCopy } from "@/core/netsim/saved";
 import { startHlsJs, type PlayerHandle, type RunClock } from "@/core/player/hlsjs";
 import type { PlayerSettings } from "@/core/player/settings";
 import type { RunEvent } from "./events";
@@ -52,6 +53,7 @@ export async function startRun(
   video: HTMLVideoElement,
   options: RunOptions = {},
 ): Promise<Run> {
+  const streamSaved = await hasSavedCopy(setup.streamUrl);
   const check = await checkLatency(setup.streamUrl, options.latencyCheck);
   const session: ShapingSession = await startShaping(
     setup.curve,
@@ -82,6 +84,7 @@ export async function startRun(
     host: new URL(setup.streamUrl).host,
     latencyMs: check.latencyMs,
     samplesMs: check.samplesMs,
+    streamSaved,
   });
   const onVisibilityChange = () => {
     emit({ type: "visibility", t: clock.now(), hidden: document.hidden });
@@ -104,6 +107,7 @@ export async function startRun(
         ? {}
         : { realFirstByteAt: message.realFirstByteAt }),
       ...(message.realEndAt === undefined ? {} : { realEndAt: message.realEndAt }),
+      ...(message.saved ? { saved: true } : {}),
     });
   });
   session.onEnd((reason) => {

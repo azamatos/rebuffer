@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { computeMetrics, computeScore, type RunMetrics } from "@/core/metrics";
 import { ShapingError } from "@/core/netsim/client";
+import { forgetSavedCopy, MAX_SAVED_BYTES } from "@/core/netsim/saved";
 import type { NetworkCurve } from "@/core/netsim/curve";
 import { presetById } from "@/core/netsim/presets";
 import { curveFromParam } from "@/core/netsim/url";
@@ -332,9 +333,44 @@ function Outcome({ result }: { result: RunResult }) {
         <span className="text-xl font-medium text-fg-3"> / 100</span>
       </p>
       {honesty.length > 0 && <p className="text-sm text-fg-2">{honesty.join(" ")}</p>}
+      <SavedCopyNote />
       <p className="text-xs text-fg-3">
         Player: {result.player.name} {result.player.version}
       </p>
     </section>
+  );
+}
+
+/** What the browser keeps between runs, and a way to forget it. */
+function SavedCopyNote() {
+  const [state, setState] = useState<"kept" | "forgotten" | "failed">("kept");
+  const forget = async () => {
+    try {
+      await forgetSavedCopy();
+      setState("forgotten");
+    } catch {
+      setState("failed");
+    }
+  };
+  return (
+    <p aria-live="polite" className="text-xs text-fg-3">
+      {state === "forgotten" ? (
+        "Forgotten: the next run downloads everything over your real network again."
+      ) : (
+        <>
+          {state === "failed" && "This browser didn't let the lab forget its downloads. "}
+          This browser keeps what runs download (up to {MAX_SAVED_BYTES / 1024 / 1024} MB, unless
+          the stream's server forbids it), so running a setup again doesn't depend on your real
+          network.{" "}
+          <button
+            type="button"
+            onClick={() => void forget()}
+            className="text-fg-2 underline underline-offset-2 hover:text-fg"
+          >
+            Forget saved downloads
+          </button>
+        </>
+      )}
+    </p>
   );
 }

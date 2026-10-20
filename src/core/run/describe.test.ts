@@ -78,12 +78,16 @@ describe("describeEvents", () => {
 });
 
 describe("describeNetworkCheck", () => {
-  const check = (latencyMs: number | undefined): Extract<RunEvent, { type: "network-check" }> => ({
+  const check = (
+    latencyMs: number | undefined,
+    streamSaved = false,
+  ): Extract<RunEvent, { type: "network-check" }> => ({
     type: "network-check",
     t: 0,
     host: "media.azamatos.com",
     latencyMs,
     samplesMs: [],
+    streamSaved,
   });
 
   it("warns when the real latency is above the simulated one", () => {
@@ -96,6 +100,10 @@ describe("describeNetworkCheck", () => {
     expect(describeNetworkCheck(check(95), 80)).toBeUndefined();
     expect(describeNetworkCheck(check(undefined), 80)).toBeUndefined();
     expect(describeNetworkCheck(undefined, 80)).toBeUndefined();
+  });
+
+  it("stays quiet when the stream is saved in this browser: its downloads don't wait for the network", () => {
+    expect(describeNetworkCheck(check(85, true), 40)).toBeUndefined();
   });
 });
 
@@ -113,8 +121,10 @@ describe("describeHonesty", () => {
     latency?: Partial<Honesty["latency"]>;
     bandwidth?: Partial<Honesty["bandwidth"]>;
     hiddenS?: number;
+    saved?: number;
   }): Honesty => ({
     requests: 94,
+    saved: overrides.saved ?? 0,
     latency: {
       host: "media.azamatos.com",
       realMs: 97,
@@ -131,6 +141,19 @@ describe("describeHonesty", () => {
       ...overrides.bandwidth,
     },
     hiddenS: overrides.hiddenS ?? 0,
+  });
+
+  it("says when every download came from the saved copy", () => {
+    expect(describeHonesty(honesty({ saved: 94 }), network(80, 6))).toEqual([
+      "All 94 downloads came from the copy saved in this browser by an earlier run, so your real network played no part.",
+    ]);
+  });
+
+  it("says how many downloads came from the saved copy and how the rest went", () => {
+    expect(describeHonesty(honesty({ saved: 90 }), network(80, 6))).toEqual([
+      "90 of 94 downloads came from the copy saved in this browser by an earlier run; the other 4 went over your real network.",
+      "Your connection kept up: all 94 downloads arrived before the simulation needed them.",
+    ]);
   });
 
   it("says the connection kept up when nothing was late", () => {

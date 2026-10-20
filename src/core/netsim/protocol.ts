@@ -67,6 +67,8 @@ export const requestEventMessage = z.object({
   realFirstByteAt: z.number().optional(),
   /** Simulated-clock seconds when the real server's last byte arrived, once it has. */
   realEndAt: z.number().optional(),
+  /** Answered from the copy saved in this browser by an earlier run (src/core/netsim/saved.ts), not the network. */
+  saved: z.boolean().optional(),
 });
 
 export const sessionReadyMessage = z.object({ type: z.literal("session-ready"), sessionId });

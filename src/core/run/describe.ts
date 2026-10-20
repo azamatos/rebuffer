@@ -113,6 +113,8 @@ export function describeNetworkCheck(
   if (check?.latencyMs === undefined || check.latencyMs <= simulatedRttMs + LATE_FIRST_BYTE_MS) {
     return undefined;
   }
+  // Saved downloads don't wait for the real network; the result counts any that did.
+  if (check.streamSaved) return undefined;
   return `Your real latency to ${check.host} is about ${Math.round(check.latencyMs)} ms, above the simulated ${simulatedRttMs} ms, so downloads can't start as soon as this network would start them. The result will say how much that mattered.`;
 }
 
@@ -123,11 +125,21 @@ export function describeNetworkCheck(
  * show one: a slow answer can come from distance, a cache miss or a busy connection alike.
  */
 export function describeHonesty(honesty: Honesty, curve: NetworkCurve): string[] {
-  const { requests, latency, bandwidth, hiddenS } = honesty;
+  const { requests, saved, latency, bandwidth, hiddenS } = honesty;
   const late = (count: number, verb: string, typicalMs: number, worstMs: number) =>
     `${count} of ${requests} downloads ${verb} late, typically by ${formatMs(typicalMs)} and at most ${formatMs(worstMs)}`;
   const sentences: string[] = [];
-  if (requests > 0 && latency.late === 0 && bandwidth.late === 0) {
+  const allSaved = requests > 0 && saved === requests;
+  if (allSaved) {
+    sentences.push(
+      `All ${requests} downloads came from the copy saved in this browser by an earlier run, so your real network played no part.`,
+    );
+  } else if (saved > 0) {
+    sentences.push(
+      `${saved} of ${requests} downloads came from the copy saved in this browser by an earlier run; the other ${requests - saved} went over your real network.`,
+    );
+  }
+  if (!allSaved && requests > 0 && latency.late === 0 && bandwidth.late === 0) {
     sentences.push(
       `Your connection kept up: all ${requests} downloads arrived before the simulation needed them.`,
     );

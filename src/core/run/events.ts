@@ -68,6 +68,8 @@ export type RunEvent =
       realFirstByteAt?: number;
       /** When the real server's last byte arrived, once it has. */
       realEndAt?: number;
+      /** Answered from the copy saved in this browser by an earlier run, so the real network played no part. */
+      saved?: boolean;
     }
   /** The real network, measured just before the run without shaping: how fast the stream's host answers. */
   | {
@@ -78,6 +80,8 @@ export type RunEvent =
       latencyMs: number | undefined;
       /** Every answer's time in order, ms; the first one also opened the connection. */
       samplesMs: readonly number[];
+      /** This browser has the stream saved from an earlier run, so its downloads may not need the network. */
+      streamSaved: boolean;
     }
   /** The tab went to the background or came back. Browsers slow down timers in background tabs. */
   | { type: "visibility"; t: number; hidden: boolean }

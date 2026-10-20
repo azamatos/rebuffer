@@ -5,12 +5,14 @@
  */
 import { describeIssues } from "@/core/netsim/curve";
 import { pageMessage, type WorkerMessage } from "@/core/netsim/protocol";
+import { openSavedCopy } from "./saved";
 import { createSession, type Session } from "./session";
 
 declare const self: ServiceWorkerGlobalScope;
 
 /** Sessions by the id of the page (client) that started them, so two tabs never mix. */
 const sessions = new Map<string, Session>();
+const saved = openSavedCopy();
 
 self.addEventListener("install", () => {
   void self.skipWaiting();
@@ -61,7 +63,7 @@ self.addEventListener("message", (event) => {
       const { sessionId, curve, origins, startAt } = message;
       sessions.set(
         client.id,
-        createSession({ id: sessionId, curve, origins, startAt, post: reply }),
+        createSession({ id: sessionId, curve, origins, startAt, post: reply, saved }),
       );
       reply({ type: "session-ready", sessionId });
       event.waitUntil(forgetClosedPages());
