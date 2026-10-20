@@ -15,6 +15,7 @@ import {
 } from "@/core/run/describe";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
+import { RunCharts } from "@/ui/run/RunCharts";
 
 export interface RunSearch {
   stream?: string;
@@ -82,6 +83,8 @@ export function RunPage({ search }: { search: RunSearch }) {
   const resolved = useMemo(() => resolveSetup(search), [search]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const runRef = useRef<Run | undefined>(undefined);
+  // The run's handle, so the charts can follow it; its data never goes through React state.
+  const [run, setRun] = useState<Run>();
   const [phase, setPhase] = useState<Phase>("ready");
   const [error, setError] = useState<string>();
   const [events, setEvents] = useState<readonly RunEvent[]>([]);
@@ -130,6 +133,7 @@ export function RunPage({ search }: { search: RunSearch }) {
         video,
       );
       runRef.current = run;
+      setRun(run);
       setPhase("running");
       const finished = await run.finished;
       setEvents(finished.events);
@@ -232,31 +236,33 @@ export function RunPage({ search }: { search: RunSearch }) {
           {result && <Outcome result={result} />}
         </div>
 
-        <section
-          aria-labelledby="log-h"
-          className="min-w-0 flex-[999_1_480px] rounded-[14px] border border-line bg-surface px-5 py-4"
-        >
-          <h2 id="log-h" className="mb-2 text-[15px] font-semibold">
-            Event log
-          </h2>
-          {lines.length === 0 ? (
-            <p className="text-sm text-fg-3">Events appear here once the run starts.</p>
-          ) : (
-            <ol className="text-sm tabular-nums">
-              {lines.map((line, i) => (
-                <li key={`${line.t}-${i}`} className="flex gap-4 border-t border-white/6 py-2">
-                  <span
-                    className={`w-14 flex-none font-mono ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
-                  >
-                    {line.time}
-                  </span>
-                  <span>{line.text}</span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
+        <RunCharts curve={setup.curve} run={run} events={events} untilS={elapsed} />
       </div>
+
+      <section
+        aria-labelledby="log-h"
+        className="rounded-[14px] border border-line bg-surface px-5 py-4"
+      >
+        <h2 id="log-h" className="mb-2 text-[15px] font-semibold">
+          Event log
+        </h2>
+        {lines.length === 0 ? (
+          <p className="text-sm text-fg-3">Events appear here once the run starts.</p>
+        ) : (
+          <ol className="text-sm tabular-nums">
+            {lines.map((line, i) => (
+              <li key={`${line.t}-${i}`} className="flex gap-4 border-t border-white/6 py-2">
+                <span
+                  className={`w-14 flex-none font-mono ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
+                >
+                  {line.time}
+                </span>
+                <span>{line.text}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }

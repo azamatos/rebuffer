@@ -88,6 +88,38 @@ export function bandwidthAt(curve: NetworkCurve, t: number): number {
   return rateIn(segmentAt(curve, t), t);
 }
 
+/** A corner of the curve as it's drawn: bandwidth in bits per second at time `t`. */
+export interface CurveCorner {
+  t: number;
+  bps: number;
+}
+
+/**
+ * The curve between `from` and `to` as corners joined by straight lines, for drawing and for its range. A step or
+ * a jump is two corners at the same time. Empty when `to` isn't after `from`.
+ */
+export function curveOutline(curve: NetworkCurve, from: number, to: number): CurveCorner[] {
+  if (!(to > from)) return [];
+  const outline: CurveCorner[] = [{ t: from, bps: bandwidthAt(curve, from) }];
+  let current = outline[0]?.bps ?? 0;
+  for (const point of curve.points) {
+    if (point.t <= from || point.t >= to) continue;
+    if (curve.shape === "steps") outline.push({ t: point.t, bps: current });
+    current = point.mbps * BITS_PER_MEGABIT;
+    outline.push({ t: point.t, bps: current });
+  }
+  // The value just before `to`: a jump exactly at `to` hasn't happened yet.
+  const arriving = curve.points.find((point) => point.t === to);
+  const end =
+    curve.shape === "steps"
+      ? current
+      : arriving
+        ? arriving.mbps * BITS_PER_MEGABIT
+        : bandwidthAt(curve, to);
+  outline.push({ t: to, bps: end });
+  return outline;
+}
+
 /** Bits the link carries between `t0` and `t1` (the exact integral of the curve). */
 export function bitsBetween(curve: NetworkCurve, t0: number, t1: number): number {
   let total = 0;

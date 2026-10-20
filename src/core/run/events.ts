@@ -24,6 +24,8 @@ export type RunEvent =
   /** Playback waits for data. Before the first frame this is startup, not a stall. */
   | { type: "stall-start"; t: number }
   | { type: "stall-end"; t: number }
+  /** The player started downloading a media segment. */
+  | { type: "segment-loading"; t: number; level: number; sn: number }
   /** A media segment finished downloading. */
   | {
       type: "segment";

@@ -4,8 +4,8 @@
 
 /* Tokens from the design proposal (docs/memory-bank/activeContext.md links the canvas). Dark only, like
    azamatos.com. Chart and status colours were checked for contrast and colour-blind separation on
-   --color-surface. */
-@theme {
+   --color-surface. `static` keeps every token on :root, because the chart canvases read them there. */
+@theme static {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
 

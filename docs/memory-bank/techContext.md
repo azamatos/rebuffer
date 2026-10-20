@@ -15,7 +15,7 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 | Routing | TanStack Router | 1.170 | Typed, validated search params: a run setup lives in the URL and can be shared |
 | App state | Zustand | 5.0 | Settings and UI state only; run data stays outside React |
 | Player | hls.js | 1.7.3 (no 2.x) | The player under test. Pinned; the version is saved with every run. Shaka Player 5.3 later |
-| Charts | uPlot + our own canvas lane | 1.6.32 | Small, fast canvas time series with stepped paths and draw hooks. Quiet since 2025-03, so it sits behind our own chart interface |
+| Charts | Our own canvas code (`src/charts`) | — | **Changed 2026-10-20 from uPlot (1.6.32).** The design needs a curve that is filled up to the playhead and dashed after it, a log axis labelled by the ladder, stall bands, a playhead with a time pill and a downloads lane; with uPlot most of that was draw hooks anyway, and uPlot redraws everything on each `setData`. Own code draws a frame in 0.1 ms (p50) and 1.8 ms (max) at 4× CPU throttling, adds no dependency, and its scales and labels are unit-tested. Zoom for the Report (M3) is ours to build |
 | Validation | zod | 4.6 | Imported traces, exported runs, URL state |
 | Storage | idb-keyval (IndexedDB) | 6.3 | Saved runs and networks; small API |
 | Unit tests | Vitest | 5.0 | Core logic, with fake timers for the simulator |
@@ -128,7 +128,7 @@ src/
     metrics/       event log → metrics, score, "what happened" notes, "try next" ideas
     persist/       IndexedDB (runs, networks), URL setup codec
   sw/              Service Worker: shaping transport (imports core/netsim), cache for repeat runs
-  charts/          uPlot wrappers, request lane on canvas, ring buffers, rAF loop
+  charts/          canvas charts: scales and labels (pure), drawing, the rAF loop that follows a run
   ui/              routes, screens, components (shadcn), hooks
 content/traces/    trace excerpts as JSON + their licences and attribution
 scripts/media/     download, encode the ladder, the flawed variant, subtitles, upload
@@ -141,8 +141,11 @@ A run, step by step:
 3. The hls.js adapter loads the stream; every request goes through the SW and is shaped.
 4. The SW posts each request's timeline (start, first byte, end, bytes, late or not) to the page; the adapter emits
    player events. Both go into one append-only event log.
-5. Charts read ring buffers fed from the log on `requestAnimationFrame`; React renders only the frame around them
-   and the tiles (throttled to 4 Hz).
+5. The charts subscribe to the log: each event goes into a timeline (`src/core/run/timeline.ts`: samples in parallel
+   number arrays, quality on screen, stalls, one entry per video segment download), and a `requestAnimationFrame`
+   loop draws it up to the run's clock. React renders only the frame around them, the tiles and the charts' text
+   alternatives (a sentence each and a data table, from `chart-text.ts`), from a copy of the log taken 4 times a
+   second.
 6. At the end, `metrics` turns the log into numbers, notes and ideas (pure functions); the run (setup, versions,
    log, metrics) is saved to IndexedDB and the Report opens.
 

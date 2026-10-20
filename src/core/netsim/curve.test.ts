@@ -3,6 +3,7 @@ import {
   bandwidthAt,
   bitsBetween,
   curveFromJson,
+  curveOutline,
   curveToJson,
   timeToDeliver,
   upTimeBetween,
@@ -298,5 +299,61 @@ describe("curve JSON", () => {
       ok: false,
       errors: ["This network file is version 2; Rebuffer reads version 1."],
     });
+  });
+});
+
+describe("curveOutline", () => {
+  const corners = (outline: { t: number; bps: number }[]) =>
+    outline.map(({ t, bps }) => [t, bps / 1e6]);
+
+  it("draws steps as two corners at each change", () => {
+    const curve = steps([
+      [0, 4],
+      [10, 0.4],
+      [20, 4],
+    ]);
+    expect(corners(curveOutline(curve, 5, 25))).toEqual([
+      [5, 4],
+      [10, 4],
+      [10, 0.4],
+      [20, 0.4],
+      [20, 4],
+      [25, 4],
+    ]);
+  });
+
+  it("starts after a change exactly at the start and stops before one exactly at the end", () => {
+    const curve = steps([
+      [0, 4],
+      [10, 0.4],
+      [20, 4],
+    ]);
+    expect(corners(curveOutline(curve, 10, 20))).toEqual([
+      [10, 0.4],
+      [20, 0.4],
+    ]);
+  });
+
+  it("draws slopes as straight lines, with a jump as two corners", () => {
+    const curve = slopes([
+      [0, 0],
+      [10, 6],
+      [10, 1],
+      [20, 1],
+    ]);
+    expect(corners(curveOutline(curve, 5, 10))).toEqual([
+      [5, 3],
+      [10, 6],
+    ]);
+    expect(corners(curveOutline(curve, 5, 15))).toEqual([
+      [5, 3],
+      [10, 6],
+      [10, 1],
+      [15, 1],
+    ]);
+  });
+
+  it("is empty when there's no time to draw", () => {
+    expect(curveOutline(steps([[0, 4]]), 5, 5)).toEqual([]);
   });
 });

@@ -1,4 +1,9 @@
-import type { ErrorData, FragLoadedData, FragLoadEmergencyAbortedData } from "hls.js";
+import type {
+  ErrorData,
+  FragLoadedData,
+  FragLoadEmergencyAbortedData,
+  FragLoadingData,
+} from "hls.js";
 import type { RunEvent } from "@/core/run/events";
 import { bufferAhead, levelsFromHls } from "./map";
 import type { PlayerSettings } from "./settings";
@@ -85,6 +90,11 @@ export async function startHlsJs({
   // hls.js fires LEVEL_SWITCHED when playback enters a fragment of a different level: what's on screen.
   hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
     emit({ type: "level-shown", t: clock.now(), level: data.level });
+  });
+  hls.on(Hls.Events.FRAG_LOADING, (_, data: FragLoadingData) => {
+    const { frag } = data;
+    if (!isMainPlaylist(frag.type) || frag.sn === "initSegment") return;
+    emit({ type: "segment-loading", t: clock.now(), level: frag.level, sn: frag.sn });
   });
   hls.on(Hls.Events.FRAG_LOADED, (_, data: FragLoadedData) => {
     const { frag } = data;
