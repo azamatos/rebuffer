@@ -10,10 +10,10 @@ building and every milestone is shippable on its own.
 |---|---|---|
 | Plan for a Smart TV app | — | done 2026-10-17, dropped 2026-10-18 |
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
-| M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
+| M0 Decisions and setup | Oct 25 | done 2026-10-19; push-triggered deploys work since 2026-10-20 |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | in progress: the Report's first slice and saved runs built 2026-10-20 |
+| M3 Report, network editor, inspector | Nov 15 | in progress: the Report done except zoom (2026-10-20, live); network editor and inspector not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -135,4 +135,6 @@ building and every milestone is shippable on its own.
 - 2026-10-20 (later): M3 started. The Report's first slice and saved runs. A stall that began during hls.js's own
   seek wasn't counted: fixed, with a backstop on the samples and a test that forces a stall. The bundle budget only
   counted `index-*.js`; it now counts every script Home loads. Then "what happened" notes with chart markers, and
-  "try next" ideas with player settings in run links. 402 unit tests, 79 Playwright checks.
+  "try next" ideas with player settings in run links. 402 unit tests, 79 Playwright checks. CI failed on GitHub's
+  slower Linux runners (WebKit picked a low quality and buffered the whole 20 s test stream, so the forced stall
+  never came); the test now caps the buffer. All of it pushed as `8b89fe6` and live.
