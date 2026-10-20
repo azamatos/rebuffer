@@ -1,7 +1,6 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fourth session: M3 done. Review fixes, zoom and the Networks screen are live; the
-Inspect screen is built, not pushed yet).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (end of the fourth session: M3 done and live).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,10 +9,9 @@ Inspect screen is built, not pushed yet).** Read this first, then `progress.md`.
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `55356a3`** (pushed 2026-10-20 after the owner's "lets go"; CI green; the deployed site
-  has the Networks screen). **Not pushed yet:** the Inspect screen (`5f9ebab`, `e647d85`), the clean film's
-  BANDWIDTH fix (`26686a8`) and this hand-off. **Every push to `main` deploys on its own** (Cloudflare builds it in
-  about a minute). Pushing is outward-facing: ask the owner before each push.
+- **Live site = `main` at `dc3fd6f`** plus this note (pushed 2026-10-20 with the owner's "lets push"; CI green; the
+  deployed Inspect chunk matches the local build). Nothing waits to be pushed. **Every push to `main` deploys on its
+  own** (Cloudflare builds it in about a minute). Pushing is outward-facing: ask the owner before each push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
     link; seven network presets with a thumbnail each; four player presets; Run), recent runs, how it works.
@@ -31,7 +29,7 @@ Inspect screen is built, not pushed yet).** Read this first, then `progress.md`.
     and your own; a curve editor that works with the keyboard alone, with our film's qualities drawn over it; point
     and whole-network fields; undo; import JSON or CSV, export both; save in this browser; "Use in a run" (run links
     carry a drawn network's `name=`).
-  - **Inspect (`/inspect?url=`, built 2026-10-20, not pushed yet):** a link, pasted text or a file; summary with
+  - **Inspect (`/inspect?url=`, built 2026-10-20):** a link, pasted text or a file; summary with
     finding counts and Run this stream; the ladder with declared, average and measured peak (first 3 segments,
     sizes by HEAD, separate audio added segment by segment), codecs in words and what this browser plays; findings
     grouped across playlists with file, line and spec; segments of any playlist as a chart, a sentence and a table.
@@ -46,8 +44,8 @@ Inspect screen is built, not pushed yet).** Read this first, then `progress.md`.
 
 ## Next step (in this order)
 
-1. **Ask the owner to push** the Inspect screen and the BANDWIDTH fix, and to **upload the clean film's new
-   `master.m3u8`** (see "Waiting for the owner"); then check `/inspect` on both samples live.
+1. **Ask whether the owner uploaded the clean film's new `master.m3u8`** (see "Waiting for the owner"); then check
+   `/inspect` on both samples live: the clean one should have no warning about bandwidth.
 2. **M4:** About (how it works, limits, credits for the film and the traces), first-run hints, the accessibility
    pass (a live region for switches and stalls on the Run screen), pre-rendered Home (Lighthouse), the determinism
    job, a real Safari check, README.
@@ -92,8 +90,6 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
-- **Push:** the Inspect screen (core and screen), the clean film's BANDWIDTH fix and this hand-off. All checks pass
-  locally (474 unit tests, 94 Playwright checks).
 - **Upload the clean film's master playlist (blocked for the agent: R2 writes):** the inspector found that our clean
   `master.m3u8` declares each variant's video alone (ffmpeg leaves out the separate audio; RFC 8216 §4.3.4.2 counts
   it): 240p declares 469 kbps and peaks at 600 kbps with its audio. The local copy is fixed

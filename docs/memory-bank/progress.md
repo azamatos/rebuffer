@@ -13,7 +13,7 @@ building and every milestone is shippable on its own.
 | M0 Decisions and setup | Oct 25 | done 2026-10-19; push-triggered deploys work since 2026-10-20 |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3, done 2026-10-20) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | done 2026-10-20 (the Report and the network editor live; the inspector not pushed yet) |
+| M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -160,4 +160,5 @@ building and every milestone is shippable on its own.
   the screen, and e2e tests against the synthetic stream (and a server without CORS). On media.azamatos.com it shows
   all four planted mistakes; on our clean film it found a real one: BANDWIDTH without the separate audio. The encode
   script now measures it with the audio; the upload waits for the owner. 474 unit tests, 94 Playwright checks, Home's
-  JavaScript 93.4 KB. Not pushed yet.
+  JavaScript 93.4 KB. Pushed with the owner's "lets push" (`dc3fd6f`, CI green, live). The clean master's upload
+  waits for the owner.
