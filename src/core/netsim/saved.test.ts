@@ -1,7 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { isPlainGet, isPlaylist, mayKeep, planSaving, playlistIsFinal } from "./saved";
+import { isPlainGet, isPlaylist, markUsed, mayKeep, planSaving, playlistIsFinal } from "./saved";
 
 const MB = 1024 * 1024;
+
+describe("markUsed", () => {
+  const index = [
+    { url: "master", bytes: 1 },
+    { url: "media", bytes: 1 },
+    { url: "seg0", bytes: 4 * MB },
+    { url: "seg1", bytes: 4 * MB },
+  ];
+
+  it("moves what a run used to the end, in the order it was used", () => {
+    expect(markUsed(index, ["media", "master", "seg0"]).map((entry) => entry.url)).toEqual([
+      "seg1",
+      "media",
+      "master",
+      "seg0",
+    ]);
+  });
+
+  it("ignores repeats and URLs it doesn't have", () => {
+    expect(markUsed(index, ["seg0", "other", "seg0"]).map((entry) => entry.url)).toEqual([
+      "master",
+      "media",
+      "seg1",
+      "seg0",
+    ]);
+  });
+
+  it("keeps what a run used when the next save needs room", () => {
+    const used = markUsed(index, ["master", "media"]);
+    expect(planSaving(used, { url: "seg2", bytes: 4 * MB }, 8 * MB).drop).toEqual(["seg0", "seg1"]);
+  });
+});
 
 describe("planSaving", () => {
   it("adds a download and keeps everything while it fits", () => {

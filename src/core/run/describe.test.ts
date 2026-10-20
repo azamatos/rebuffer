@@ -102,8 +102,10 @@ describe("describeNetworkCheck", () => {
     expect(describeNetworkCheck(undefined, 80)).toBeUndefined();
   });
 
-  it("stays quiet when the stream is saved in this browser: its downloads don't wait for the network", () => {
-    expect(describeNetworkCheck(check(85, true), 40)).toBeUndefined();
+  it("still warns when the stream is saved: only the downloads already saved skip the real network", () => {
+    expect(describeNetworkCheck(check(85, true), 40)).toBe(
+      "Your real latency to media.azamatos.com is about 85 ms, above the simulated 40 ms. Downloads saved by an earlier run don't wait for it, but any this run needs that aren't saved can't start as soon as this network would start them. The result will say how much that mattered.",
+    );
   });
 });
 

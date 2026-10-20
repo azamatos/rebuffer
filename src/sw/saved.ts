@@ -1,5 +1,6 @@
 import {
   isPlaylist,
+  markUsed,
   mayKeep,
   planSaving,
   playlistIsFinal,
@@ -28,6 +29,28 @@ export function openSavedCopy(): SavedCopy {
     queue = queue.then(task).catch(() => undefined);
   };
 
+  async function readIndex(cache: Cache): Promise<SavedEntry[]> {
+    const stored = await cache.match(indexKey());
+    return stored ? ((await stored.json()) as SavedEntry[]) : [];
+  }
+
+  async function writeIndex(cache: Cache, index: SavedEntry[]): Promise<void> {
+    await cache.put(
+      indexKey(),
+      new Response(JSON.stringify(index), { headers: { "content-type": "application/json" } }),
+    );
+  }
+
+  // Downloads answered from the copy since the index was last written; one write moves them all to its end.
+  let used: string[] = [];
+  async function markAllUsed(): Promise<void> {
+    const urls = used;
+    used = [];
+    if (urls.length === 0 || !(await caches.has(SAVED_CACHE))) return;
+    const cache = await caches.open(SAVED_CACHE);
+    await writeIndex(cache, markUsed(await readIndex(cache), urls));
+  }
+
   async function store(url: string, body: Blob | string, original: Response): Promise<void> {
     const cache = await caches.open(SAVED_CACHE);
     const bytes = typeof body === "string" ? new Blob([body]).size : body.size;
@@ -39,14 +62,9 @@ export function openSavedCopy(): SavedCopy {
         headers: original.headers,
       }),
     );
-    const stored = await cache.match(indexKey());
-    const index = stored ? ((await stored.json()) as SavedEntry[]) : [];
-    const plan = planSaving(index, { url, bytes });
+    const plan = planSaving(await readIndex(cache), { url, bytes });
     await Promise.all(plan.drop.map((dropped) => cache.delete(dropped, { ignoreVary: true })));
-    await cache.put(
-      indexKey(),
-      new Response(JSON.stringify(plan.index), { headers: { "content-type": "application/json" } }),
-    );
+    await writeIndex(cache, plan.index);
   }
 
   return {
@@ -54,7 +72,13 @@ export function openSavedCopy(): SavedCopy {
       try {
         if (!(await caches.has(SAVED_CACHE))) return undefined;
         const cache = await caches.open(SAVED_CACHE);
-        return await cache.match(url, { ignoreVary: true });
+        const saved = await cache.match(url, { ignoreVary: true });
+        if (saved) {
+          // What repeat runs read stays longest. Uses that come together share one index write.
+          if (used.length === 0) later(markAllUsed);
+          used.push(url);
+        }
+        return saved;
       } catch {
         return undefined;
       }

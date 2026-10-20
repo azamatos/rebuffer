@@ -5,17 +5,17 @@
  */
 
 export const SAVED_CACHE = "rebuffer-saved-v1";
-/** The most the copy keeps; the oldest downloads go first. */
+/** The most the copy keeps; the downloads used longest ago go first. */
 export const MAX_SAVED_BYTES = 300 * 1024 * 1024;
 
-/** One saved download, as the copy's index lists it (oldest first). */
+/** One saved download, as the copy's index lists it (used longest ago first). */
 export interface SavedEntry {
   url: string;
   bytes: number;
 }
 
 /**
- * Adds `added` to the index and drops the oldest entries until the total fits in `maxBytes`. A download saved again
+ * Adds `added` to the index and drops the entries used longest ago until the total fits in `maxBytes`. A download saved again
  * moves to the end. Returns the new index and the URLs to delete.
  */
 export function planSaving(
@@ -33,6 +33,20 @@ export function planSaving(
     drop.push(oldest.url);
   }
   return { index: next, drop };
+}
+
+/**
+ * Moves the downloads in `used` to the end of the index, in the order they were used, so what repeat runs read stays
+ * longest. URLs the index doesn't have are ignored.
+ */
+export function markUsed(index: readonly SavedEntry[], used: readonly string[]): SavedEntry[] {
+  const byUrl = new Map(index.map((entry) => [entry.url, entry]));
+  const moved = [...new Set(used)].flatMap((url) => {
+    const entry = byUrl.get(url);
+    return entry ? [entry] : [];
+  });
+  const movedUrls = new Set(moved.map((entry) => entry.url));
+  return [...index.filter((entry) => !movedUrls.has(entry.url)), ...moved];
 }
 
 /** Whether a request can be answered from the copy, or saved to it: a plain GET of a whole file. */

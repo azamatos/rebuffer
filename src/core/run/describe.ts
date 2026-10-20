@@ -107,9 +107,12 @@ export function describeNetworkCheck(
   if (check?.latencyMs === undefined || check.latencyMs <= simulatedRttMs + LATE_FIRST_BYTE_MS) {
     return undefined;
   }
-  // Saved downloads don't wait for the real network; the result counts any that did.
-  if (check.streamSaved) return undefined;
-  return `Your real latency to ${check.host} is about ${Math.round(check.latencyMs)} ms, above the simulated ${simulatedRttMs} ms, so downloads can't start as soon as this network would start them. The result will say how much that mattered.`;
+  const latency = `Your real latency to ${check.host} is about ${Math.round(check.latencyMs)} ms, above the simulated ${simulatedRttMs} ms`;
+  // A saved stream says nothing about the segments this run needs: only the saved ones skip the real network.
+  if (check.streamSaved) {
+    return `${latency}. Downloads saved by an earlier run don't wait for it, but any this run needs that aren't saved can't start as soon as this network would start them. The result will say how much that mattered.`;
+  }
+  return `${latency}, so downloads can't start as soon as this network would start them. The result will say how much that mattered.`;
 }
 
 /**

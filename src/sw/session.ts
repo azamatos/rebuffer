@@ -235,7 +235,10 @@ export function createSession(options: SessionOptions): Session {
     const plain = isPlainGet(request);
     const saved = plain ? await options.saved?.find(request.url) : undefined;
     if (isSettled(shaped)) return;
-    const response = saved ?? (await fetch(request, { signal: shaped.upstream.signal }));
+    // "no-store": a download that isn't saved goes over the real network, as the result says, and not to the
+    // browser's HTTP cache, which keeps our segments for a year and would still answer after "Forget".
+    const response =
+      saved ?? (await fetch(request, { signal: shaped.upstream.signal, cache: "no-store" }));
     if (shaped.settled) return;
     shaped.fromSaved = saved !== undefined;
     if (!saved && plain) options.saved?.keep(request.url, response);
