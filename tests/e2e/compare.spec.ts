@@ -152,19 +152,20 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
   await expect(
     page.getByRole("img", { name: "A stalled once, 2 s in all, first at 0:12; B never stalled." }),
   ).toBeVisible();
-  const summary = page.locator("summary", { hasText: "Both runs as a table" });
-  await tabTo(page, browserName, summary);
-  await page.keyboard.press("Enter");
-  const table = page.getByRole("region", { name: "Both runs as a table" });
-  await expect(table.getByRole("row", { name: /^0:12 / })).toContainText("Stalled");
-
-  // Swap: A becomes B.
+  // Swap: A becomes B. (Keyboard steps go top to bottom: Firefox only Tabs forward.)
   await tabTo(page, browserName, page.getByRole("button", { name: "Swap A and B" }));
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs\/compare\?a=bbbb2222&b=aaaa1111$/);
   await expect(numbers.getByRole("row", { name: /First frame/ })).toContainText(
     /0\.40 s later▼ worse/,
   );
+
+  // The table, at the bottom.
+  const summary = page.locator("summary", { hasText: "Both runs as a table" });
+  await tabTo(page, browserName, summary);
+  await page.keyboard.press("Enter");
+  const table = page.getByRole("region", { name: "Both runs as a table" });
+  await expect(table.getByRole("row", { name: /^0:12 / })).toContainText("Stalled");
 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

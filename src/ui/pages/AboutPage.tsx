@@ -202,8 +202,16 @@ export function AboutPage() {
               once each take twice as long.
             </li>
             <li>
-              Repeat runs from the saved copy matched in Chromium: the tunnel four times scored 31,
-              25, 25 and 25. The first run went over the real network, and its result said so.
+              Each of the {presets.length} presets five times in Chromium, on a 2-minute test stream
+              from a local server: scores within 1 point of each other, the same stalls and quality
+              switches, first frames within 0.12 s (the very first run in a fresh browser starts
+              about 0.2 s slower while the network worker starts). Measured on 20 October 2026; the
+              README has the table.
+            </li>
+            <li>
+              With our film over the internet, repeat runs from the saved copy matched in Chromium:
+              the tunnel four times scored 31, 25, 25 and 25. The first run went over the real
+              network, and its result said so.
             </li>
           </ul>
         </Section>

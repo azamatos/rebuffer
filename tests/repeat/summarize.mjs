@@ -14,7 +14,10 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const results = files.map((file) => JSON.parse(readFileSync(new URL(file, dir), "utf8")));
+// In the order they ran, which is the presets' order.
+const results = files
+  .map((file) => JSON.parse(readFileSync(new URL(file, dir), "utf8")))
+  .sort((x, y) => x.measuredAt.localeCompare(y.measuredAt));
 const range = (values, format) => {
   const known = values.filter((value) => value !== undefined && value !== null);
   if (known.length === 0) return "—";
@@ -22,6 +25,7 @@ const range = (values, format) => {
   const high = Math.max(...known);
   return format(low) === format(high) ? format(low) : `${format(low)}–${format(high)}`;
 };
+const points = (count) => `${count} ${count === 1 ? "point" : "points"}`;
 const median = (values) => {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
@@ -85,7 +89,7 @@ const table = [
 const markdown = `## Repeatability
 
 ${browser}, ${player}; stream: ${stream}; measured ${measuredAt.slice(0, 10)}.
-Scores across runs of one network differ by at most ${Math.max(...spreads)} points (median spread ${median(spreads)}).
+Scores across runs of one network differ by at most ${points(Math.max(...spreads))} (median spread ${points(median(spreads))}).
 
 ${table}
 `;
