@@ -1,7 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fourth session: the third session's work reviewed and fixed; the Report done,
-zoom included).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (end of the fourth session: review fixes and zoom pushed; the Networks screen built, not
+pushed yet).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,10 +10,10 @@ zoom included).** Read this first, then `progress.md`.
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `8b89fe6`** (pushed 2026-10-20). **Not pushed yet:** the review fixes and the chart zoom
-  (`34009d6`…`667d07a`, plus this hand-off), waiting for the owner's go. **Every push to `main` deploys on its own**
-  (Cloudflare builds it in about a minute; checked 2026-10-20). Pushing is outward-facing: ask the owner before each
-  push.
+- **Live site = `main` at `c18034c`** (pushed 2026-10-20 with the owner's "push"; CI green; the deployed Report has
+  zoom). **Not pushed yet:** the 4.4 s logo blink (`a0ed972`), the Networks screen and its parts (`cadf486`…`0b68abf`)
+  and this hand-off. **Every push to `main` deploys on its own** (Cloudflare builds it in about a minute). Pushing is
+  outward-facing: ask the owner before each push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
     link; seven network presets with a thumbnail each; four player presets; Run), recent runs, how it works.
@@ -23,29 +23,30 @@ zoom included).** Read this first, then `progress.md`.
     (300 MB), so they match.
   - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, the charts from the saved log with numbered
     markers, "What happened" notes, "Try next" ideas (each the setup with one change), setup, simulation check, how
-    the score is computed; Run again, Export JSON, Copy link, Delete. **Zoom** (2026-10-20, not pushed yet): buttons
-    above the charts (in, out, earlier, later, whole run), a drag across a chart, "Show on the chart" on each note;
-    the axis, markers, sentences and tables follow the view.
+    the score is computed; Run again, Change network (not pushed yet), Export JSON, Copy link, Delete. **Zoom**:
+    buttons above the charts (in, out, earlier, later, whole run), a drag across a chart, "Show on the chart" on each
+    note; the axis, markers, sentences and tables follow the view.
   - **Runs (`/runs`):** the runs saved in this browser (the newest 50).
-  - Placeholders: Inspect, Networks, About.
-- **Quality bar today:** 426 unit tests; 82 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
-  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 91.0 KB of a 100 KB brotli
-  budget, counting every script `index.html` loads.
+  - **Networks (`/networks`, built 2026-10-20, not pushed yet):** the seven presets, four recorded 4G traces (Irish 4G
+    dataset, CC BY 4.0, credited) and your own; a curve editor that works with the keyboard alone, with our film's
+    qualities drawn over it; point and whole-network fields; undo; import JSON or CSV, export both; save in this
+    browser; "Use in a run" (run links now carry a drawn network's `name=`).
+  - Placeholders: Inspect, About.
+- **Quality bar today:** 462 unit tests; 88 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
+  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 93.2 KB of a 100 KB brotli
+  budget, counting every script `index.html` loads (91.0 before the Networks screen: the bundler now splits React
+  and the router into a third file, which compresses worse; the raw size grew about 1 KB).
 - **Schedule:** M0, M1 and M2 are done (targets were Oct 25, Nov 1 and Nov 8). M3 (Nov 15) is in progress: the Report
-  is done; the network editor and the inspector screen are not started. MVP live by Nov 22, launch Dec 6.
+  and the network editor are done; the inspector screen is next. MVP live by Nov 22, launch Dec 6.
 
 ## Next step (in this order)
 
-1. **Ask the owner to push** the review fixes and the zoom (see "Waiting for the owner"), then check the live site.
-2. **Network editor (`/networks`, M3)**, in slices: the presets and networks saved in IndexedDB
-   (`persist/networks.ts`, planned) with "Run with this"; a curve editor (a chart plus a table of points; arrows move
-   the chosen point, Insert and Delete add and remove points; dragging with a mouse); import and export (JSON, where
-   `curveFromJson` already validates; CSV); recorded traces (the Irish 4G converter, CC BY 4.0, with attribution;
-   check the licence at the source first); then "Change network" on the Report. Follow the design canvas (Network
-   board).
-3. **Inspector screen (`/inspect`, M3)** on top of `src/core/hls`: ladder, tracks, segments, measured bitrate,
+1. **Ask the owner to push** the blink and the Networks screen (see "Waiting for the owner"), then check the live
+   site: open `/networks`, edit a curve with the keyboard, use it in a run.
+2. **Inspector screen (`/inspect`, M3)** on top of `src/core/hls`: ladder, tracks, segments, measured bitrate,
    findings. Follow the design canvas (Inspect board).
-4. Then M4: About, first-run hints, accessibility pass, pre-rendered Home (Lighthouse), real Safari check, README.
+3. Then M4: About (with the traces' credit too), first-run hints, accessibility pass, pre-rendered Home
+   (Lighthouse), real Safari check, README.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
@@ -87,12 +88,21 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
-- **Push:** seven fix commits from a review of the third session's work, a docs fix, the chart zoom and this
-  hand-off. All checks pass locally (426 unit tests, 82 Playwright checks).
-- **Behaviour change to know about (review fix, rule 2):** the Service Worker now fetches with `cache: "no-store"`.
-  Before, the browser's HTTP cache (our segments are `immutable` for a year) answered downloads after "Forget saved
-  downloads" while the result called them the real network. Now a setup's first run always goes over the real
-  network, and repeats come from the saved copy, as the docs said.
+- **Push:** the 4.4 s logo blink, the Networks screen (curve edits and CSV, four recorded traces, saved networks,
+  the screen itself, "Change network" on the Report) and this hand-off. All checks pass locally (462 unit tests,
+  88 Playwright checks).
+- **Deviations from the design canvas (Network board), for the owner's eye:**
+  - The board says Tab moves between points; that would trap keyboard users in the editor (WCAG 2.1.2), so Tab
+    leaves it as anywhere else and `[` `]` choose the point before or after (Home and End: first and last).
+  - Recorded traces are train, car, bus and walking (the board shows train and car), 90 s each. Their latency is
+    60 ms, our assumption: the recordings don't measure one; the screen says so.
+  - The page has a visible "Networks" title above the list and the editor, like the Runs page.
+  - "Use in a run" opens the Run screen ready to start (not started), with the default stream and player, or the
+    run's own stream and player when the editor came from a report's "Change network".
+- **On phones the network list comes before the editor** (11 cards to scroll past). Possible later: a compact
+  list (a select, or collapsed groups) under 700 px. Not done; the design has the list first.
+- **Behaviour change (review fix, pushed 2026-10-20, rule 2):** the Service Worker fetches with `cache: "no-store"`,
+  so a setup's first run always goes over the real network, and repeats come from the saved copy.
 - **Score on slow networks (observation; decision 5 stays until the owner reopens it).** Rural 3G played with no
   stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.
@@ -128,6 +138,14 @@ that needs their eye under "Waiting for the owner".
   `scrollIntoView` after `focus({ preventScroll: true })`, and check `toBeInViewport()` in tests.
 - **An `sr-only` span adds a space to the accessible name** ("31 Report : Custom network…"), so Playwright name
   patterns use `\b.*` rather than a literal colon.
+- **The Irish 4G recordings skip a sample about every 10 s.** Choose excerpts by elapsed time (as the converter
+  reads them), not by row number: the first pick, by rows, put a train excerpt on 65 s of nothing.
+- **idb-keyval creates a store only along with its database:** each kind of record gets its own database
+  (`rebuffer` for runs, `rebuffer-networks` for networks).
+- **The router quotes a search value that reads as a number** (`?run=%2231994322%22`). It still works; new ids start
+  with a letter (`newNetworkId`), and tests accept the quotes for run ids.
+- **Keyboard tests only Tab forward:** in Firefox, a control earlier in the page than the focus can be 40+ Tabs
+  away. Order a test's steps as a person would fill the page, top to bottom, or load the page afresh.
 - **The code review (`/code-review high <range>`) earned its keep:** 10 findings on the third session, 8 real. Its
   findings aren't verified, so check each against the code before fixing.
 

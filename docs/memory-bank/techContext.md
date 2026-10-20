@@ -139,7 +139,9 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 
 `/` home and setup · `/run` live run (`?stream=&network=|curve=&player=&set=`; `set` changes player settings from the
 preset's, as `abrEwmaFastVoD:1.5`, within limits in `src/core/player/settings.ts`; `start=now` from Home's buttons
-and the Report's starts it and is then dropped from the URL) · `/runs` saved runs · `/runs/$runId` a report (both lazy) · `/networks` network editor · `/inspect`
+and the Report's starts it and is then dropped from the URL; `name=` a drawn network's name) · `/runs` saved runs ·
+`/runs/$runId` a report (both lazy) · `/networks` network editor (lazy; `?network=` a preset or trace, `saved=` yours,
+`run=` a run's network to change, `new=blank`) · `/inspect`
 stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 
@@ -149,17 +151,19 @@ stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP
 src/
   core/            framework-free, unit-tested (no React, no DOM UI)
     hls/           playlist parser (multivariant + media), codec strings → names, lint rules with spec refs
-    netsim/        curve model, link scheduler (fair share, RTT, outages), presets, trace import (planned)
+    netsim/        curve model, link scheduler (fair share, RTT, outages), presets, recorded traces (traces.ts,
+                   from content/traces/), the editor's edits (edit.ts), CSV (csv.ts)
     player/        PlayerAdapter interface, hls.js adapter (Shaka later)
     run/           RunController: SW session + player + clock → event log; the charts' timeline and text; the
                    Report's "what happened" notes and "try next" ideas
     metrics/       event log → metrics, score, honesty count
     persist/       IndexedDB: saved runs (built: `runs.ts`, light enough for Home; `summary.ts` with the metrics),
-                   networks (planned)
+                   networks (`networks.ts`, a database of its own: idb-keyval creates a store only with its
+                   database)
   sw/              Service Worker: shaping transport (imports core/netsim), cache for repeat runs
   charts/          canvas charts: scales and labels (pure), drawing, the rAF loop that follows a run
   ui/              routes, screens, components (shadcn), hooks
-content/traces/    trace excerpts as JSON + their licences and attribution
+content/traces/    trace excerpts as JSON (irish-4g.json, made by scripts/traces/convert-irish4g.mjs) + credit
 scripts/media/     download, encode the ladder, the flawed variant, subtitles, upload
 tests/e2e/         Playwright specs; CI test stream made with ffmpeg
 ```
@@ -235,7 +239,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 90.9 KB on 2026-10-20, mostly React and TanStack Router. Lazy chunks: the Run screen, the Report, the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 93.2 KB on 2026-10-20 (91.0 before the Networks screen: the bundler now puts React and TanStack Router in a third file, named `time-*.js` after a module it also holds, and three files compress worse than two; the raw size grew about 1 KB). Lazy chunks: the Run screen, the Report, the Networks screen (10 KB gzip), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |
@@ -254,7 +258,11 @@ reference code is non-commercial research only, with patent notices.
   keyboard, every section of the report; Export JSON, Copy link and Delete by keyboard; the Runs list opens the
   report by keyboard; Home's recent runs; zoom by keyboard, by a note's button and by a mouse drag, with the
   sentences and a table following the view; axe on each). Shared helpers in `tests/e2e/helpers.ts`.
-  Planned: Home → Run → Report, the network editor by keyboard, Inspect the version with problems.
+  `networks.spec.ts` (a trace with its credit; the tunnel edited on the curve by keyboard: choose, move, step to a
+  quality line, add, delete, undo; a time outside the neighbours explained; name and latency; export JSON; save,
+  with focus kept; Use in a run carries the name; a CSV imported from the keyboard and a broken file explained;
+  axe), and `report.spec.ts` covers "Change network".
+  Planned: Home → Run → Report, Inspect the version with problems.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
   cross-origin on port 4013 under `/hls/`, next to deterministic `/bytes/<size>` files. CI installs ffmpeg.

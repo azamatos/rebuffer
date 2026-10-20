@@ -58,6 +58,13 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - The stream's ladder is drawn as horizontal lines over the curve, so you see where the network falls below each
   quality.
 - Latency (RTT, ms) and run length. Import or export a trace as JSON or CSV.
+- **Built 2026-10-20:** the list (presets, four recorded traces: train, car, bus and walking, 90 s each, with their
+  credit; "Yours", saved in this browser; "+ New network"), the editor (log-scale chart with our film's five
+  qualities as dashed lines; points moved by arrows, Shift for 5 s or the next quality line; `[` `]` for the point
+  before or after, since Tab must leave the editor; N adds, Delete removes, Cmd/Ctrl+Z undoes; drag or double-click
+  with a pointer; changes read out; a points table), the chosen point's time and bandwidth, the whole network's
+  name, latency and length, steps or slopes, import JSON or CSV, export JSON and CSV, Save to my networks, Use in a
+  run. The Report's "Change network" opens a run's network here and keeps its stream and player.
 
 ### Player setup
 

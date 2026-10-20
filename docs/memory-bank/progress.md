@@ -11,9 +11,9 @@ building and every milestone is shippable on its own.
 | Plan for a Smart TV app | — | done 2026-10-17, dropped 2026-10-18 |
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
 | M0 Decisions and setup | Oct 25 | done 2026-10-19; push-triggered deploys work since 2026-10-20 |
-| M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
+| M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3, done 2026-10-20) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | in progress: the Report done, zoom included (2026-10-20; zoom not pushed yet); network editor and inspector not started |
+| M3 Report, network editor, inspector | Nov 15 | in progress: the Report (zoom live) and the network editor done 2026-10-20 (the editor not pushed yet); the inspector next |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -78,8 +78,10 @@ building and every milestone is shippable on its own.
 - [x] Review of the third session's work (`/code-review high`): 10 findings, 8 fixed (2026-10-20); the logo's
       blinking left for the owner, one cleanup skipped
 - [x] Report: zoom on the charts, by keyboard and by mouse; notes show their stretch (2026-10-20)
-- [ ] Network editor: presets, recorded traces, keyboard editing, import and export
-- [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
+- [x] Irish 4G trace converter (CC BY 4.0) and four recorded-trace networks with their credit (2026-10-20)
+- [x] Network editor: presets, recorded traces, your own (IndexedDB), a curve editor by keyboard or pointer, point
+      and whole-network fields, undo, import and export JSON and CSV, Use in a run (2026-10-20)
+- [x] Report: Change network, keeping the run's stream and player (2026-10-20)
 - [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
 
 ## M4: polish; MVP complete (target Nov 22)
@@ -148,4 +150,7 @@ building and every milestone is shippable on its own.
   answered while the result said real network (now `no-store`); the heads-up about latency hid itself when only
   the master playlist was saved; the Report's actions and the Runs list weren't tested by keyboard. Docs that no
   longer matched the code were corrected. Then zoom on the Report's charts. 426 unit tests, 82 Playwright checks,
-  Home's JavaScript 91.0 KB. Not pushed yet.
+  Home's JavaScript 91.0 KB. The owner said "push" (`c18034c`, CI green, live), chose a 4.4 s blink for the logo
+  cursor (WCAG 2.2.2), and "lets go with networks": curve edits and CSV (pure, tested), four recorded 4G traces
+  from the Irish 4G dataset (licence checked at Zenodo: CC BY 4.0), saved networks, the Networks screen and "Change
+  network" on the Report. 462 unit tests, 88 Playwright checks, Home's JavaScript 93.2 KB. Not pushed yet.
