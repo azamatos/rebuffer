@@ -132,10 +132,13 @@ export async function startHlsJs({
   // --- what the viewer sees -------------------------------------------------------------------
   let firstFrameShown = false;
   let stalled = false;
+  // When the picture last started moving: the first frame, or the end of the last stall.
+  let movingSince = 0;
   const markFirstFrame = () => {
     if (firstFrameShown) return;
     firstFrameShown = true;
-    emit({ type: "first-frame", t: clock.now() });
+    movingSince = clock.now();
+    emit({ type: "first-frame", t: movingSince });
   };
   if ("requestVideoFrameCallback" in video) {
     video.requestVideoFrameCallback(markFirstFrame);
@@ -155,7 +158,8 @@ export async function startHlsJs({
   const resume = () => {
     if (!stalled) return;
     stalled = false;
-    emit({ type: "stall-end", t: clock.now() });
+    movingSince = clock.now();
+    emit({ type: "stall-end", t: movingSince });
   };
   listen("playing", resume);
   let lastPosition = 0;
@@ -169,8 +173,9 @@ export async function startHlsJs({
 
   let previousSample = { t: clock.now(), position: video.currentTime };
   const timer = setInterval(() => {
-    // The backstop for a `waiting` event that never came: stuck since the previous sample at the latest.
-    if (isStuck(video, previousSample.position)) stall(previousSample.t);
+    // The backstop for a `waiting` event that never came: stuck since the previous sample at the latest, but not
+    // before the picture last started moving, so the log stays in time order.
+    if (isStuck(video, previousSample.position)) stall(Math.max(previousSample.t, movingSince));
     previousSample = { t: clock.now(), position: video.currentTime };
     const estimate = hls.bandwidthEstimate;
     emit({
