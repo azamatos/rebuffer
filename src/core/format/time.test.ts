@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatDuration } from "./time";
+import { formatClock, formatDuration, formatWhen } from "./time";
 
 describe("formatClock", () => {
   it("formats minutes and seconds", () => {
@@ -53,5 +53,15 @@ describe("formatDuration", () => {
   it("returns zero for empty input", () => {
     expect(formatDuration(0)).toBe("0 s");
     expect(formatDuration(-1)).toBe("0 s");
+  });
+});
+
+describe("formatWhen", () => {
+  const now = new Date(2026, 9, 20, 15, 0).getTime();
+
+  it("says today and yesterday, and the date before that", () => {
+    expect(formatWhen(new Date(2026, 9, 20, 14, 32).getTime(), now)).toBe("Today, 14:32");
+    expect(formatWhen(new Date(2026, 9, 19, 9, 5).getTime(), now)).toBe("Yesterday, 09:05");
+    expect(formatWhen(new Date(2026, 9, 18, 23, 59).getTime(), now)).toBe("18 Oct 2026, 23:59");
   });
 });

@@ -1,8 +1,14 @@
 import { Link } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { presetById } from "@/core/netsim/presets";
 import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID, runSearchFor } from "@/core/run/setup";
 import { DEFAULT_STREAM } from "@/core/samples";
 import { RunSetup } from "@/ui/home/RunSetup";
+
+// Saved runs come from IndexedDB after the page is up, so their code loads then too.
+const RecentRuns = lazy(() =>
+  import("@/ui/home/RecentRuns").then((module) => ({ default: module.RecentRuns })),
+);
 
 const tunnelS = presetById(DEFAULT_NETWORK_ID)?.curve.lengthS ?? 90;
 const tryTheTunnel = runSearchFor(
@@ -64,6 +70,10 @@ export function HomePage() {
       </section>
 
       <RunSetup />
+
+      <Suspense fallback={null}>
+        <RecentRuns />
+      </Suspense>
 
       <section aria-labelledby="how-h" className="mx-auto max-w-[1280px] px-4 pt-2 pb-16 sm:px-8">
         <h2 id="how-h" className="mb-4 text-[22px] font-semibold">

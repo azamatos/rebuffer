@@ -101,6 +101,13 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   lowest quality (0.4 Mbps); the buffer ran out at 0:51; a stall of 2.1 s".
 - Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Export JSON**, **Copy link**
   (the link carries the setup, not the results).
+- **Built 2026-10-20 (first slice):** the score with its breakdown (quality, switches, stalls, startup), seven tiles
+  with a line each, the three charts drawn from the saved log (each with its sentence and data table), the setup
+  (stream, network, every player setting, browser and player size), the simulation check, how the score is
+  computed; Run again (starts at once), Export JSON, Copy link, Delete. Runs are saved in IndexedDB (the newest 50);
+  `/runs` lists them and Home shows the newest five under "Recent runs". The Run screen offers "See the report" at
+  the end rather than opening it by itself, so the live result stays in view. _Planned:_ "what happened" notes with
+  markers on the charts, "try next" ideas, zoom, Change network (needs the network editor), Compare (M5).
 
 ### Compare (after the MVP)
 

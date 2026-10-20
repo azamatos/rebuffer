@@ -1,12 +1,13 @@
 import { HeadContent, Link, Outlet } from "@tanstack/react-router";
 import { Wordmark } from "./Logo";
 
+// Home is where runs are set up, so its link is "Run"; a report counts as part of Runs.
 const nav = [
-  { to: "/", label: "Run" },
-  { to: "/inspect", label: "Inspect" },
-  { to: "/networks", label: "Networks" },
-  { to: "/runs", label: "Runs" },
-  { to: "/about", label: "About" },
+  { to: "/", label: "Run", exact: true },
+  { to: "/inspect", label: "Inspect", exact: true },
+  { to: "/networks", label: "Networks", exact: true },
+  { to: "/runs", label: "Runs", exact: false },
+  { to: "/about", label: "About", exact: true },
 ] as const;
 
 export function AppShell() {
@@ -32,7 +33,7 @@ export function AppShell() {
                   to={item.to}
                   className="rounded-lg px-3 py-2 text-fg-2 hover:text-fg"
                   activeProps={{ className: "bg-white/6 text-fg" }}
-                  activeOptions={{ exact: true }}
+                  activeOptions={{ exact: item.exact }}
                 >
                   {item.label}
                 </Link>

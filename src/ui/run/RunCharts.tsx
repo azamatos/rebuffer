@@ -16,9 +16,9 @@ import { buildTimeline } from "@/core/run/timeline";
 
 interface RunChartsProps {
   curve: NetworkCurve;
-  /** The run on screen, once one has started. */
+  /** The run on screen, once one has started; without one, a finished log in `events` is drawn at once. */
   run: Run | undefined;
-  /** The run's log as the screen last copied it (four times a second); only the text alternatives read it. */
+  /** The run's log: copied four times a second while it runs (only the text reads it then), or a finished run's. */
   events: readonly RunEvent[];
   /** How far the run has got, seconds. */
   untilS: number;
@@ -64,6 +64,17 @@ export function RunCharts({ curve, run, events, untilS }: RunChartsProps) {
       unsubscribe();
     };
   }, [run, curve]);
+
+  // A finished run without a live handle (the Report): draw its whole log.
+  const finished = useMemo(
+    () => (events.some((event) => event.type === "end") ? events : undefined),
+    [events],
+  );
+  useEffect(() => {
+    const charts = chartsRef.current;
+    if (!charts || run || !finished) return;
+    charts.show(finished);
+  }, [run, finished, curve]);
 
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const levels = timeline.levels;

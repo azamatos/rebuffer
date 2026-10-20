@@ -27,7 +27,7 @@ Live at https://rebuffer.azamatos.com (every push to `main` deploys; see `techCo
 | `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | Types, ESLint (strict, type-checked), Prettier                                  |
 | `pnpm test`                                          | Vitest: unit tests for `src/core`                                               |
 | `pnpm e2e`                                           | Playwright (Chromium, Firefox, WebKit) with axe; builds and serves on port 4012 |
-| `pnpm build` · `pnpm size`                           | Production build; bundle budgets (`.size-limit.json`)                           |
+| `pnpm build` · `pnpm size`                           | Production build; bundle budgets (`.size-limit.js`, after a build)              |
 | `pnpm media:encode`                                  | Sample streams from _Tears of Steel_ (`scripts/media/README.md`)                |
 
 CI (`.github/workflows/ci.yml`) runs all of these plus Lighthouse CI (`lighthouserc.json`).

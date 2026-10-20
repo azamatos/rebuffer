@@ -29,3 +29,20 @@ export function formatDuration(seconds: number): string {
   const rest = Math.round(seconds - minutes * 60);
   return rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const two = (value: number) => String(value).padStart(2, "0");
+
+/** When a run happened, in the visitor's time zone: "Today, 14:32", "Yesterday, 09:05", "18 Oct 2026, 14:32". */
+export function formatWhen(epochMs: number, nowMs: number): string {
+  const date = new Date(epochMs);
+  const time = `${two(date.getHours())}:${two(date.getMinutes())}`;
+  const day = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const today = day(new Date(nowMs));
+  const then = day(date);
+  if (then === today) return `Today, ${time}`;
+  if (then === day(new Date(today - 12 * 3600 * 1000))) return `Yesterday, ${time}`;
+  return `${date.getDate()} ${MONTHS[date.getMonth()] ?? ""} ${date.getFullYear()}, ${time}`;
+}

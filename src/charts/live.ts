@@ -27,6 +27,8 @@ export interface RunCharts {
   follow(now: () => number): void;
   /** Adds one event of the run being followed. Its `end` event stops the animation and draws the result. */
   add(event: RunEvent): void;
+  /** Draws a finished run from its whole log at once (the Report). */
+  show(events: readonly RunEvent[]): void;
   destroy(): void;
 }
 
@@ -89,6 +91,13 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
       addEvent(timeline, event);
       // A hidden tab gets no animation frames: draw the end now so the result is there when it comes back.
       if (event.type === "end") draw();
+    },
+    show(events) {
+      cancelAnimationFrame(frameId);
+      clock = undefined;
+      timeline = createTimeline();
+      for (const event of events) addEvent(timeline, event);
+      draw();
     },
     destroy() {
       cancelAnimationFrame(frameId);

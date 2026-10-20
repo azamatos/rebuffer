@@ -131,7 +131,7 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 ## Routes (code-based TanStack Router, real paths; Pages serves `index.html` for unknown paths)
 
 `/` home and setup · `/run` live run (`?stream=&network=|curve=&player=`; `start=now` from Home's buttons starts it
-and is then dropped from the URL) · `/runs` saved runs and reports · `/networks` network editor · `/inspect`
+and is then dropped from the URL) · `/runs` saved runs · `/runs/$runId` a report (both lazy) · `/networks` network editor · `/inspect`
 stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 
@@ -145,7 +145,8 @@ src/
     player/        PlayerAdapter interface, hls.js adapter (Shaka later)
     run/           RunController: SW session + player + clock → event log
     metrics/       event log → metrics, score, "what happened" notes, "try next" ideas
-    persist/       IndexedDB (runs, networks), URL setup codec
+    persist/       IndexedDB: saved runs (built: `runs.ts`, light enough for Home; `summary.ts` with the metrics),
+                   networks (planned)
   sw/              Service Worker: shaping transport (imports core/netsim), cache for repeat runs
   charts/          canvas charts: scales and labels (pure), drawing, the rAF loop that follows a run
   ui/              routes, screens, components (shadcn), hooks
@@ -225,7 +226,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli (`.size-limit.json`). 85.4 KB on 2026-10-18, almost all React and TanStack Router. The Run screen is a lazy chunk (34 KB gzip) and hls.js another (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 90.4 KB on 2026-10-20, mostly React and TanStack Router. Lazy chunks: the Run screen, the Report, the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |
@@ -240,7 +241,9 @@ reference code is non-commercial research only, with patent notices.
   redirects, aborts, the `*` wildcard), `run.spec.ts` (a full run on the synthetic stream started by keyboard, its
   charts' text and a data table, a repeat run from saved downloads; skipped in a browser build that can't decode
   H.264 through MSE), `home.spec.ts` (Home's setup by keyboard: own stream link, network, player, Run, then Stop on
-  the Run screen; a bad link explained; the "Try the tunnel" link). Shared helpers in `tests/e2e/helpers.ts`.
+  the Run screen; a bad link explained; the "Try the tunnel" link), `report.spec.ts` (a run saved and opened by
+  keyboard, every section of the report, Export JSON, Copy link, the Runs list, Home's recent runs, Delete; axe on
+  each). Shared helpers in `tests/e2e/helpers.ts`.
   Planned: Home → Run → Report, the network editor by keyboard, Inspect the version with problems.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it

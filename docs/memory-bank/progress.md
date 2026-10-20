@@ -13,7 +13,7 @@ building and every milestone is shippable on its own.
 | M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | not started |
+| M3 Report, network editor, inspector | Nov 15 | in progress: the Report's first slice and saved runs built 2026-10-20 |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -68,8 +68,12 @@ building and every milestone is shippable on its own.
 
 ## M3: report, network editor, inspector (target Nov 15)
 
-- [ ] Report: score with breakdown, tiles, timeline, "what happened" notes, "try next" ideas, export JSON, share
-      link; saved runs in IndexedDB; Runs list
+- [x] **Report, first slice** (2026-10-20): score with breakdown, tiles, the three charts from the saved log, setup,
+      simulation check, score explanation; Run again, Export JSON, Copy link, Delete; saved runs in IndexedDB (50);
+      Runs list; Home's recent runs
+- [x] Stalls that start during hls.js's own gap-jumping seeks are counted (2026-10-20; a run had shown an empty
+      buffer for 1.5 s and no stall)
+- [ ] Report: "what happened" notes with chart markers, "try next" ideas (rerun with one setting changed), zoom
 - [ ] Network editor: presets, recorded traces, keyboard editing, import and export
 - [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
 - [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
@@ -126,3 +130,6 @@ building and every milestone is shippable on its own.
   Then pushed: Cloudflare built and deployed `7b7d527` from the push on its own (auto-deploy works now), and CI passed.
   Later the same day: the logo cursor keeps blinking (owner's request), and Home's setup (stream, network, player,
   Run) opens the Run screen and starts it; M2 done. 372 unit tests, 73 Playwright checks, home JavaScript 89.5 KB.
+- 2026-10-20 (later): M3 started. The Report's first slice and saved runs. A stall that began during hls.js's own
+  seek wasn't counted: fixed, with a backstop on the samples and a test that forces a stall. The bundle budget only
+  counted `index-*.js`; it now counts every script Home loads. 384 unit tests, 79 Playwright checks.

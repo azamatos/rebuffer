@@ -1,3 +1,4 @@
+import { formatMbps } from "@/core/format/bitrate";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { LATE_FIRST_BYTE_MS, type Honesty } from "@/core/metrics";
 import type { NetworkCurve } from "@/core/netsim/curve";
@@ -10,14 +11,7 @@ export function levelLabel(level: Level | undefined, index: number): string {
   return `${name} (${formatMbps(level.bitrate)})`;
 }
 
-export function formatMbps(bitsPerSecond: number): string {
-  const mbps = bitsPerSecond / 1e6;
-  return mbps >= 10
-    ? `${mbps.toFixed(0)} Mbps`
-    : mbps >= 1
-      ? `${Number(mbps.toFixed(1))} Mbps`
-      : `${Math.round(bitsPerSecond / 1000)} kbps`;
-}
+export { formatMbps };
 
 export interface LogLine {
   t: number;

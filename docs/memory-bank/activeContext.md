@@ -29,16 +29,20 @@
 - **Home setup (built 2026-10-20):** our two films, the public test streams or your own HLS link; the network presets
   with a thumbnail each; the player presets; Run opens `/run` with the setup in the URL and starts it. The logo
   cursor keeps blinking, as on pass.azamatos.com (owner's request; solid with reduced motion).
-- **Quality bar today:** 372 unit tests, 73 Playwright checks (axe on every screen; 2 keyboard checks skipped in
-  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 89.5 KB brotli, Run chunk 41 KB gzip.
-- **M2 is done** (target was Nov 8).
+- **Quality bar today:** 384 unit tests, 79 Playwright checks (axe on every screen; 2 keyboard checks skipped in
+  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 90.4 KB brotli (now counting every script Home
+  loads).
+- **M2 is done** (target was Nov 8). **M3 started:** the Report's first slice and saved runs (2026-10-20, not
+  pushed yet): score with breakdown, tiles, charts from the saved log, setup, simulation check; Run again, Export
+  JSON, Copy link, Delete; `/runs` and Home's recent runs. Stall detection fixed for stalls that start during
+  hls.js's own seeks.
 - **Ahead of schedule:** M0 and M1 were planned for Oct 25 and Nov 1 and are done; M2 (Nov 8) is half done.
 
 ## Next step (in this order)
 
-1. **M3, Report screen first:** score with its breakdown, tiles, the three charts static and zoomable, "what
-   happened" notes, "try next" ideas, export JSON, a share link (setup only), runs saved in IndexedDB, the Runs list
-   (and Home's "Recent runs" from the design). Then the network editor and the inspector screen.
+1. **M3, the Report's next slices:** "what happened" notes (pure, from the timeline: drops, abandons, stalls,
+   recovery) with numbered markers on the charts; "try next" ideas that rerun the setup with one setting changed
+   (needs player settings in the run link); zoom on the report's charts. Then the network editor and the inspector.
 2. The owner collects fixes and reviews them when everything is ready (said 2026-10-20).
 
 Pushes to `main` deploy to rebuffer.azamatos.com on their own (checked 2026-10-20). Pushing is still outward-facing:

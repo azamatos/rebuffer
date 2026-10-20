@@ -1,9 +1,18 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { computeMetrics, computeScore, type RunMetrics } from "@/core/metrics";
 import { ShapingError } from "@/core/netsim/client";
 import { forgetSavedCopy, MAX_SAVED_BYTES } from "@/core/netsim/saved";
+import {
+  describeBrowser,
+  newRunId,
+  RUN_FORMAT,
+  RUN_VERSION,
+  savedRuns,
+  type SavedRun,
+} from "@/core/persist/runs";
+import { summarize } from "@/core/persist/summary";
 import type { NetworkCurve } from "@/core/netsim/curve";
 import { presetById } from "@/core/netsim/presets";
 import { curveFromParam } from "@/core/netsim/url";
@@ -35,6 +44,8 @@ interface ResolvedSetup {
   streamUrl: string;
   streamName: string;
   curve: NetworkCurve;
+  /** The preset's id; undefined for a network drawn into the link. */
+  networkId: string | undefined;
   networkName: string;
   player: PlayerPreset;
 }
@@ -48,6 +59,7 @@ function resolveSetup(
 
   let curve: NetworkCurve;
   let networkName: string;
+  let networkId: string | undefined;
   if (search.curve) {
     const parsed = curveFromParam(search.curve);
     if (!parsed.ok)
@@ -60,6 +72,7 @@ function resolveSetup(
       return { ok: false, error: `There's no network called “${search.network ?? ""}”.` };
     curve = preset.curve;
     networkName = preset.name;
+    networkId = preset.id;
   }
 
   const player = PLAYER_PRESETS.find(
@@ -74,9 +87,41 @@ function resolveSetup(
       streamUrl,
       streamName: sample?.name ?? new URL(streamUrl).host,
       curve,
+      networkId,
       networkName,
       player,
     },
+  };
+}
+
+/** A finished run as the browser keeps it. */
+function toSavedRun(setup: ResolvedSetup, result: RunResult, video: HTMLVideoElement): SavedRun {
+  return {
+    format: RUN_FORMAT,
+    version: RUN_VERSION,
+    id: newRunId(),
+    startedAt: result.startedAt,
+    savedAt: Date.now(),
+    setup: {
+      streamUrl: setup.streamUrl,
+      streamName: setup.streamName,
+      network: { id: setup.networkId, name: setup.networkName, curve: setup.curve },
+      player: {
+        presetId: setup.player.id,
+        name: setup.player.name,
+        settings: setup.player.settings,
+      },
+    },
+    player: result.player,
+    environment: {
+      browser: describeBrowser(navigator.userAgent),
+      playerSize:
+        video.clientWidth > 0
+          ? { width: video.clientWidth, height: video.clientHeight }
+          : undefined,
+    },
+    reason: result.reason,
+    events: result.events,
   };
 }
 
@@ -111,6 +156,8 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
   const [error, setError] = useState<string>();
   const [events, setEvents] = useState<readonly RunEvent[]>([]);
   const [result, setResult] = useState<RunResult>();
+  // Where the finished run was saved, or false if the browser wouldn't keep it.
+  const [savedId, setSavedId] = useState<string | false>();
 
   // Live data stays out of React state; the screen copies it four times a second.
   useEffect(() => {
@@ -136,6 +183,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
     setPhase("starting");
     setError(undefined);
     setResult(undefined);
+    setSavedId(undefined);
     setEvents([]);
     try {
       const run = await startRun(
@@ -149,6 +197,13 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
       setEvents(finished.events);
       setResult(finished);
       setPhase("finished");
+      const saved = toSavedRun(setup, finished, video);
+      try {
+        await savedRuns().save(saved, summarize(saved));
+        setSavedId(saved.id);
+      } catch {
+        setSavedId(false);
+      }
     } catch (caught) {
       setError(errorMessage(caught));
       setPhase("failed");
@@ -263,7 +318,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
             />
           </div>
           {metrics && <Tiles metrics={metrics} />}
-          {result && <Outcome result={result} />}
+          {result && <Outcome result={result} savedId={savedId} />}
         </div>
 
         <RunCharts curve={setup.curve} run={run} events={events} untilS={elapsed} />
@@ -347,7 +402,7 @@ function Tiles({ metrics }: { metrics: RunMetrics }) {
   );
 }
 
-function Outcome({ result }: { result: RunResult }) {
+function Outcome({ result, savedId }: { result: RunResult; savedId: string | false | undefined }) {
   const metrics = computeMetrics(result.events);
   const score = computeScore(metrics);
   const honesty = describeHonesty(metrics.honesty, result.setup.curve);
@@ -362,6 +417,20 @@ function Outcome({ result }: { result: RunResult }) {
         <span className="text-xl font-medium text-fg-3"> / 100</span>
       </p>
       {honesty.length > 0 && <p className="text-sm text-fg-2">{honesty.join(" ")}</p>}
+      {savedId && (
+        <Link
+          to="/runs/$runId"
+          params={{ runId: savedId }}
+          className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover"
+        >
+          See the report
+        </Link>
+      )}
+      {savedId === false && (
+        <p className="text-sm text-warning-text">
+          This browser didn't let the lab save the run, so it has no report page.
+        </p>
+      )}
       <SavedCopyNote />
       <p className="text-xs text-fg-3">
         Player: {result.player.name} {result.player.version}

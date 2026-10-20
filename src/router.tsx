@@ -10,6 +10,13 @@ import type { RunSearch } from "@/ui/pages/RunPage";
 const RunPage = lazy(() =>
   import("@/ui/pages/RunPage").then((module) => ({ default: module.RunPage })),
 );
+const RunsPage = lazy(() =>
+  import("@/ui/pages/RunsPage").then((module) => ({ default: module.RunsPage })),
+);
+// The Report draws the same charts, so it loads on demand too.
+const ReportPage = lazy(() =>
+  import("@/ui/pages/ReportPage").then((module) => ({ default: module.ReportPage })),
+);
 
 const title = (page: string) => ({ meta: [{ title: `${page} · Rebuffer` }] });
 
@@ -57,12 +64,27 @@ const runsRoute = createRoute({
   path: "/runs",
   head: () => title("Runs"),
   component: () => (
-    <PlannedPage
-      title="Runs"
-      summary="Reports of the runs saved in this browser: the score, what happened and what to try next."
-    />
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the runs…</p>}>
+      <RunsPage />
+    </Suspense>
   ),
 });
+
+const reportRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$runId",
+  head: () => title("Report"),
+  component: ReportRoute,
+});
+
+function ReportRoute() {
+  const { runId } = reportRoute.useParams();
+  return (
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the report…</p>}>
+      <ReportPage runId={runId} />
+    </Suspense>
+  );
+}
 
 const networksRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -104,6 +126,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   runRoute,
   runsRoute,
+  reportRoute,
   networksRoute,
   inspectRoute,
   aboutRoute,
