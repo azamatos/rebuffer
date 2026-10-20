@@ -155,6 +155,8 @@ test("the first-run hint explains the charts until it's dismissed by keyboard", 
   await tabTo(page, browserName, hint.getByRole("button", { name: "Got it" }));
   await page.keyboard.press("Enter");
   await expect(hint).toHaveCount(0);
+  // Focus doesn't drop to the page with the button: it goes to the top of the screen.
+  await expect(page.locator("main")).toBeFocused();
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(hint).toHaveCount(0);

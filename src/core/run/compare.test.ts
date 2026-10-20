@@ -123,10 +123,34 @@ describe("compareMetrics", () => {
     expect(rows["Wasted data"]).toMatchObject({ a: "0.0 MB", b: "0.0 MB", verdict: "same" });
   });
 
-  it("says when a run never showed a picture", () => {
+  it("counts a run that never showed a picture as the worse one", () => {
     const blank = compared(run("c", [{ type: "end", t: 20, reason: "error" }]));
-    const first = compareMetrics(a, blank).find((row) => row.label === "First frame");
-    expect(first).toMatchObject({ b: "never", difference: "—", verdict: "unknown" });
+    const first = (x: typeof a, y: typeof a) =>
+      compareMetrics(x, y).find((row) => row.label === "First frame");
+    expect(first(a, blank)).toMatchObject({ b: "never", difference: "—", verdict: "worse" });
+    expect(first(blank, a)).toMatchObject({ a: "never", verdict: "better" });
+    expect(first(blank, blank)).toMatchObject({ verdict: "same" });
+  });
+
+  it("works out differences from the numbers as shown", () => {
+    const withScore = (score: number, firstFrameS: number) => ({
+      ...a,
+      score: { ...a.score, score },
+      metrics: { ...a.metrics, firstFrameS },
+    });
+    const rows = (x: number, y: number, fx: number, fy: number) =>
+      Object.fromEntries(
+        compareMetrics(withScore(x, fx), withScore(y, fy)).map((row) => [row.label, row]),
+      );
+    // 50.6 and 52.4 read 51 and 52: one point apart, not two.
+    expect(rows(50.6, 52.4, 1, 1)["QoE score"]).toMatchObject({
+      difference: "+1 point",
+      verdict: "better",
+    });
+    // 0.304 and 0.306 s read 0.30 and 0.31 s: 0.01 s later, not "0.00 s later".
+    expect(rows(50, 50, 0.304, 0.306)["First frame"]?.difference).toBe("0.01 s later");
+    expect(rows(50.4, 50.6, 0.3, 0.3)["QoE score"]?.difference).toBe("+1 point");
+    expect(rows(50.2, 50.4, 0.3, 0.3)["QoE score"]?.verdict).toBe("same");
   });
 });
 

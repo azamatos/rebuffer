@@ -26,8 +26,8 @@ export function compared(run: SavedRun): ComparedRun {
   return { run, metrics, score: computeScore(metrics), timeline: buildTimeline(run.events) };
 }
 
-/** How B did against A on one number; "same" when both read the same, "unknown" when one has no value. */
-export type Verdict = "better" | "worse" | "same" | "unknown";
+/** How B did against A on one number; "same" when both read the same. */
+export type Verdict = "better" | "worse" | "same";
 
 export interface MetricComparison {
   label: string;
@@ -42,10 +42,12 @@ interface Measure {
   label: string;
   value: (run: ComparedRun) => number | undefined;
   format: (value: number) => string;
+  /** The value to the precision `format` shows, so a difference is never smaller than what can be seen. */
+  round: (value: number) => number;
   higherIsBetter: boolean;
-  /** B's value against A's in words; `delta` is B − A, already known not to read as zero. */
+  /** B's value against A's in words; `delta` is B − A of the rounded values, never zero. */
   describe: (delta: number) => string;
-  /** How a run reads when it has no value. */
+  /** How a run reads when it has no value: it never got that far, which is the worst there is. */
   missing?: string;
 }
 
@@ -53,12 +55,16 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
 const percent = (share: number) => `${Math.round(share * 100)}%`;
 const megabytes = (bytes: number) => `${(bytes / 1e6).toFixed(1)} MB`;
 const seconds = (value: number) => `${value.toFixed(2)} s`;
+const toStep = (step: number) => (value: number) => Math.round(value / step) * step;
+/** As `formatMbps` shows it: whole Mbps from 10 up, tenths from 1, kbps below. */
+const roundBitrate = (bps: number) => toStep(bps >= 1e7 ? 1e6 : bps >= 1e6 ? 1e5 : 1e3)(bps);
 
 const measures: Measure[] = [
   {
     label: "QoE score",
     value: ({ score }) => score.score,
     format: (value) => String(Math.round(value)),
+    round: Math.round,
     higherIsBetter: true,
     describe: (delta) =>
       `${delta > 0 ? "+" : "−"}${plural(Math.abs(Math.round(delta)), "point", "points")}`,
@@ -67,6 +73,7 @@ const measures: Measure[] = [
     label: "First frame",
     value: ({ metrics }) => metrics.firstFrameS,
     format: seconds,
+    round: toStep(0.01),
     higherIsBetter: false,
     describe: (delta) => `${seconds(Math.abs(delta))} ${delta < 0 ? "sooner" : "later"}`,
     missing: "never",
@@ -75,6 +82,7 @@ const measures: Measure[] = [
     label: "Stall time",
     value: ({ metrics }) => metrics.stalls.totalS,
     format: (value) => (value === 0 ? "none" : formatDuration(value)),
+    round: toStep(0.01),
     higherIsBetter: false,
     describe: (delta) => `${formatDuration(Math.abs(delta))} ${delta < 0 ? "less" : "more"}`,
   },
@@ -82,6 +90,7 @@ const measures: Measure[] = [
     label: "Stalls",
     value: ({ metrics }) => metrics.stalls.count,
     format: String,
+    round: (value) => value,
     higherIsBetter: false,
     describe: (delta) => `${Math.abs(delta)} ${delta < 0 ? "fewer" : "more"}`,
   },
@@ -89,6 +98,7 @@ const measures: Measure[] = [
     label: "Rebuffer ratio",
     value: ({ metrics }) => metrics.rebufferRatio,
     format: (value) => `${(value * 100).toFixed(1)}%`,
+    round: toStep(0.001),
     higherIsBetter: false,
     describe: (delta) =>
       `${(Math.abs(delta) * 100).toFixed(1)} percentage points ${delta < 0 ? "lower" : "higher"}`,
@@ -97,6 +107,7 @@ const measures: Measure[] = [
     label: "Average bitrate",
     value: ({ metrics }) => metrics.averageBitrate,
     format: formatMbps,
+    round: roundBitrate,
     higherIsBetter: true,
     describe: (delta) => `${delta > 0 ? "+" : "−"}${formatMbps(Math.abs(delta))}`,
   },
@@ -104,6 +115,7 @@ const measures: Measure[] = [
     label: "Quality switches",
     value: ({ metrics }) => metrics.switches.total,
     format: String,
+    round: (value) => value,
     higherIsBetter: false,
     describe: (delta) => `${Math.abs(delta)} ${delta < 0 ? "fewer" : "more"}`,
   },
@@ -111,6 +123,7 @@ const measures: Measure[] = [
     label: "At top quality",
     value: ({ metrics }) => metrics.topQualityShare,
     format: percent,
+    round: toStep(0.01),
     higherIsBetter: true,
     describe: (delta) =>
       `${Math.round(Math.abs(delta) * 100)} percentage points ${delta > 0 ? "more" : "less"}`,
@@ -119,6 +132,7 @@ const measures: Measure[] = [
     label: "Wasted data",
     value: ({ metrics }) => metrics.wastedBytes,
     format: megabytes,
+    round: toStep(1e5),
     higherIsBetter: false,
     describe: (delta) => `${megabytes(Math.abs(delta))} ${delta < 0 ? "less" : "more"}`,
   },
@@ -133,11 +147,15 @@ export function compareMetrics(a: ComparedRun, b: ComparedRun): MetricComparison
       value === undefined ? (measure.missing ?? "—") : measure.format(value);
     const row = { label: measure.label, a: shown(valueA), b: shown(valueB) };
     if (valueA === undefined || valueB === undefined) {
-      return { ...row, difference: "—", verdict: valueA === valueB ? "same" : "unknown" };
+      // A run that never got there did worst; two that never did, the same.
+      if (valueA === valueB) return { ...row, difference: "—", verdict: "same" };
+      return { ...row, difference: "—", verdict: valueA === undefined ? "better" : "worse" };
     }
     // Numbers that read the same are the same: a difference below what's shown isn't one.
-    if (row.a === row.b) return { ...row, difference: "—", verdict: "same" };
-    const delta = valueB - valueA;
+    const delta = measure.round(valueB) - measure.round(valueA);
+    if (row.a === row.b || Math.abs(delta) < 1e-9) {
+      return { ...row, difference: "—", verdict: "same" };
+    }
     const better = measure.higherIsBetter ? delta > 0 : delta < 0;
     return { ...row, difference: measure.describe(delta), verdict: better ? "better" : "worse" };
   });

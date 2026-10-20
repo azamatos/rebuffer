@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { presets } from "@/core/netsim/presets";
 import { recordedTraces, TRACE_CREDIT } from "@/core/netsim/traces";
 import { SAMPLE_STREAMS } from "@/core/samples";
@@ -87,6 +87,12 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 /** How the lab works, where it stops, how each number is computed, and credits. */
 export function AboutPage() {
+  // A link from another screen to a section (Compare's "how repeatable runs are") arrives before this lazy page has
+  // rendered, so the router's scroll to the hash finds nothing: scroll once it's here.
+  useEffect(() => {
+    const target = window.location.hash.slice(1);
+    if (target) document.getElementById(target)?.scrollIntoView();
+  }, []);
   return (
     <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-4 py-14 sm:px-8 lg:flex-row lg:gap-16">
       <nav

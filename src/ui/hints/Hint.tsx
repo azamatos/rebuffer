@@ -39,6 +39,8 @@ export function Hint({ id, title, children }: { id: string; title: string; child
         onClick={() => {
           dismiss(id);
           setHidden(true);
+          // The button goes with the hint; keep keyboard users where they were, at the top of the screen.
+          document.getElementById("main")?.focus();
         }}
         className="min-h-10 rounded-lg border border-line-strong px-4 font-medium hover:border-fg-3"
       >

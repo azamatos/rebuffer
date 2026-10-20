@@ -17,6 +17,8 @@
           choice === "light" ||
           (choice !== "dark" && matchMedia("(prefers-color-scheme: light)").matches);
         document.documentElement.dataset.theme = light ? "light" : "dark";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", light ? "#f4f5f6" : "#050607");
         // The page carries Home's markup; elsewhere it stays hidden until the app has drawn the screen.
         if (location.pathname !== "/") document.documentElement.dataset.notHome = "";
       })();

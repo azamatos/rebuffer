@@ -125,8 +125,10 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111&b=bbbb2222$/);
   await expect(page.getByRole("heading", { level: 1, name: "Compare two runs" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Run A" })).toContainText("Lift · hls.js defaults");
-  await expect(page.getByRole("region", { name: "Run B" })).toContainText(
+  await expect(page.getByRole("region", { name: "Summary of run A" })).toContainText(
+    "Lift · hls.js defaults",
+  );
+  await expect(page.getByRole("region", { name: "Summary of run B" })).toContainText(
     "Lift · hls.js fast start",
   );
 
@@ -138,9 +140,9 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
   // The numbers, B against A, in words.
   const numbers = page.getByRole("region", { name: "The numbers" });
   await expect(numbers.getByRole("row", { name: /First frame/ })).toContainText(
-    "0.40 s sooner better",
+    /0\.40 s sooner▲ better/,
   );
-  await expect(numbers.getByRole("row", { name: /Stall time/ })).toContainText("2 s less better");
+  await expect(numbers.getByRole("row", { name: /Stall time/ })).toContainText(/2 s less▲ better/);
   await expect(numbers.getByRole("row", { name: /Average bitrate/ })).toContainText("worse");
 
   // The overlaid charts sum themselves up, and have a table.
@@ -161,7 +163,7 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs\/compare\?a=bbbb2222&b=aaaa1111$/);
   await expect(numbers.getByRole("row", { name: /First frame/ })).toContainText(
-    "0.40 s later worse",
+    /0\.40 s later▼ worse/,
   );
 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -174,7 +176,7 @@ test("a report compares its run with the newest other one", async ({ page, brows
   await tabTo(page, browserName, compare);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111&b=bbbb2222$/);
-  await expect(page.getByLabel("Run B")).toHaveValue("bbbb2222");
+  await expect(page.getByRole("combobox", { name: "Run B" })).toHaveValue("bbbb2222");
 });
 
 test("comparing needs two runs", async ({ page }) => {

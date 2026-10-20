@@ -11,7 +11,7 @@ export type Theme = "light" | "dark";
 /** Also read by the script in index.html; change both together. */
 export const THEME_KEY = "rebuffer-theme";
 
-/** The page's ground in each theme, for the browser's own UI (`<meta name="theme-color">`). */
+/** The page's ground in each theme, for the browser's own UI (`<meta name="theme-color">`); index.html's script too. */
 const GROUND: Record<Theme, string> = { dark: "#050607", light: "#f4f5f6" };
 
 const lightQuery = () => window.matchMedia("(prefers-color-scheme: light)");

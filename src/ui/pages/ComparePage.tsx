@@ -185,6 +185,8 @@ function RunPicker({
   onChange: (id: string) => void;
 }) {
   const id = useId();
+  // A run that isn't saved here (deleted, or from another browser) shows as no choice, not as the first run.
+  const known = runs.some((run) => run.id === value);
   return (
     <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
       <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium">
@@ -193,13 +195,13 @@ function RunPicker({
       </label>
       <select
         id={id}
-        value={value ?? ""}
+        value={known ? value : ""}
         onChange={(event) => {
           onChange(event.target.value);
         }}
         className="min-h-11 w-full rounded-[10px] border border-line-strong bg-ground px-3"
       >
-        {value === undefined && <option value="">Choose a run</option>}
+        {!known && <option value="">Choose a run</option>}
         {runs.map((run) => (
           <option key={run.id} value={run.id}>
             {run.networkName} · {titleOf(run)} · {Math.round(run.score)}/100 ·{" "}
@@ -231,7 +233,6 @@ const verdicts: Record<Verdict, { text: string; icon: string; className: string 
   better: { text: "better", icon: "▲", className: "text-accent" },
   worse: { text: "worse", icon: "▼", className: "text-error-text" },
   same: { text: "same", icon: "=", className: "text-fg-3" },
-  unknown: { text: "can't tell", icon: "?", className: "text-fg-3" },
 };
 
 function Comparison({ a: runA, b: runB }: { a: SavedRun; b: SavedRun }) {
@@ -343,7 +344,7 @@ function RunCard({
 }) {
   return (
     <section
-      aria-label={`Run ${side.toUpperCase()}`}
+      aria-label={`Summary of run ${side.toUpperCase()}`}
       className={`${card} flex flex-col gap-1.5 p-5`}
     >
       <p className="flex items-center gap-2 text-sm font-semibold">
