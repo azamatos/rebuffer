@@ -25,8 +25,8 @@ jobs:
       - run: pnpm build
       - run: pnpm size
 
-      # Fails the run if accessibility or SEO drop below 100 or best practices below 95; performance under 95 warns
-      # until the home page is pre-rendered (see lighthouserc.json and progress.md).
+      # Fails the run if accessibility or SEO drop below 100, or performance or best practices below 95, on Home
+      # (made at build time, scripts/prerender.mjs).
       - name: Lighthouse
         run: pnpm dlx @lhci/cli@0.15.1 autorun
 

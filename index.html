@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#050607" />
-    <!-- The theme before the first paint (src/ui/theme/theme.ts explains); its hash is in public/_headers. -->
+    <!-- Before the first paint: the theme (src/ui/theme/theme.ts explains) and whether this is Home (scripts/prerender.mjs).
+         The script's hash is in public/_headers. -->
     <script>
       (function () {
         var choice;
@@ -16,6 +17,8 @@
           choice === "light" ||
           (choice !== "dark" && matchMedia("(prefers-color-scheme: light)").matches);
         document.documentElement.dataset.theme = light ? "light" : "dark";
+        // The page carries Home's markup; elsewhere it stays hidden until the app has drawn the screen.
+        if (location.pathname !== "/") document.documentElement.dataset.notHome = "";
       })();
     </script>
     <title>Rebuffer: see how a video player survives a bad network</title>

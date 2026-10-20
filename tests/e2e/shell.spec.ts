@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { tabTo } from "./helpers";
+import { openApp, tabTo } from "./helpers";
 
 const pages = [
   { path: "/", heading: "See how a video player survives a bad network." },
@@ -32,7 +32,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 test("the theme switch works with the keyboard and is kept", async ({ page, browserName }) => {
   const html = page.locator("html");
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/");
+  await openApp(page, "/");
   await expect(html).toHaveAttribute("data-theme", "dark");
 
   const theme = page.getByRole("group", { name: "Theme" });
@@ -46,6 +46,7 @@ test("the theme switch works with the keyboard and is kept", async ({ page, brow
   // The choice outlives a reload and is applied before the app starts.
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("#root:not([data-prerendered])")).toBeAttached();
   await expect(theme.getByRole("radio", { name: "Light" })).toBeChecked();
 
   // Back to System: the page follows the system's setting again.
@@ -60,7 +61,7 @@ test("the theme switch works with the keyboard and is kept", async ({ page, brow
 test("the skip link moves focus to the main content", async ({ page, browserName }) => {
   // WebKit only tabs to links when "Press Tab to highlight each item" is on.
   test.skip(browserName === "webkit", "WebKit skips links on Tab by default");
-  await page.goto("/");
+  await openApp(page, "/");
   await page.keyboard.press("Tab");
   const skip = page.getByRole("link", { name: "Skip to content" });
   await expect(skip).toBeFocused();
@@ -70,7 +71,7 @@ test("the skip link moves focus to the main content", async ({ page, browserName
 
 test("the main navigation works with the keyboard alone", async ({ page, browserName }) => {
   test.skip(browserName === "webkit", "WebKit skips links on Tab by default");
-  await page.goto("/");
+  await openApp(page, "/");
   const inspect = page
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Inspect" });

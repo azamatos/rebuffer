@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { canPlayH264, STREAM, tabTo } from "./helpers";
+import { canPlayH264, openApp, STREAM, tabTo } from "./helpers";
 
 // 8 s: 4 Mbps, a drop to 0.4 Mbps from 0:03 to 0:05, then 4 Mbps; RTT 50 ms.
 const CURVE = "steps,50,8,0:4|3:0.4|5:4";
@@ -102,7 +102,7 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   // The run is listed on Home and on the Runs page, which opens its report from the keyboard.
-  await page.goto("/");
+  await openApp(page, "/");
   await expect(page.getByRole("region", { name: "Recent runs" })).toContainText("Custom network");
   await page.goto("/runs");
   const row = page.getByRole("row", { name: /Custom network/ });

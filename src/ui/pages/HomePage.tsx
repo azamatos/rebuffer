@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useSyncExternalStore } from "react";
 import { presetById } from "@/core/netsim/presets";
 import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID, runSearchFor } from "@/core/run/setup";
 import { DEFAULT_STREAM } from "@/core/samples";
@@ -9,6 +9,19 @@ import { RunSetup } from "@/ui/home/RunSetup";
 const RecentRuns = lazy(() =>
   import("@/ui/home/RecentRuns").then((module) => ({ default: module.RecentRuns })),
 );
+
+const subscribeNever = () => () => undefined;
+
+/**
+ * False in the markup made at build time (scripts/prerender.mjs) and while React takes it over, true after: saved
+ * runs exist only in the browser.
+ */
+const useInBrowser = () =>
+  useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
 
 const tunnelS = presetById(DEFAULT_NETWORK_ID)?.curve.lengthS ?? 90;
 const tryTheTunnel = runSearchFor(
@@ -32,6 +45,7 @@ const steps = [
 ];
 
 export function HomePage() {
+  const inBrowser = useInBrowser();
   return (
     <>
       <section className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pt-18 pb-10 sm:px-8">
@@ -71,9 +85,11 @@ export function HomePage() {
 
       <RunSetup />
 
-      <Suspense fallback={null}>
-        <RecentRuns />
-      </Suspense>
+      {inBrowser && (
+        <Suspense fallback={null}>
+          <RecentRuns />
+        </Suspense>
+      )}
 
       <section aria-labelledby="how-h" className="mx-auto max-w-[1280px] px-4 pt-2 pb-16 sm:px-8">
         <h2 id="how-h" className="mb-4 text-[22px] font-semibold">

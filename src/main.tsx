@@ -1,17 +1,12 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { RouterProvider } from "@tanstack/react-router";
-import { router } from "./router";
 import { startTheme } from "./ui/theme/theme";
 import "./styles.css";
 
 startTheme();
 
-const root = document.getElementById("root");
-if (!root) throw new Error("#root is missing from index.html");
-
-createRoot(root).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-);
+// The page arrives with Home's markup (scripts/prerender.mjs). The app's code runs after that has been painted, so
+// the first paint never waits for it, however fast the scripts arrive.
+requestAnimationFrame(() => {
+  setTimeout(() => {
+    void import("./app");
+  });
+});

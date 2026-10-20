@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../zod";
 import { CURVE_LIMITS, type NetworkCurve } from "./curve-math";
 
 export * from "./curve-math";

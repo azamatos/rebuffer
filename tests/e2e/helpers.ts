@@ -3,6 +3,15 @@ import { expect, type Locator, type Page } from "@playwright/test";
 // The synthetic stream from tests/e2e/fixtures/make-stream.mjs, served cross-origin by tests/e2e/servers/files.mjs.
 export const STREAM = "http://localhost:4013/hls/ladder/master.m3u8";
 
+/**
+ * Opens a page and waits until the app runs it. Home comes with its markup made at build time, which looks ready
+ * before the app has taken it over and can react to keys.
+ */
+export async function openApp(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await expect(page.locator("#root:not([data-prerendered])")).toBeAttached();
+}
+
 /** Moves focus to `target` with Tab, as a keyboard user would. WebKit only tabs to text fields by default. */
 export async function tabTo(page: Page, browserName: string, target: Locator): Promise<void> {
   if (browserName === "webkit") {

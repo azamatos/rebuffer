@@ -3,12 +3,13 @@
     "collect": {
       "staticDistDir": "./dist",
       "isSinglePageApplication": true,
-      "numberOfRuns": 3
+      "numberOfRuns": 3,
+      "url": ["http://localhost/"]
     },
     "assert": {
       "assertions": {
         "categories:performance": [
-          "warn",
+          "error",
           {
             "minScore": 0.95
           }

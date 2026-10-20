@@ -12,7 +12,7 @@
   "packageManager": "pnpm@10.30.1",
   "scripts": {
     "dev": "vite --port 4002 --strictPort",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
     "preview": "vite preview --port 4012 --strictPort",
     "typecheck": "tsc -b",
     "lint": "eslint .",

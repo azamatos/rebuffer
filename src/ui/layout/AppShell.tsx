@@ -1,4 +1,5 @@
 import { HeadContent, Link, Outlet } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ThemeSwitch } from "@/ui/theme/ThemeSwitch";
 import { Wordmark } from "./Logo";
 
@@ -12,6 +13,11 @@ const nav = [
 ] as const;
 
 export function AppShell() {
+  // From here on, the markup Home came with (scripts/prerender.mjs) is the app's: it reacts to clicks and keys.
+  // Tests wait for this (tests/e2e/helpers.ts, openApp).
+  useEffect(() => {
+    document.getElementById("root")?.removeAttribute("data-prerendered");
+  }, []);
   return (
     <>
       <HeadContent />

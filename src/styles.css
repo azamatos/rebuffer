@@ -92,6 +92,11 @@
   --color-note-text: #46586b;
 }
 
+/* Home's markup comes with every page (scripts/prerender.mjs); on other paths it waits hidden for the app. */
+[data-not-home] #root[data-prerendered] {
+  display: none;
+}
+
 @layer base {
   :root {
     color-scheme: dark;

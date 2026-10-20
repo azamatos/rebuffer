@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../zod";
 import { curveSchema } from "./curve";
 
 /** An origin as `new URL(...).origin` writes it: scheme, host and port, nothing else. */

@@ -1,4 +1,9 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  type RouterHistory,
+} from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
@@ -162,10 +167,13 @@ const routeTree = rootRoute.addChildren([
   aboutRoute,
 ]);
 
-export const router = createRouter({ routeTree, defaultPreload: "intent" });
+/** The app's router: in the browser with its address bar, or at a given path when Home is rendered at build time. */
+export function createAppRouter(history?: RouterHistory) {
+  return createRouter({ routeTree, defaultPreload: "intent", ...(history && { history }) });
+}
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router;
+    router: ReturnType<typeof createAppRouter>;
   }
 }
