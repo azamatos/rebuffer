@@ -60,6 +60,20 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(setup).toContainText("maxBufferLength 30");
   await expect(page.getByRole("region", { name: "Simulation check" })).toContainText("downloads");
 
+  // Change network opens the run's network in the editor; a run from there keeps the stream and the player.
+  await tabTo(page, browserName, page.getByRole("link", { name: "Change network" }));
+  await page.keyboard.press("Enter");
+  // The router quotes an id that reads as a number.
+  await expect(page).toHaveURL(/\/networks\?run=(%22)?[0-9a-f]{8}(%22)?$/);
+  await expect(page.getByRole("heading", { level: 2, name: "Custom network" })).toBeVisible();
+  await expect(page.getByText(/^Changing the network of a run of localhost:4013\./)).toBeVisible();
+  const use = await page.getByRole("link", { name: "Use in a run" }).getAttribute("href");
+  expect(Object.fromEntries(new URL(use ?? "", "http://localhost").searchParams)).toEqual({
+    stream: STREAM,
+    curve: CURVE,
+  });
+  await page.goto(reportUrl);
+
   // Run again repeats the setup and starts; the link to copy carries the setup only.
   const again = await page.getByRole("link", { name: "Run again" }).getAttribute("href");
   const againUrl = new URL(again ?? "", "http://localhost");

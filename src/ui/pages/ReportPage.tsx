@@ -169,6 +169,9 @@ function Report({ run }: { run: SavedRun }) {
             </svg>
             Run again
           </Link>
+          <Link to="/networks" search={{ run: run.id }} className={secondaryButton}>
+            Change network
+          </Link>
           <button type="button" onClick={exportJson} className={secondaryButton}>
             Export JSON
           </button>
