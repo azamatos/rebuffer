@@ -49,6 +49,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   separate audio track added segment by segment; a finding repeated across playlists is listed once with every
   file and line; under-declared variants offer "Run it on a N Mbps network" (a steady network 10% over what they
   declare). The link lives in the address (`/inspect?url=`).
+- **Polished 2026-10-21 (M4.5):** the three ways in are tabs (Link, Paste text, File with a drop zone), each saying
+  what it takes; samples, finding counts and the Segments panel's playlists are chips, each playlist's chip marked
+  with its worst finding (its own, or its measured bandwidth against what it declares).
 
 ### Network
 
@@ -75,6 +78,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   with a pointer; changes read out; a points table), the chosen point's time and bandwidth, the whole network's
   name, latency and length, steps or slopes, import JSON or CSV, export JSON and CSV, Save to my networks, Use in a
   run. The Report's "Change network" opens a run's network here and keeps its stream and player.
+- **Polished 2026-10-21 (M4.5):** the list is compact rows in a sidebar that stays in view on wide screens; the
+  editor's header holds Steps | Slopes, undo, redo, a `?` list of the keys (also the `?` key), **Save** and **Run
+  with this network**; the points table is behind Chart | Table; import and export are one **Import / Export** menu.
 
 ### Player setup
 
@@ -95,7 +101,11 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   **Built 2026-10-20:** the network area fills up to the playhead and the rest of the curve is dashed (before a run
   the chart previews the whole network); the bandwidth axis is logarithmic, labelled by the ladder; stalls are red
   bands on the first two charts; the downloads lane shows video segments only, abandoned ones as dashed outlines.
-  Each chart has a sentence (its accessible name, refreshed 4 times a second) and a data table behind a disclosure.
+  Each chart has a sentence (its accessible name, refreshed 4 times a second) and a data table behind a Chart | Table
+  toggle in its header (since 2026-10-21; the table takes the chart's place).
+- **Polished 2026-10-21 (M4.5):** the run's state is a chip (Ready, Checking your connection…, Running, Finished,
+  Couldn't run); the progress bar glides with the run's clock; the first-run hint is one line; the event log sits
+  under the video and tiles, newest first, and ends where the charts do.
 - **Event log:** quality switches, stalls, abandoned downloads, errors; also announced in a polite live region.
 - Controls: Stop, Restart. The run ends at the end of the network curve or the video.
 - Before the run, a quick check measures the visitor's real latency to the stream's host. If it is above the
@@ -117,8 +127,12 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - **Score** (see Metrics) and tiles with one-line explanations.
 - The same three charts, static, zoomable, with notes the lab writes: "0:42–0:54: bandwidth fell below the
   lowest quality (0.4 Mbps); the buffer ran out at 0:51; a stall of 2.1 s".
-- Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Export JSON**, **Copy link**
-  (the link carries the setup, not the results).
+- Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Copy link** (the link carries the
+  setup, not the results) and **More actions** (Export JSON, Delete); Copy link and Export confirm in a toast.
+- **Polished 2026-10-21 (M4.5):** the simulation check is a line under the title (a banner with details when the
+  real network or a background tab shaped the run); the score shows its breakdown as bars; an eighth tile gives the
+  real network's speed while downloading; "What happened" is one row per note; "Try next" a row of cards; each chart
+  has Chart | Table in its header.
 - **Built 2026-10-20 (first slice):** the score with its breakdown (quality, switches, stalls, startup), seven tiles
   with a line each, the three charts drawn from the saved log (each with its sentence and data table), the setup
   (stream, network, every player setting, browser and player size), the simulation check, how the score is
@@ -137,7 +151,8 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   settings travel in the run link as `set=` and show in headings ("hls.js defaults · abrBandWidthFactor 0.8").
 - **Zoom (built 2026-10-20):** buttons above the charts (Zoom in, Zoom out, Earlier, Later, Whole run) with the
   stretch on view read out ("Showing 0:42–0:54 of 1:30"); a drag across any chart picks a stretch, a double-click
-  shows the whole run; each note's "Show on the chart" zooms to it and moves focus to the charts. The three charts
+  shows the whole run; each note's "Show ↗" (named "Show on the chart" for screen readers) zooms to it, moves focus
+  to the charts and rings the chart for a moment. The three charts
   zoom together, down to 4 s; the time axis, markers, sentences and tables follow the view, and the vertical scales
   stay those of the whole run.
 - **Change network** (built 2026-10-20) opens the network editor with the run's network; **Compare with…** (built

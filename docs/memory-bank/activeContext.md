@@ -1,7 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fifth session: M4, Compare and the font fixes live; the UI polish approved, not
-started).** Read this first, then `progress.md` (M4.5 holds the approved polish plan).
+**Updated 2026-10-21 (end of the sixth session: the approved UI polish, M4.5, built and committed, not pushed; it
+waits for the owner's review).** Read this first, then `progress.md` (M4.5 records what was built).
 
 ## Where things stand
 
@@ -14,46 +14,58 @@ started).** Read this first, then `progress.md` (M4.5 holds the approved polish 
   about 75 s; every screen checked live in Chromium, Firefox and WebKit, both themes). **CI green**: Lighthouse on
   GitHub's runner 100 in all four categories (CLS 0, FCP 0.9 s, LCP 1.4 s, TBT 0), e2e 135 passed. **Every push to
   `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
-- **What works today (locally; live is the fourth session's state):**
+- **Local `main` is 11 commits ahead of the live site** (`5a16d13`): the fifth session's docs, the polish (`ae2efa8`
+  to `8a0b4e4`), the CSS budget (`5341079`), the code review's fixes (`6c43a60`) and this memory bank. Not pushed:
+  the owner reviews the screenshots first (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n).
+- **What works today (locally; live is the fifth session's state, before the polish):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
     each; four player presets; Run), recent runs, how it works.
-  - **Run screen:** setup from the URL, a check of the real latency before the run, video, live tiles, three live
-    charts, an event log, a polite live log that reads out switches and stalls, a first-run hint ("What to watch",
-    until "Got it"), and at the end the score, an honesty paragraph and "See the report".
-  - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, zoomable charts with numbered markers, "What
-    happened", "Try next", setup, simulation check, how the score is computed; Run again, Change network, Compare
-    with…, Export JSON, Copy link, Delete.
+  - **Run screen:** setup from the URL, a check of the real latency before the run, a state chip and a progress bar
+    that glides with the run's clock, video, four tiles, three live charts (each with Chart | Table), an event log
+    beside the video that ends with the charts, a polite live log that reads out switches and stalls, a one-line
+    first-run hint (until "Got it"), and at the end the score, an honesty paragraph and "See the report".
+  - **Report (`/runs/<id>`):** the simulation check as a line or a banner under the title, the score with its
+    breakdown as bars, eight tiles (the eighth: the real network's speed while downloading), zoomable charts with
+    numbered markers, "What happened" rows, "Try next" cards, setup, how the score is computed; Run again, Change
+    network, Compare with…, Copy link, and a "More actions" menu (Export JSON, Delete); toasts confirm.
   - **Runs (`/runs`)** and **Compare (`/runs/compare`, built 2026-10-20):** two saved runs side by side: what changed,
     every number with B against A in words and a verdict, the charts overlaid (A solid, B dashed).
-  - **Networks (`/networks`)** and **Inspect (`/inspect`)** as in the fourth session.
+  - **Networks (`/networks`):** a sidebar of compact rows; the editor with Save and Run with this network in its
+    header, a `?` list of the keys, one panel for the point and the whole network, Import / Export in one menu.
+  - **Inspect (`/inspect`):** Link | Paste text | File as tabs, chips for samples, counts and playlists (each with its
+    worst finding).
   - **About (`/about`, built 2026-10-20):** how a run works, where the simulation stops, how repeatable it is, the
     numbers and the score, privacy, credits (film, 4G dataset, test streams, libraries with licences).
   - **Light theme (built 2026-10-20, the owner asked for it):** System (default), Light or Dark from three radios in
     the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
-- **Quality bar today:** 484 unit tests; 138 Playwright checks in Chromium, Firefox and WebKit (axe on every screen, in
-  both themes; 3 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 95.1 KB of a 100 KB brotli budget (now counting the app chunk the entry
-  loads after the first paint); Lighthouse on Home locally 0.98–0.99 performance, 1.0 in the rest (CI now fails
-  under 0.95, and opens `/`: it used to open `/index.html`, the not-found screen).
+- **Quality bar today (2026-10-21):** 489 unit tests; 141 Playwright checks in Chromium, Firefox and WebKit, 138 pass
+  and 3 keyboard checks are skipped in WebKit (which only tabs to text fields); axe on every screen in both themes;
+  the run-based specs repeated 2–3 times in each browser. Home's JavaScript 96.3 of 100 KB and its CSS 7.97 of 8 KB
+  (brotli; the CSS has 30 bytes of room). Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the
+  Linux container, 1.0 in the rest, CLS 0 (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout
+  shift stays under 0.03 on every screen (Home 0.0000 desktop, 0.0039 phone).
 - **Repeatability (`pnpm repeat`, measured 2026-10-20):** Each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads. The README and About quote the table.
 - **Schedule:** M0–M4 done (M4's target was Nov 22; done 2026-10-20 except the real Safari check, which needs the
   owner). M5: Compare is built; the case study, pinning and the LinkedIn post remain (launch Dec 6).
 
 ## Next step (in this order)
 
-1. **Build the approved UI polish (M4.5 in `progress.md`),** in its order, one commit and its tests per item. The
-   design: https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K. Show the owner screenshots in both themes before
-   asking to push.
-2. **Push the docs commits** with the first polish change (ask first).
+1. **The owner reviews the polish** on https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n (every screen in both
+   themes, the departures from the boards, the measurements). Change what they ask for, then ask to push.
+2. **Push** (ask first): 11 commits. Then check the live site in three browsers and both themes, and CI (Lighthouse
+   on GitHub's runner, e2e).
 3. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
-4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+4. **Record the README's GIF again** (`scripts/readme/record-gif.mjs`): the current one shows the old screens. The
+   owner uploads it (the command is in the script).
+5. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+6. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
 
-## Working with the owner (how this went on 2026-10-19 and 2026-10-20)
+## Working with the owner (how this went on 2026-10-19 to 2026-10-21)
 
 - Give a recommendation with each choice; the owner answers "go with recommendations" or picks, after seeing results
   (live numbers, screenshots).
@@ -81,22 +93,34 @@ that needs their eye under "Waiting for the owner".
 | 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the owner re-uploaded the 14 playlists the same day |
 | 15 | Charts | Own canvas code instead of uPlot: the agent's call on 2026-10-20 (reasons in `techContext.md`, Stack), shown to the owner with the results |
 | 16 | Themes | A light theme next to the dark one, with a System / Light / Dark switch; System is the default. The owner asked for it on 2026-10-20 ("not everyone will like" dark only); the light palette is the agent's, for the owner's eye |
-| 18 | UI polish | The proposal (header, Run, Report, Networks, Inspect, motion) approved as drawn on 2026-10-20, with the eighth Report tile (the real network's speed) and the simulation check as a banner; the build is left to a new session (the owner's request) |
+| 18 | UI polish | The proposal (header, Run, Report, Networks, Inspect, motion) approved as drawn on 2026-10-20, with the eighth Report tile (the real network's speed) and the simulation check as a banner; built 2026-10-21, waiting for the owner's review |
 | 17 | First paint | Home rendered at build time and hydrated, the app's code after the first paint: the agent's call on 2026-10-20 (`techContext.md`, "Themes and the first paint") |
 
 ## Design and plan artifacts
 
 - **Design canvas** (Home, Run, Report, Network editor, Inspector, visual system):
   https://claude.ai/artifact/BgVz6NLex5nHa9G5hGKej6. Private to the owner. The screens follow it.
-- **Polish proposal (2026-10-20, approved the same day, not built yet):** https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K.
+- **Polish proposal (2026-10-20, approved the same day, built 2026-10-21):** https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K.
   The owner asked for a friendlier, more compact UI: the wordmark sized to the nav, fewer and better-matched blocks,
   clearer labels, smooth motion (disclosures, the paste panel, run progress, state changes, scrolling). Six boards:
-  header before/after, Run, Report, Networks, Inspect, and an interactive motion board. The plan to build it is
-  M4.5 in `progress.md`.
+  header before/after, Run, Report, Networks, Inspect, and an interactive motion board. What was built is M4.5 in
+  `progress.md`.
+- **Polish review (2026-10-21):** https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n. Screenshots of the built polish
+  in both themes (from the production build), the departures from the proposal, the measurements. Private.
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 
-## Waiting for the owner (raised 2026-10-20)
+## Waiting for the owner (raised 2026-10-20 and 2026-10-21)
+
+- **The polish (2026-10-21): review it, then say when to push.** The review page lists where the build departs from
+  the boards: the score's bars are green (quality) and red (stalls) with grey for switches and startup, out of 100
+  points (the board drew pink and orange, which mean other things here, and doubled the bars); the state chip says
+  "Running" or "Finished" without the time or score; after a run the result card makes the left column longer than
+  the charts (the log keeps 96 px and scrolls); the Networks panel keeps the Name field, so its buttons sit on a second
+  row, and a saved network gets "Delete network" there; zoom's Earlier and Later are ‹ ›; the third-party samples keep
+  their "no guarantees" label; a few sizes moved 1–2 px onto the spacing scale (theme buttons 32 px, undo and redo 36,
+  every transition 200 ms) to stay inside the CSS budget. **The CSS budget has 30 bytes left:** the next visual change
+  needs trimming or a bigger budget, the owner's call.
 
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
@@ -110,6 +134,8 @@ that needs their eye under "Waiting for the owner".
   2. Rural 3G with Fast start; Stop halfway (an abort mid-download), then Run again.
   3. Start a run and switch to another tab for 20 s (the worker idles; the report should note background time).
   4. Inspect our "with problems" sample (four findings); the theme switch; Compare two runs.
+  5. The polish's menus: open the Report's "⋯" with the keyboard (Tab, Enter), then click Export JSON with the mouse
+     (Safari doesn't focus a clicked button, which once closed the menu first; Playwright's WebKit showed it).
   5. Anything that looks wrong: a screenshot is enough.
 - **Compare's colours:** A is a solid line in the text colour, B a dashed line in the accent (no new colour tokens;
   the network keeps its blue). The owner may prefer two new hues.
@@ -168,6 +194,21 @@ that needs their eye under "Waiting for the owner".
 - Whether to publish the playlist parser or the network simulator as npm packages after launch.
 
 ## Lessons worth keeping
+
+- **Tailwind's `flex-1` is `flex: 1 1 0%`,** and a percentage basis in a column of indefinite height counts the
+  content: the Run screen's event log grew with its lines. Use `flex-[1_1_0px]` to fill a column without growing it.
+- **WebKit moves focus to the nearest focusable ancestor** (`<main tabindex="-1">`) when a button that doesn't take
+  focus on click is pressed; Safari and Firefox on macOS don't focus clicked buttons at all. A popover that closes on
+  blur must ignore blurs during a press inside it (`Popover.tsx`). Chromium tests alone don't show it.
+- **axe measures what's painted:** a check during a fade (a table appearing, a theme switch) fails on contrast. Wait
+  with `settle()`, and after `emulateMedia` wait for `data-theme` first (`switchTheme()`).
+- **Smooth scrolling moves boxes after a jump:** a test that measures a box for the mouse waits for it to stop
+  (`steady()`).
+- **CSS bytes:** each one-off Tailwind class costs (a tint brings a fallback and a `color-mix` rule), and Tailwind
+  makes a class of any word in the source: a comment or a `style.transform` produced `.transform`. Reuse classes.
+- **Vite's dev server serves stale dependencies** ("504 Outdated Optimize Dep") after a module first imports a new
+  entry of a dependency (`react-dom`'s `flushSync`): restart it.
+- **zsh doesn't split `$var` into words:** pass file lists through `xargs`.
 
 - **`ch` is the width of "0" in whichever font is showing:** a box sized in `ch` changes width when a web font swaps
   in, and its text re-wraps. Size text boxes in `em`.

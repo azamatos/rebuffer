@@ -228,6 +228,23 @@ A run, step by step:
 - **Zod parses without compiling** (`src/core/zod.ts`, `jitless`): its probe for `new Function` made Firefox log a
   CSP error.
 
+## UI building blocks (built 2026-10-21, M4.5)
+
+- **Motion** lives in `src/styles.css` under `prefers-reduced-motion: no-preference`: disclosures open by height
+  (`::details-content` and `interpolate-size`), jumps within a page scroll smoothly (the router's own scroll is
+  `instant`, `src/router.tsx`), `.flash` rings a jump target (`src/ui/feedback/flash.ts`), and `.fade-in`,
+  `.pop-in` and `.toast-in` share one `rise` keyframe. Transitions are 200 ms.
+- **Toasts:** `toast(text)` (`src/ui/feedback/toast.ts`) shows in the shell's `#toasts`, a polite live region
+  without `role="status"`, since each screen's one status (the run's state, the zoom) is what screen readers and
+  tests find by that role. Errors stay on the page instead.
+- **Popover and MenuItem** (`src/ui/menu/Popover.tsx`): a disclosure button (`aria-expanded`), not an ARIA menu, so
+  Tab moves through it. Escape, an outside press or focus moving elsewhere closes it; blurs during a press inside it
+  are ignored, because Safari and Firefox on macOS don't focus a clicked button (WebKit moves focus to `<main>`).
+  It can be controlled from outside (the Networks screen's `?` key).
+- **Chart | Table:** `ShowAs` and `ChartOrTable` (`src/ui/run/chart-parts.tsx`): the table takes the chart's place,
+  at least 176 px tall, and the chart stays mounted under it (`visibility: hidden`), so canvases keep drawing; the
+  table is built only while it shows. Its region keeps the old name ("Buffer as a table").
+
 ## Metrics and score
 
 Definitions are in `productContext.md`. The score is the linear QoE model from Yin et al., SIGCOMM 2015 (bitrate
@@ -291,9 +308,10 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli: every script `index.html` loads, plus the app chunk the entry imports after the first paint with the chunks it needs (`.size-limit.js` reads both lists from the build: the page, and the entry's `__vite__mapDeps`). 95.1 KB on 2026-10-20 (93.4 before the theme switch and the deferred app; the entry's preload helper is about 1 KB). Lazy chunks: the Run screen, the Report, Compare, About, the Networks screen (10 KB gzip), the Inspect screen (21 KB gzip, with the playlist parser), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli: every script `index.html` loads, plus the app chunk the entry imports after the first paint with the chunks it needs (`.size-limit.js` reads both lists from the build: the page, and the entry's `__vite__mapDeps`). 95.1 KB on 2026-10-20 (93.4 before the theme switch and the deferred app; the entry's preload helper is about 1 KB); 96.3 KB on 2026-10-21 with the polish (the toaster lives in the shell). Lazy chunks: the Run screen, the Report, Compare, About, the Networks screen (10 KB gzip), the Inspect screen (21 KB gzip, with the playlist parser), the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
+| Home route CSS | ≤ 8 KB brotli (one file for every screen). 7.97 KB on 2026-10-21: the polish had taken it from 6.5 to 8.36 KB; each one-off class costs bytes (a tint like `bg-accent/12` brings a fallback and a `color-mix` rule, and Tailwind makes a class of any word it finds in the source, a comment included), so new UI reuses the classes already there |
 | Lighthouse | ≥ 95 in every category on Home and a Report |
 
 ## Tests
@@ -304,17 +322,23 @@ reference code is non-commercial research only, with patent notices.
 - **Playwright today** (Chromium, Firefox, WebKit; axe on every screen): `shell.spec.ts` (routes, skip link,
   keyboard navigation), `shaper.spec.ts` (byte-exact shaped downloads within tolerance, fair sharing, Range,
   redirects, aborts, the `*` wildcard), `run.spec.ts` (a full run on the synthetic stream started by keyboard, its
-  charts' text and a data table, a repeat run from saved downloads; skipped in a browser build that can't decode
-  H.264 through MSE), `home.spec.ts` (Home's setup by keyboard: own stream link, network, player, Run, then Stop on
+  charts' text and a data table, a repeat run from saved downloads, the progress bar moving every frame and the
+  columns ending together, the Report's simulation-check banner after a run from a slow server; skipped in a browser
+  build that can't decode H.264 through MSE), `home.spec.ts` (Home's setup by keyboard: own stream link, network, player, Run, then Stop on
   the Run screen; a bad link explained; the "Try the tunnel" link), `report.spec.ts` (a run saved and opened by
-  keyboard, every section of the report; Export JSON, Copy link and Delete by keyboard; the Runs list opens the
+  keyboard, every section of the report; Copy link, the "More actions" menu (Escape, a mouse click after opening it
+  by keyboard, toasts with one status left) and Delete by keyboard; the score's method opened from the score card; the Runs list opens the
   report by keyboard; Home's recent runs; zoom by keyboard, by a note's button and by a mouse drag, with the
-  sentences and a table following the view; axe on each). Shared helpers in `tests/e2e/helpers.ts`.
+  sentences and a table following the view; axe on each). Shared helpers in `tests/e2e/helpers.ts`: `openApp`,
+  `tabTo` (up to 60 Tabs), `settle` (waits for animations before axe, which measures what's painted), `steady` (waits
+  for a box to stop moving after a smooth scroll) and `switchTheme`.
   `networks.spec.ts` (a trace with its credit; the tunnel edited on the curve by keyboard: choose, move, step to a
   quality line, add, delete, undo; a time outside the neighbours explained; name and latency; export JSON; save,
-  with focus kept; Use in a run carries the name; a CSV imported from the keyboard and a broken file explained;
-  axe), `inspect.spec.ts` (a link typed by keyboard: summary, ladder with codecs and measured peaks, findings,
-  another playlist's segments, Run this stream; pasted text; a file; a server without CORS, via the file server's
+  with focus kept and a toast; Run with this network carries the name; a CSV imported from the Import / Export menu
+  and a broken file explained; the points table; the `?` shortcuts with focus left on the curve; axe in both
+  themes), `inspect.spec.ts` (a link typed by keyboard: summary, ladder with codecs and measured peaks, findings,
+  another playlist's segments from the chips by arrow keys and their table, Run this stream; the tabs by arrow keys
+  and Enter; pasted text; a file; a server without CORS, via the file server's
   `/nocors/` prefix; a bad link; axe), and `report.spec.ts` covers "Change network".
   Planned: Home → Run → Report. The "with problems" sample lives on media.azamatos.com, which CI doesn't depend on:
   its four mistakes are checked by hand (all found, 2026-10-20) and by unit tests on `problems-*.m3u8` fixtures.
