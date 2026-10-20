@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "repeat": "playwright test --config playwright.repeat.config.ts && node tests/repeat/summarize.mjs",
     "size": "size-limit",
     "media:encode": "node scripts/media/encode.mjs",
     "traces:convert": "node scripts/traces/convert-irish4g.mjs"

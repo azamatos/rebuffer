@@ -13,3 +13,6 @@ blob-report/
 
 # Agent worktrees
 /.claude/worktrees/
+
+# The repeatability job's results (pnpm repeat)
+/repeat-results/

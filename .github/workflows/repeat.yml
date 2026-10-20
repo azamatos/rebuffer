@@ -1,0 +1,40 @@
+name: Repeatability
+
+# Every network preset, run five times in Chromium on a synthetic stream from a local server (tests/repeat/).
+# About an hour, so it runs by hand and once a week rather than on every push; the table lands in the run's summary
+# and in the repeat-results artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Runs of each network
+        default: "5"
+  schedule:
+    - cron: "0 3 * * 1"
+
+jobs:
+  repeat:
+    name: Spread of each preset over repeated runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pnpm repeat
+        env:
+          REPEAT_RUNS: ${{ inputs.runs || '5' }}
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: repeat-results
+          path: repeat-results/
+          retention-days: 90
