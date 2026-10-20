@@ -2,9 +2,10 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource/space-mono/400.css";
 
-/* Tokens from the design proposal (docs/memory-bank/activeContext.md links the canvas). Dark only, like
-   azamatos.com. Chart and status colours were checked for contrast and colour-blind separation on
-   --color-surface. `static` keeps every token on :root, because the chart canvases read them there. */
+/* Tokens from the design proposal (docs/memory-bank/activeContext.md links the canvas). Dark by default, like
+   azamatos.com; the light theme below overrides them (src/ui/theme/theme.ts keeps <html data-theme> set). Chart
+   and status colours were checked for contrast and colour-blind separation on --color-surface in both themes.
+   `static` keeps every token on :root, because the chart canvases read them there. */
 @theme static {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -19,6 +20,8 @@
   --color-accent: #68edc0;
   --color-accent-hover: #a6f4da;
   --color-accent-ink: #03140e;
+  /* The wordmark's tilde, as on azamatos.com. */
+  --color-prompt: #5bc8c0;
 
   /* Chart series: each colour means one thing everywhere. */
   --color-net: #3d85d1;
@@ -51,6 +54,42 @@
       opacity: 0;
     }
   }
+}
+
+/* Light: the same roles on a light ground. Text colours keep 4.5:1 on both grounds; the accent darkens to a
+   teal that white text reads on; qualities run light to dark, lowest to highest, as they run dark to light on the
+   dark ground. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-ground: #f4f5f6;
+  --color-surface: #ffffff;
+  --color-line: rgb(15 19 22 / 0.1);
+  --color-line-strong: rgb(15 19 22 / 0.22);
+  --color-fg: #0f1316;
+  --color-fg-2: #454d54;
+  --color-fg-3: #5b636a;
+  --color-accent: #0a7a5a;
+  --color-accent-hover: #065c43;
+  --color-accent-ink: #ffffff;
+  --color-prompt: #12807a;
+
+  --color-net: #2b6cb5;
+  --color-estimate: #b03a80;
+  --color-onscreen: #0f8560;
+  --color-buffer: #6a4bd0;
+  --color-q0: #5fbe9c;
+  --color-q1: #36a882;
+  --color-q2: #1b8a65;
+  --color-q3: #106a4e;
+  --color-q4: #084834;
+
+  --color-error: #d22f36;
+  --color-error-text: #b01f27;
+  --color-warning: #b06500;
+  --color-warning-text: #8a4f00;
+  --color-note: #5f7388;
+  --color-note-text: #46586b;
 }
 
 @layer base {

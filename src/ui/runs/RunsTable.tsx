@@ -47,14 +47,14 @@ export function RunsTable({
           {runs.map((run) => {
             const when = formatWhen(run.savedAt, now);
             return (
-              <tr key={run.id} className="border-t border-white/6">
+              <tr key={run.id} className="border-t border-fg/6">
                 <td className="px-5 py-3.5">
                   <Link
                     to="/runs/$runId"
                     params={{ runId: run.id }}
                     className="inline-flex items-center gap-2.5 font-semibold text-fg hover:text-accent"
                   >
-                    <span className="inline-flex h-7 w-10 items-center justify-center rounded-md bg-white/6">
+                    <span className="inline-flex h-7 w-10 items-center justify-center rounded-md bg-fg/6">
                       {Math.round(run.score)}
                     </span>
                     Report

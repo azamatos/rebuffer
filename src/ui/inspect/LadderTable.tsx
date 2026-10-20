@@ -46,10 +46,7 @@ export function LadderTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr
-              key={row.line}
-              className={`border-t border-white/6 ${row.over ? "bg-warning/6" : ""}`}
-            >
+            <tr key={row.line} className={`border-t border-fg/6 ${row.over ? "bg-warning/6" : ""}`}>
               <th scope="row" className="py-3 pr-3 align-top font-semibold">
                 <span className="inline-flex items-center gap-2.5">
                   <svg width="10" height="20" aria-hidden="true">

@@ -1,7 +1,8 @@
 # Cloudflare Pages headers. connect-src and media-src stay open because the lab plays any stream link the
-# visitor enters; everything else is same-origin.
+# visitor enters; everything else is same-origin. The one inline script (index.html: the theme before the first paint)
+# is allowed by its hash; tests/unit/csp.test.ts checks that it matches.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; media-src * blob:; connect-src *; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-7UBYcv/zZvo1kC+PvtgX8rAbnwUbg25SERdoUXPE98g=' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; media-src * blob:; connect-src *; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   Permissions-Policy: camera=(), microphone=(), geolocation=()

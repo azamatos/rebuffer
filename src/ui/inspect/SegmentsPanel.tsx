@@ -144,7 +144,7 @@ export function SegmentsPanel({ choices }: { choices: readonly SegmentsChoice[] 
             </thead>
             <tbody>
               {choice.playlist.segments.map((segment, index) => (
-                <tr key={index} className="border-t border-white/6">
+                <tr key={index} className="border-t border-fg/6">
                   <td className="py-1.5 pr-4">{index + 1}</td>
                   <td className="py-1.5 pr-4 font-mono">{formatClock(segment.startTime, 1)}</td>
                   <td className="py-1.5 pr-4">{seconds(segment.duration)}</td>

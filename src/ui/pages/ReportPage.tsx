@@ -300,7 +300,7 @@ function Report({ run }: { run: SavedRun }) {
             {ideas.map((idea) => (
               <li
                 key={idea.title}
-                className="flex flex-wrap items-center justify-between gap-2.5 border-t border-white/6 pt-2.5"
+                className="flex flex-wrap items-center justify-between gap-2.5 border-t border-fg/6 pt-2.5"
               >
                 <div className="min-w-0 flex-[1_1_200px]">
                   <p className="font-medium">{idea.title}</p>

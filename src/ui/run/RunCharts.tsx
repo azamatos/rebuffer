@@ -15,6 +15,7 @@ import type { Run } from "@/core/run/controller";
 import type { Level, RunEvent } from "@/core/run/events";
 import type { TimeRange } from "@/core/run/range";
 import { buildTimeline } from "@/core/run/timeline";
+import { useTheme } from "@/ui/theme/useTheme";
 
 interface RunChartsProps {
   curve: NetworkCurve;
@@ -94,6 +95,11 @@ export function RunCharts({
     charts.show(finished, markers);
   }, [run, finished, curve, markers]);
 
+  const theme = useTheme();
+  useEffect(() => {
+    chartsRef.current?.retheme();
+  }, [theme]);
+
   // The Report's zoom: the stretch on view, and a pointer to pick another.
   useEffect(() => {
     chartsRef.current?.zoom(range);
@@ -160,7 +166,7 @@ export function RunCharts({
               </thead>
               <tbody>
                 {chartRows(timeline, curve, untilS, range).map((row) => (
-                  <tr key={row.t} className="border-t border-white/6">
+                  <tr key={row.t} className="border-t border-fg/6">
                     <Td mono>{formatClock(row.t)}</Td>
                     <Td>{formatRate(row.networkBps)}</Td>
                     <Td>{row.estimateBps === undefined ? "—" : formatRate(row.estimateBps)}</Td>
@@ -207,7 +213,7 @@ export function RunCharts({
               </thead>
               <tbody>
                 {chartRows(timeline, curve, untilS, range).map((row) => (
-                  <tr key={row.t} className="border-t border-white/6">
+                  <tr key={row.t} className="border-t border-fg/6">
                     <Td mono>{formatClock(row.t)}</Td>
                     <Td>{row.bufferS === undefined ? "—" : `${row.bufferS.toFixed(1)} s`}</Td>
                     <Td>{row.stalled ? "Stalled" : row.bufferS === undefined ? "—" : "Playing"}</Td>
@@ -275,7 +281,7 @@ export function RunCharts({
               </thead>
               <tbody>
                 {downloadRows(timeline, range, untilS).map((row, i) => (
-                  <tr key={`${row.start}-${i}`} className="border-t border-white/6">
+                  <tr key={`${row.start}-${i}`} className="border-t border-fg/6">
                     <Td mono>{formatClock(row.start, 1)}</Td>
                     <Td>{row.quality}</Td>
                     <Td>{row.tookS === undefined ? "—" : formatDuration(row.tookS)}</Td>

@@ -27,6 +27,7 @@ import {
   setRate,
   stepRate,
 } from "@/core/netsim/edit";
+import { useTheme } from "@/ui/theme/useTheme";
 
 interface CurveEditorProps {
   curve: NetworkCurve;
@@ -65,6 +66,7 @@ export function CurveEditor({
   const [loaded] = useState(curve);
   const helpId = useId();
 
+  const theme = useTheme();
   const shown = preview ?? curve;
   const domain = editorDomain(shown, ladder, editorDomain(loaded, ladder));
 
@@ -89,6 +91,12 @@ export function CurveEditor({
     const canvas = canvasRef.current;
     if (!canvas) return;
     themeRef.current = readTheme(canvas);
+    drawRef.current();
+  }, [theme]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     const fit = () => {
       painterRef.current = fitCanvas(canvas);
       drawRef.current();

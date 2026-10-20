@@ -208,7 +208,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
                 onClick={() => {
                   edit(setShape(curve, shape));
                 }}
-                className="min-h-9 px-3 text-sm text-fg-2 aria-pressed:bg-white/10 aria-pressed:text-fg"
+                className="min-h-9 px-3 text-sm text-fg-2 aria-pressed:bg-fg/10 aria-pressed:text-fg"
               >
                 {shape === "steps" ? "Steps" : "Slopes"}
               </button>
@@ -314,7 +314,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
                   <tr
                     key={i}
                     aria-current={i === index ? "true" : undefined}
-                    className="border-t border-white/6 aria-[current]:text-accent"
+                    className="border-t border-fg/6 aria-[current]:text-accent"
                   >
                     <td className="py-1.5 pr-4">{i + 1}</td>
                     <td className="py-1.5 pr-4 font-mono">{clock(point.t)}</td>

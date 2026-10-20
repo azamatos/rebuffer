@@ -32,6 +32,8 @@ export interface RunCharts {
   add(event: RunEvent): void;
   /** Draws a finished run from its whole log at once (the Report), with numbered markers for its notes. */
   show(events: readonly RunEvent[], markers?: readonly ChartMarker[]): void;
+  /** Reads the colours again and redraws, after the page's theme changed. */
+  retheme(): void;
   /** Shows only `range` of the run on all three charts (the Report's zoom); undefined shows all of it. */
   zoom(range: TimeRange | undefined): void;
   /**
@@ -56,7 +58,7 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
   let range: TimeRange | undefined;
   let selection: TimeRange | undefined;
   let frameId = 0;
-  const theme: ChartTheme = readTheme(canvases.network);
+  let theme: ChartTheme = readTheme(canvases.network);
   const painters = new Map<HTMLCanvasElement, Painter | undefined>();
   const fit = (canvas: HTMLCanvasElement) => {
     painters.set(canvas, fitCanvas(canvas));
@@ -123,6 +125,10 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
       markers = numbered;
       timeline = createTimeline();
       for (const event of events) addEvent(timeline, event);
+      draw();
+    },
+    retheme() {
+      theme = readTheme(canvases.network);
       draw();
     },
     zoom(next) {

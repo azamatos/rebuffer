@@ -271,7 +271,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
               aria-valuemax={setup.curve.lengthS}
               aria-valuenow={Math.round(elapsed)}
               aria-valuetext={`${formatClock(elapsed)} of ${formatClock(setup.curve.lengthS)}`}
-              className="h-1.5 flex-auto overflow-hidden rounded-full bg-white/8"
+              className="h-1.5 flex-auto overflow-hidden rounded-full bg-fg/8"
             >
               <div
                 className="h-1.5 bg-accent"
@@ -354,7 +354,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         ) : (
           <ol className="text-sm tabular-nums">
             {lines.map((line, i) => (
-              <li key={`${line.t}-${i}`} className="flex gap-4 border-t border-white/6 py-2">
+              <li key={`${line.t}-${i}`} className="flex gap-4 border-t border-fg/6 py-2">
                 <span
                   className={`w-14 flex-none font-mono ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
                 >

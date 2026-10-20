@@ -1,4 +1,5 @@
 import { HeadContent, Link, Outlet } from "@tanstack/react-router";
+import { ThemeSwitch } from "@/ui/theme/ThemeSwitch";
 import { Wordmark } from "./Logo";
 
 // Home is where runs are set up, so its link is "Run"; a report counts as part of Runs.
@@ -32,13 +33,14 @@ export function AppShell() {
                   key={item.to}
                   to={item.to}
                   className="rounded-lg px-3 py-2 text-fg-2 hover:text-fg"
-                  activeProps={{ className: "bg-white/6 text-fg" }}
+                  activeProps={{ className: "bg-fg/6 text-fg" }}
                   activeOptions={{ exact: item.exact }}
                 >
                   {item.label}
                 </Link>
               ))}
             </nav>
+            <ThemeSwitch />
           </div>
         </header>
 

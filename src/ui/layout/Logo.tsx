@@ -9,7 +9,7 @@ export function Wordmark() {
       <span aria-hidden="true" className="text-accent">
         ➜
       </span>
-      <span aria-hidden="true" className="text-[#5bc8c0]">
+      <span aria-hidden="true" className="text-prompt">
         ~
       </span>
       <span className="text-fg">

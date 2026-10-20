@@ -81,7 +81,7 @@ export function HomePage() {
         </h2>
         <ol className="grid gap-4 sm:grid-cols-3">
           {steps.map((step) => (
-            <li key={step.title} className="border-t border-white/12 pt-4">
+            <li key={step.title} className="border-t border-fg/12 pt-4">
               <p className="mb-1.5 font-semibold">{step.title}</p>
               <p className="text-[15px] text-fg-2">{step.text}</p>
             </li>

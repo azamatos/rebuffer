@@ -43,7 +43,7 @@ export function FindingsList({
       {findings.map((finding) => (
         <li
           key={`${finding.id}-${finding.message}`}
-          className="flex gap-3.5 border-t border-white/6 py-3.5"
+          className="flex gap-3.5 border-t border-fg/6 py-3.5"
         >
           <span className="mt-1">
             <SeverityIcon severity={finding.severity} size={18} />

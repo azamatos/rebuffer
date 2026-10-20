@@ -42,7 +42,7 @@ function Choice({
   children: ReactNode;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[15px] hover:bg-white/4 has-checked:bg-white/6">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[15px] hover:bg-fg/4 has-checked:bg-fg/6">
       <input
         type="radio"
         name={name}
