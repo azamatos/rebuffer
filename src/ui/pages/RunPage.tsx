@@ -26,7 +26,8 @@ import {
   formatMbps,
 } from "@/core/run/describe";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
-import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
+import { MAX_NETWORK_NAME } from "@/core/run/links";
+import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 import { RunCharts } from "@/ui/run/RunCharts";
 
@@ -34,6 +35,8 @@ export interface RunSearch {
   stream?: string;
   network?: string;
   curve?: string;
+  /** A drawn network's name; "Custom network" without one. */
+  name?: string;
   player?: string;
   /** Player settings changed from the preset's, as `abrEwmaFastVoD:1.5` (the Report's "try next" ideas). */
   set?: string;
@@ -70,7 +73,7 @@ function resolveSetup(
     if (!parsed.ok)
       return { ok: false, error: `The network in this link is broken: ${parsed.errors.join(" ")}` };
     curve = parsed.curve;
-    networkName = "Custom network";
+    networkName = search.name?.trim().slice(0, MAX_NETWORK_NAME) || CUSTOM_NETWORK_NAME;
   } else {
     const preset = networkById(search.network ?? DEFAULT_NETWORK_ID);
     if (!preset)

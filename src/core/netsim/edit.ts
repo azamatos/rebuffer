@@ -62,7 +62,10 @@ export function timeBounds(curve: NetworkCurve, index: number): { min: number; m
   return min > max ? { min: point.t, max: point.t } : { min, max };
 }
 
+/** The curve with point `index` at `t` and `mbps`; the same curve when that changes nothing, so it isn't an undo step. */
 function withPoint(curve: NetworkCurve, index: number, t: number, mbps: number): NetworkCurve {
+  const point = curve.points[index];
+  if (point?.t === t && point.mbps === mbps) return curve;
   return {
     ...curve,
     points: curve.points.map((point, i) => (i === index ? { t, mbps } : point)),
@@ -190,6 +193,13 @@ export function placePoint(
     return { ok: false, error: `Bandwidth must be from 0 to ${CURVE_LIMITS.maxMbps} Mbps.` };
   }
   return { ok: true, curve: withPoint(curve, index, roundTime(t), roundRate(mbps)) };
+}
+
+/** "Point 4 of 8: 0:42, 0 Mbps", for the editor's live region and its description. */
+export function describePoint(curve: NetworkCurve, index: number): string {
+  const point = curve.points[index];
+  if (!point) return "";
+  return `Point ${index + 1} of ${curve.points.length}: ${formatClock(point.t, point.t % 1 === 0 ? 0 : 1)}, ${point.mbps} Mbps`;
 }
 
 /** Undo and redo over whole curves. */

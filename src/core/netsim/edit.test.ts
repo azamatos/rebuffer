@@ -3,6 +3,7 @@ import { validateCurve, type NetworkCurve } from "./curve";
 import {
   addPointAfter,
   deletePoint,
+  describePoint,
   inTimeOrder,
   insertPoint,
   ladderStep,
@@ -65,6 +66,12 @@ describe("timeBounds and moveTime", () => {
     ]);
     expect(timeBounds(curve, 2)).toEqual({ min: 10.1, max: 10.1 });
     expect(times(moveTime(steps([[0, 1]]), 0, 12.345))).toEqual([12.3]);
+  });
+
+  it("returns the same curve when a move changes nothing, so it isn't an undo step", () => {
+    const curve = steps([[0, 6]]);
+    expect(moveTime(curve, 0, -5)).toBe(curve);
+    expect(setRate(curve, 0, 6)).toBe(curve);
   });
 });
 
@@ -217,5 +224,13 @@ describe("history", () => {
     expect(history.future).toEqual([]);
     expect(redo(history)).toBe(history);
     expect(record(history, history.present)).toBe(history);
+  });
+});
+
+describe("describePoint", () => {
+  it("says which point it is, when and how much", () => {
+    expect(describePoint(tunnel, 6)).toBe("Point 7 of 10: 0:42, 0 Mbps");
+    expect(describePoint(steps([[12.5, 2.47]]), 0)).toBe("Point 1 of 1: 0:12.5, 2.47 Mbps");
+    expect(describePoint(tunnel, 99)).toBe("");
   });
 });

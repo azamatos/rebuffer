@@ -54,3 +54,15 @@ export const SAMPLE_STREAMS: readonly SampleStream[] = [
 ];
 
 export const DEFAULT_STREAM = SAMPLE_STREAMS[0] as SampleStream;
+
+/**
+ * Our film's qualities as its multivariant playlist declares them (BANDWIDTH, bits/s), named by width class: the
+ * lines the network editor draws over a curve.
+ */
+export const DEFAULT_LADDER: readonly { name: string; bitrate: number }[] = [
+  { name: "240p", bitrate: 469_484 },
+  { name: "360p", bitrate: 938_042 },
+  { name: "540p", bitrate: 1_918_296 },
+  { name: "720p", bitrate: 3_295_352 },
+  { name: "1080p", bitrate: 5_991_394 },
+];

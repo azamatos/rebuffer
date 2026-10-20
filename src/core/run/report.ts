@@ -1,4 +1,4 @@
-import { curveToParam } from "@/core/netsim/url";
+import type { NetworkCurve } from "@/core/netsim/curve-math";
 import type { SavedRun } from "@/core/persist/runs";
 import {
   formatSetting,
@@ -10,6 +10,7 @@ import {
   type PlayerSettings,
 } from "@/core/player/settings";
 import type { Idea } from "./ideas";
+import { networkSearch, type NetworkSearch } from "./links";
 import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID, runSearchFor, type RunLinkSearch } from "./setup";
 
 /**
@@ -17,24 +18,32 @@ import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID, runSearchFor, type RunLinkSearch
  * links and words.
  */
 
-/** The Run screen's search params that repeat a saved run's setup: a preset by its id, a drawn network as `curve`. */
+/**
+ * The Run screen's search params that repeat a saved run's setup: a preset by its id, a drawn network as `curve`
+ * with its name.
+ */
 export function savedRunSearch(
   run: SavedRun,
   { start = false } = {},
-): RunLinkSearch & { curve?: string } {
-  const { streamUrl, network, player } = run.setup;
+): RunLinkSearch & NetworkSearch {
+  return runSearchWithNetwork(run, run.setup.network, { start });
+}
+
+/** A saved run's setup with another network: the Report's "Change network", through the Networks screen. */
+export function runSearchWithNetwork(
+  run: SavedRun,
+  network: { id: string | undefined; name: string; curve: NetworkCurve },
+  { start = false } = {},
+): RunLinkSearch & NetworkSearch {
+  const { streamUrl, player } = run.setup;
   const changes = playerChanges(run);
   const set = Object.keys(changes).length > 0 ? { set: settingsToParam(changes) } : {};
-  if (network.id !== undefined) {
-    return {
-      ...runSearchFor({ streamUrl, networkId: network.id, playerId: player.presetId }, { start }),
-      ...set,
-    };
-  }
-  // A drawn network has no id: its curve travels in the link. The network part of runSearchFor is replaced.
-  const search = runSearchFor({ streamUrl, networkId: "", playerId: player.presetId }, { start });
-  delete search.network;
-  return { ...search, curve: curveToParam(network.curve), ...set };
+  // The network part of runSearchFor is replaced by the network's own params.
+  const search = runSearchFor(
+    { streamUrl, networkId: DEFAULT_NETWORK_ID, playerId: player.presetId },
+    { start },
+  );
+  return { ...search, ...networkSearch(network), ...set };
 }
 
 /** The settings a saved run changed from its preset's. */
@@ -55,7 +64,7 @@ export function describeSettings(settings: PlayerSettings): string[] {
 }
 
 /** The Run screen's search params for `idea`: this run's setup with the one change, started at once. */
-export function ideaSearch(run: SavedRun, idea: Idea): RunLinkSearch & { curve?: string } {
+export function ideaSearch(run: SavedRun, idea: Idea): RunLinkSearch & NetworkSearch {
   const next = savedRunSearch(run, { start: true });
   const { apply } = idea;
   if (apply.kind === "settings") {
@@ -68,6 +77,7 @@ export function ideaSearch(run: SavedRun, idea: Idea): RunLinkSearch & { curve?:
     return next;
   }
   delete next.curve;
+  delete next.name;
   if (apply.networkId === DEFAULT_NETWORK_ID) delete next.network;
   else next.network = apply.networkId;
   return next;

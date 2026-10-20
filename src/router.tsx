@@ -4,6 +4,7 @@ import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
 import { PlannedPage } from "@/ui/pages/PlannedPage";
+import type { NetworksSearch } from "@/ui/networks/NetworkList";
 import type { RunSearch } from "@/ui/pages/RunPage";
 
 // The Run screen brings hls.js, zod and the simulator client, so it loads only when opened.
@@ -12,6 +13,9 @@ const RunPage = lazy(() =>
 );
 const RunsPage = lazy(() =>
   import("@/ui/pages/RunsPage").then((module) => ({ default: module.RunsPage })),
+);
+const NetworksPage = lazy(() =>
+  import("@/ui/pages/NetworksPage").then((module) => ({ default: module.NetworksPage })),
 );
 // The Report draws the same charts, so it loads on demand too.
 const ReportPage = lazy(() =>
@@ -35,7 +39,7 @@ const homeRoute = createRoute({
 /** Keeps the string params the Run screen knows; anything else in the URL is ignored. */
 function runSearch(search: Record<string, unknown>): RunSearch {
   const result: RunSearch = {};
-  for (const key of ["stream", "network", "curve", "player", "set", "start"] as const) {
+  for (const key of ["stream", "network", "curve", "name", "player", "set", "start"] as const) {
     const value = search[key];
     if (typeof value === "string" && value !== "") result[key] = value;
   }
@@ -86,17 +90,32 @@ function ReportRoute() {
   );
 }
 
+/** Keeps the string params the Networks screen knows. */
+function networksSearch(search: Record<string, unknown>): NetworksSearch {
+  const result: NetworksSearch = {};
+  for (const key of ["network", "saved", "run", "new"] as const) {
+    const value = search[key];
+    if (typeof value === "string" && value !== "") result[key] = value;
+  }
+  return result;
+}
+
 const networksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/networks",
   head: () => title("Networks"),
-  component: () => (
-    <PlannedPage
-      title="Networks"
-      summary="Presets, recorded 4G traces and a bandwidth curve you draw, with the stream's quality ladder drawn over it."
-    />
-  ),
+  validateSearch: networksSearch,
+  component: NetworksRoute,
 });
+
+function NetworksRoute() {
+  const search = networksRoute.useSearch();
+  return (
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the networks…</p>}>
+      <NetworksPage search={search} />
+    </Suspense>
+  );
+}
 
 const inspectRoute = createRoute({
   getParentRoute: () => rootRoute,

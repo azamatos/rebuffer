@@ -9,6 +9,8 @@ export interface SetupChoice {
 
 /** The Run screen's defaults when its link leaves a part out. */
 export const DEFAULT_NETWORK_ID = "tunnel";
+/** A drawn network's name when its link doesn't give one. */
+export const CUSTOM_NETWORK_NAME = "Custom network";
 export const DEFAULT_PLAYER_ID = "defaults";
 
 /** The Run screen's URL search params for a setup, as strings. */

@@ -66,7 +66,10 @@ export function savedNetworks(): NetworkStore {
   return shared;
 }
 
-/** A short random id for a saved network. */
+/**
+ * A short random id for a saved network. It starts with a letter: the router quotes a search value that reads as a
+ * number ("12345678", "1234e567"), and the address should stay plain.
+ */
 export function newNetworkId(): string {
-  return crypto.randomUUID().slice(0, 8);
+  return `n${crypto.randomUUID().slice(0, 7)}`;
 }

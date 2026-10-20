@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RUN_FORMAT, RUN_VERSION, type SavedRun } from "@/core/persist/runs";
 import { DEFAULT_STREAM } from "@/core/samples";
-import { describeSettings, savedRunSearch } from "./report";
+import { describeSettings, runSearchWithNetwork, savedRunSearch } from "./report";
 
 const saved = (network: SavedRun["setup"]["network"], presetId = "defaults"): SavedRun => ({
   format: RUN_FORMAT,
@@ -36,9 +36,35 @@ describe("savedRunSearch", () => {
     );
   });
 
-  it("carries a drawn network in the link", () => {
+  it("carries a drawn network in the link, with its name", () => {
     expect(savedRunSearch(saved({ id: undefined, name: "Custom network", curve }))).toEqual({
       curve: "steps,50,12,0:4",
+    });
+    expect(savedRunSearch(saved({ id: undefined, name: " My tunnel ", curve }))).toEqual({
+      curve: "steps,50,12,0:4",
+      name: "My tunnel",
+    });
+  });
+});
+
+describe("runSearchWithNetwork", () => {
+  it("keeps the run's stream and player and swaps the network", () => {
+    const run = saved({ id: "lift", name: "Lift", curve }, "fast-start");
+    run.setup.player.settings = { startLevel: 0, maxBufferLength: 10 };
+    expect(runSearchWithNetwork(run, { id: undefined, name: "Lift, edited", curve })).toEqual({
+      player: "fast-start",
+      curve: "steps,50,12,0:4",
+      name: "Lift, edited",
+      set: "maxBufferLength:10",
+    });
+    expect(runSearchWithNetwork(run, { id: "irish-4g-car", name: "Car, 4G", curve })).toEqual({
+      player: "fast-start",
+      network: "irish-4g-car",
+      set: "maxBufferLength:10",
+    });
+    expect(runSearchWithNetwork(run, { id: "tunnel", name: "Tunnel", curve })).toEqual({
+      player: "fast-start",
+      set: "maxBufferLength:10",
     });
   });
 });

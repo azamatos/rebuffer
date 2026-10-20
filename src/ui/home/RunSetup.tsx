@@ -1,8 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useRef, useState, type ReactNode, type SubmitEvent } from "react";
-import { linearScale, logScale } from "@/charts/scale";
 import { formatClock } from "@/core/format/time";
-import { curveOutline, type NetworkCurve } from "@/core/netsim/curve-math";
 import { presets, type NetworkPreset } from "@/core/netsim/presets";
 import { PLAYER_PRESETS, type PlayerPreset } from "@/core/player/settings";
 import {
@@ -12,6 +10,7 @@ import {
   runSearchFor,
 } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
+import { CurveThumb } from "@/ui/networks/CurveThumb";
 
 /** The stream choice that reveals a field for any HLS link. */
 const OWN_LINK = "own-link";
@@ -56,27 +55,6 @@ function Choice({
       />
       {children}
     </label>
-  );
-}
-
-/** Every network's thumbnail shares one log scale, 0.1–60 Mbps, so they compare at a glance. */
-const THUMB_RANGE: [number, number] = [1e5, 6e7];
-
-function CurveThumb({ curve }: { curve: NetworkCurve }) {
-  const x = linearScale([0, curve.lengthS], [0, 100]);
-  const y = logScale(THUMB_RANGE, [30, 1]);
-  const corners = curveOutline(curve, 0, curve.lengthS)
-    .map((corner) => `L${x(corner.t).toFixed(1)},${y(corner.bps).toFixed(1)}`)
-    .join(" ");
-  return (
-    <svg
-      viewBox="0 0 100 30"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      className="ml-auto h-5 w-16 flex-none"
-    >
-      <path d={`M0,30 ${corners} L100,30 Z`} className="fill-net/45" />
-    </svg>
   );
 }
 
@@ -222,7 +200,7 @@ export function RunSetup() {
                 onChange={setNetworkId}
               >
                 <span className="min-w-0">{preset.name}</span>
-                <CurveThumb curve={preset.curve} />
+                <CurveThumb curve={preset.curve} className="ml-auto h-5 w-16 flex-none" />
               </Choice>
             ))}
           </div>
