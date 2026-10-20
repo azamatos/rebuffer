@@ -48,13 +48,15 @@ export function bandwidthDomain(curve: NetworkCurve, levels: readonly Level[]): 
 /** Round time steps for axis labels, seconds. */
 const TIME_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800];
 
-/** Times for axis labels from 0 to `lengthS`, at a round step that leaves `minGapPx` between labels. */
-export function timeTicks(lengthS: number, widthPx: number, minGapPx = 72): number[] {
-  if (!(lengthS > 0) || !(widthPx > 0)) return [0];
-  const perSecond = widthPx / lengthS;
+/** Times for axis labels from `from` to `to`, at a round step that leaves `minGapPx` between labels. */
+export function timeTicks(from: number, to: number, widthPx: number, minGapPx = 72): number[] {
+  if (!(to > from) || !(widthPx > 0)) return [Math.max(0, from)];
+  const perSecond = widthPx / (to - from);
   const step = TIME_STEPS.find((candidate) => candidate * perSecond >= minGapPx) ?? 3600;
   const ticks: number[] = [];
-  for (let t = 0; t <= lengthS + 1e-9; t += step) ticks.push(t);
+  for (let t = Math.max(0, Math.ceil(from / step - 1e-9) * step); t <= to + 1e-9; t += step) {
+    ticks.push(t);
+  }
   return ticks;
 }
 

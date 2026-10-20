@@ -205,3 +205,54 @@ describe("downloadRows", () => {
     ]);
   });
 });
+
+describe("a zoomed chart's text", () => {
+  const timeline = buildTimeline(run);
+  const view = { from: 4, to: 8 };
+
+  it("speaks of the stretch on view, up to how far the run got", () => {
+    expect(describeNetworkChart(timeline, curve, 7, view)).toBe(
+      "From 0:04 to 0:07, the network gave 400 kbps throughout. The player's estimate was between 380 kbps and 3 Mbps. On screen: 720p (2.8 Mbps) at 0:04, 240p (400 kbps) at 0:07, after 1 quality switch.",
+    );
+    expect(describeBufferChart(timeline, 7, view, curve.lengthS)).toBe(
+      "From 0:04 to 0:07 the buffer went from 3.5 s to 0 s of video (at most 3.5 s). 1 stall in this stretch, 500 ms of it; the first from 0:07.",
+    );
+    expect(describeDownloadsChart(timeline, 7, view, curve.lengthS)).toBe(
+      "From 0:04 to 0:07: 0 video segments downloaded; 1 abandoned.",
+    );
+  });
+
+  it("says when nothing happened in the stretch", () => {
+    const early = { from: 0, to: 0.8 };
+    expect(describeNetworkChart(timeline, curve, 7, early)).toBe(
+      "From 0:00 to 0:01, the network gave 4 Mbps throughout. The player had no estimate of the bandwidth then. Nothing was on screen yet.",
+    );
+    expect(describeBufferChart(timeline, 7, { from: 0, to: 0.4 }, curve.lengthS)).toBe(
+      "From 0:00 to 0:00 the player had no buffer yet. No stalls then.",
+    );
+    expect(describeDownloadsChart(timeline, 7, { from: 1, to: 4 }, curve.lengthS)).toBe(
+      "No video segments downloaded from 0:01 to 0:04.",
+    );
+  });
+
+  it("reads as the whole run when the range is all of it", () => {
+    expect(describeNetworkChart(timeline, curve, 7, { from: 0, to: 12 })).toBe(
+      describeNetworkChart(timeline, curve, 7),
+    );
+    expect(describeBufferChart(timeline, 7, { from: 0, to: 12 }, 12)).toBe(
+      describeBufferChart(timeline, 7),
+    );
+    expect(describeDownloadsChart(timeline, 7, { from: 0, to: 12 }, 12)).toBe(
+      describeDownloadsChart(timeline, 7),
+    );
+  });
+
+  it("lists only the rows and downloads inside the range, at a finer step", () => {
+    expect(chartRows(timeline, curve, 7, view).map((row) => row.t)).toEqual([4, 5, 6, 7]);
+    expect(chartRows(timeline, curve, 7, { from: 2.5, to: 6.5 }).map((row) => row.t)).toEqual([
+      3, 4, 5, 6,
+    ]);
+    expect(downloadRows(timeline, view, 7).map((row) => row.start)).toEqual([4.2]);
+    expect(downloadRows(timeline, { from: 0, to: 1 }, 7).map((row) => row.start)).toEqual([0.3]);
+  });
+});

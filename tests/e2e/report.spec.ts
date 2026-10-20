@@ -1,13 +1,13 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { canPlayH264, STREAM, tabTo } from "./helpers";
 
 // 8 s: 4 Mbps, a drop to 0.4 Mbps from 0:03 to 0:05, then 4 Mbps; RTT 50 ms.
 const CURVE = "steps,50,8,0:4|3:0.4|5:4";
 
-test("a finished run is saved and opens as a report", async ({ page, browserName }) => {
-  test.setTimeout(60_000);
+/** Runs the 8 s setup to the end and opens its report from the keyboard; returns the report's address. */
+async function runAndOpenReport(page: Page, browserName: string): Promise<string> {
   await page.goto(
     `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&start=now`,
   );
@@ -18,7 +18,12 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await tabTo(page, browserName, seeReport);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs\/[0-9a-f]{8}$/);
-  const reportUrl = page.url();
+  return page.url();
+}
+
+test("a finished run is saved and opens as a report", async ({ page, browserName }) => {
+  test.setTimeout(60_000);
+  const reportUrl = await runAndOpenReport(page, browserName);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Custom network · hls.js defaults",
@@ -100,4 +105,65 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(page.getByText("No runs yet.")).toBeVisible();
   await page.goto(reportUrl);
   await expect(page.getByText("This browser has no run at this address.")).toBeVisible();
+});
+
+test("the report's charts zoom by keyboard and by mouse", async ({ page, browserName }) => {
+  test.setTimeout(60_000);
+  await runAndOpenReport(page, browserName);
+  const zoom = page.getByRole("group", { name: "Zoom the charts" });
+  const status = page.getByRole("status");
+  await expect(status).toHaveText("Showing all 0:08");
+
+  // Zoom in to the narrowest view, a segment of our film; past it the button keeps focus and does nothing.
+  const zoomIn = zoom.getByRole("button", { name: "Zoom in" });
+  await tabTo(page, browserName, zoomIn);
+  await page.keyboard.press("Enter");
+  await expect(status).toHaveText("Showing 0:02–0:06 of 0:08");
+  await page.keyboard.press("Enter");
+  await expect(status).toHaveText("Showing 0:02–0:06 of 0:08");
+  await expect(zoomIn).toBeFocused();
+  await expect(zoomIn).toHaveAttribute("aria-disabled", "true");
+  await tabTo(page, browserName, zoom.getByRole("button", { name: "Later" }));
+  await page.keyboard.press("Enter");
+  await expect(status).toHaveText("Showing 0:04–0:08 of 0:08");
+
+  // The charts' sentences and tables follow the view.
+  await expect(
+    page.getByRole("img", {
+      name: /^From 0:04 to 0:08, the network gave between 400 kbps and 4 Mbps\./,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /^From 0:04 to 0:08 the buffer went from/ }),
+  ).toBeVisible();
+  await tabTo(page, browserName, page.getByText("Buffer as a table"));
+  await page.keyboard.press("Enter");
+  const table = page.getByRole("region", { name: "Buffer as a table" });
+  await expect(table.getByRole("row").nth(1)).toContainText("0:04");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  // A note's button zooms to it (all of a run this short) and takes focus to the charts.
+  await tabTo(
+    page,
+    browserName,
+    page.getByRole("button", { name: /^Show on the chart\b.*note 1,/ }),
+  );
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Timeline" })).toBeFocused();
+  await expect(status).toHaveText("Showing all 0:08");
+  const chart = page.getByRole("img", { name: /^Over 0:08, the network gave/ });
+  await expect(chart).toBeInViewport();
+
+  // With a mouse: a drag across a chart picks a stretch, a double-click shows the whole run again.
+  const box = await chart.boundingBox();
+  if (!box) throw new Error("The bandwidth chart has no box");
+  const plotWidth = box.width - 84;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + plotWidth * 0.1, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + plotWidth * 0.4, y, { steps: 5 });
+  await page.mouse.up();
+  await expect(status).toHaveText("Showing 0:00–0:04 of 0:08");
+  await page.getByRole("img", { name: /^From 0:00 to 0:04, the network gave/ }).dblclick();
+  await expect(status).toHaveText("Showing all 0:08");
 });

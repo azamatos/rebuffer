@@ -13,6 +13,7 @@ import {
 } from "@/core/run/chart-text";
 import type { Run } from "@/core/run/controller";
 import type { Level, RunEvent } from "@/core/run/events";
+import type { TimeRange } from "@/core/run/range";
 import { buildTimeline } from "@/core/run/timeline";
 
 interface RunChartsProps {
@@ -25,12 +26,24 @@ interface RunChartsProps {
   untilS: number;
   /** Numbered markers on the bandwidth chart for a finished run's notes. */
   markers?: readonly ChartMarker[];
+  /** The stretch a finished run's charts and their text show (the Report's zoom); all of the run without it. */
+  range?: TimeRange;
+  /** Called with the stretch a pointer picks on the charts; without it, they can't be picked. */
+  onPick?: (range: TimeRange) => void;
 }
 
 const NO_MARKERS: readonly ChartMarker[] = [];
 
 /** Bandwidth and quality, buffer and downloads on one time axis, each with a sentence and a data table. */
-export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: RunChartsProps) {
+export function RunCharts({
+  curve,
+  run,
+  events,
+  untilS,
+  markers = NO_MARKERS,
+  range,
+  onPick,
+}: RunChartsProps) {
   const networkRef = useRef<HTMLCanvasElement>(null);
   const bufferRef = useRef<HTMLCanvasElement>(null);
   const downloadsRef = useRef<HTMLCanvasElement>(null);
@@ -81,8 +94,19 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
     charts.show(finished, markers);
   }, [run, finished, curve, markers]);
 
+  // The Report's zoom: the stretch on view, and a pointer to pick another.
+  useEffect(() => {
+    chartsRef.current?.zoom(range);
+  }, [range, curve]);
+  useEffect(() => {
+    const charts = chartsRef.current;
+    if (!charts || !onPick) return;
+    return charts.pick(onPick);
+  }, [onPick, curve]);
+
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const levels = timeline.levels;
+  const canvasClass = onPick ? "cursor-crosshair touch-pan-y" : "";
 
   return (
     <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-3">
@@ -120,8 +144,8 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
         <canvas
           ref={networkRef}
           role="img"
-          aria-label={describeNetworkChart(timeline, curve, untilS)}
-          className="block h-[200px] w-full"
+          aria-label={describeNetworkChart(timeline, curve, untilS, range)}
+          className={`block h-[200px] w-full ${canvasClass}`}
         />
         <DataTable label="Bandwidth and quality as a table">
           {() => (
@@ -135,7 +159,7 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
                 </tr>
               </thead>
               <tbody>
-                {chartRows(timeline, curve, untilS).map((row) => (
+                {chartRows(timeline, curve, untilS, range).map((row) => (
                   <tr key={row.t} className="border-t border-white/6">
                     <Td mono>{formatClock(row.t)}</Td>
                     <Td>{formatRate(row.networkBps)}</Td>
@@ -168,8 +192,8 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
         <canvas
           ref={bufferRef}
           role="img"
-          aria-label={describeBufferChart(timeline, untilS)}
-          className="block h-[110px] w-full"
+          aria-label={describeBufferChart(timeline, untilS, range, curve.lengthS)}
+          className={`block h-[110px] w-full ${canvasClass}`}
         />
         <DataTable label="Buffer as a table">
           {() => (
@@ -182,7 +206,7 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
                 </tr>
               </thead>
               <tbody>
-                {chartRows(timeline, curve, untilS).map((row) => (
+                {chartRows(timeline, curve, untilS, range).map((row) => (
                   <tr key={row.t} className="border-t border-white/6">
                     <Td mono>{formatClock(row.t)}</Td>
                     <Td>{row.bufferS === undefined ? "—" : `${row.bufferS.toFixed(1)} s`}</Td>
@@ -234,8 +258,8 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
         <canvas
           ref={downloadsRef}
           role="img"
-          aria-label={describeDownloadsChart(timeline, untilS)}
-          className="block h-10 w-full"
+          aria-label={describeDownloadsChart(timeline, untilS, range, curve.lengthS)}
+          className={`block h-10 w-full ${canvasClass}`}
         />
         <DataTable label="Segment downloads as a table">
           {() => (
@@ -250,7 +274,7 @@ export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: 
                 </tr>
               </thead>
               <tbody>
-                {downloadRows(timeline).map((row, i) => (
+                {downloadRows(timeline, range, untilS).map((row, i) => (
                   <tr key={`${row.start}-${i}`} className="border-t border-white/6">
                     <Td mono>{formatClock(row.start, 1)}</Td>
                     <Td>{row.quality}</Td>

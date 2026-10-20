@@ -1,6 +1,7 @@
 import { formatClock } from "@/core/format/time";
 import { curveOutline, type CurveCorner, type NetworkCurve } from "@/core/netsim/curve";
 import { formatMbps } from "@/core/run/describe";
+import type { TimeRange } from "@/core/run/range";
 import type { Timeline } from "@/core/run/timeline";
 import {
   axisMbps,
@@ -86,6 +87,10 @@ export interface Frame {
   /** A live run gets a playhead at `now`. */
   live: boolean;
   markers: readonly ChartMarker[];
+  /** The stretch of run time on view: all of it, or what the Report zoomed to. */
+  range: TimeRange;
+  /** The stretch a drag across the charts is picking, while it lasts. */
+  selection: TimeRange | undefined;
 }
 
 /** Room on the right for axis labels. Every chart keeps the same, so their time axes line up. */
@@ -94,7 +99,37 @@ const FONT = '12px "Space Mono", ui-monospace, monospace';
 const LABEL_GAP_PX = 14;
 
 const timeScale = (frame: Frame, painter: Painter): Scale =>
-  linearScale([0, frame.curve.lengthS], [0, Math.max(1, painter.width - GUTTER_PX)]);
+  linearScale([frame.range.from, frame.range.to], [0, Math.max(1, painter.width - GUTTER_PX)]);
+
+/** Keeps what's drawn next inside the plot, out of the labels' gutter. Undo with `ctx.restore()`. */
+function clipToPlot({ ctx, width, height }: Painter): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, Math.max(0, width - GUTTER_PX), height);
+  ctx.clip();
+}
+
+/** The stretch a drag is picking: a light band with its edges marked. */
+function drawSelection(
+  { ctx }: Painter,
+  theme: ChartTheme,
+  frame: Frame,
+  x: Scale,
+  top: number,
+  bottom: number,
+): void {
+  if (!frame.selection) return;
+  const x0 = x(frame.selection.from);
+  const x1 = x(frame.selection.to);
+  ctx.save();
+  ctx.fillStyle = theme.fg;
+  ctx.globalAlpha = 0.1;
+  ctx.fillRect(x0, top, x1 - x0, bottom - top);
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(Math.round(x0), top, 1, bottom - top);
+  ctx.fillRect(Math.round(x1) - 1, top, 1, bottom - top);
+  ctx.restore();
+}
 
 function hairline(ctx: CanvasRenderingContext2D, y: number, x0: number, x1: number): void {
   const snapped = Math.round(y) + 0.5;
@@ -201,10 +236,12 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   ctx.strokeStyle = theme.lineStrong;
   ctx.lineWidth = 1;
   hairline(ctx, bottom, 0, plotRight);
+  clipToPlot(painter);
   drawStalls(painter, theme, frame, x, top, bottom);
 
-  // The network still to come, dashed.
-  const ahead = curveOutline(curve, now, curve.lengthS);
+  // The network still to come, dashed; only the stretch on view.
+  const { from, to } = frame.range;
+  const ahead = curveOutline(curve, Math.max(now, from), to);
   if (ahead.length > 0) {
     ctx.save();
     ctx.strokeStyle = theme.net;
@@ -218,7 +255,7 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   }
 
   // The network so far, as an area.
-  const past = curveOutline(curve, 0, now);
+  const past = curveOutline(curve, from, Math.min(now, to));
   const first = past[0];
   const last = past.at(-1);
   if (first && last) {
@@ -278,6 +315,9 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   ctx.stroke();
   ctx.restore();
 
+  drawSelection(painter, theme, frame, x, top, bottom);
+  ctx.restore();
+
   drawMarkers(painter, theme, frame, x, top + 10);
   drawPlayhead(painter, theme, frame, x, bottom);
   drawTimeAxis(painter, theme, frame, x, height - 12);
@@ -300,7 +340,7 @@ function drawMarkers(
   ctx.textBaseline = "middle";
   let previous = Number.NEGATIVE_INFINITY;
   for (const marker of frame.markers) {
-    if (marker.t > frame.now) continue;
+    if (marker.t > frame.now || marker.t < frame.range.from || marker.t > frame.range.to) continue;
     const at = Math.max(
       previous + 2 * MARKER_RADIUS + 3,
       Math.min(Math.max(MARKER_RADIUS, x(marker.t)), plotRight - MARKER_RADIUS),
@@ -345,7 +385,7 @@ function drawTimeAxis(
   }
 
   ctx.fillStyle = theme.fgMuted;
-  const ticks = timeTicks(frame.curve.lengthS, plotRight);
+  const ticks = timeTicks(frame.range.from, frame.range.to, plotRight);
   for (const t of ticks) {
     const text = formatClock(t);
     const textWidth = ctx.measureText(text).width;
@@ -391,6 +431,7 @@ export function drawBuffer(painter: Painter, theme: ChartTheme, frame: Frame): v
   ctx.strokeStyle = theme.lineStrong;
   ctx.lineWidth = 1;
   hairline(ctx, bottom, 0, plotRight);
+  clipToPlot(painter);
   drawStalls(painter, theme, frame, x, top, bottom);
 
   if (count > 0) {
@@ -413,6 +454,8 @@ export function drawBuffer(painter: Painter, theme: ChartTheme, frame: Frame): v
     ctx.fill();
     ctx.restore();
   }
+  drawSelection(painter, theme, frame, x, top, bottom);
+  ctx.restore();
 
   drawPlayhead(painter, theme, frame, x, bottom);
 }
@@ -432,8 +475,10 @@ export function drawDownloads(painter: Painter, theme: ChartTheme, frame: Frame)
     timeline.levels.map((level) => [level.index, qualityShade(timeline.levels, level.index)]),
   );
 
+  clipToPlot(painter);
   for (const download of timeline.downloads) {
-    if (download.start > now) continue;
+    if (download.start > now || download.start > frame.range.to) continue;
+    if ((download.end ?? now) < frame.range.from) continue;
     const x0 = x(download.start);
     const x1 = x(Math.min(download.end ?? now, now));
     const barWidth = Math.max(2, x1 - x0 - 1);
@@ -453,6 +498,8 @@ export function drawDownloads(painter: Painter, theme: ChartTheme, frame: Frame)
     }
     ctx.restore();
   }
+  drawSelection(painter, theme, frame, x, 0, height);
+  ctx.restore();
 
   drawPlayhead(painter, theme, frame, x, height);
 }

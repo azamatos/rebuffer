@@ -1,14 +1,16 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
 import { describeHonesty, formatMbps } from "@/core/run/describe";
-import { whatHappened } from "@/core/run/notes";
+import { whatHappened, type Note } from "@/core/run/notes";
+import { noteRange, wholeRange, type TimeRange } from "@/core/run/range";
 import { tryNext } from "@/core/run/ideas";
 import { describeSettings, ideaSearch, playerChanges, savedRunSearch } from "@/core/run/report";
 import { playerTitle } from "@/core/player/settings";
 import { buildTimeline, type Timeline } from "@/core/run/timeline";
+import { ZoomBar } from "@/ui/report/ZoomBar";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { useNow } from "@/ui/runs/useNow";
 
@@ -33,7 +35,8 @@ export function ReportPage({ runId }: { runId: string }) {
     };
   }, [runId]);
 
-  if (loaded.status === "ready") return <Report run={loaded.run} />;
+  // Keyed by the run, so another report starts afresh (the whole run on view, no notice).
+  if (loaded.status === "ready") return <Report key={loaded.run.id} run={loaded.run} />;
   return (
     <section className="mx-auto max-w-[1360px] px-4 py-10 sm:px-8">
       <h1 className="text-[32px] font-semibold tracking-tight">Report</h1>
@@ -74,6 +77,8 @@ function Report({ run }: { run: SavedRun }) {
   const router = useRouter();
   const navigate = useNavigate();
   const [notice, setNotice] = useState<string>();
+  const [range, setRange] = useState<TimeRange>(() => wholeRange(run.setup.network.curve.lengthS));
+  const timelineHeading = useRef<HTMLHeadingElement>(null);
   const now = useNow();
   const metrics = useMemo(() => computeMetrics(run.events), [run]);
   const timeline = useMemo(() => buildTimeline(run.events), [run]);
@@ -124,6 +129,15 @@ function Report({ run }: { run: SavedRun }) {
     } catch {
       setNotice(`This browser didn't let the lab copy. The link: ${link}`);
     }
+  };
+
+  // A note's "Show on the chart": zoom to it and take the reader to the charts, by keyboard as well.
+  const showNote = (note: Note) => {
+    setRange(noteRange(note.start, note.end, network.curve.lengthS));
+    const heading = timelineHeading.current;
+    // WebKit doesn't scroll to a heading it focuses, so scroll there explicitly.
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
   };
 
   const remove = async () => {
@@ -206,15 +220,28 @@ function Report({ run }: { run: SavedRun }) {
       </section>
 
       <section aria-labelledby="timeline-h" className="flex flex-col gap-3">
-        <h2 id="timeline-h" className="text-lg font-semibold">
-          Timeline
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2
+            id="timeline-h"
+            ref={timelineHeading}
+            tabIndex={-1}
+            className="scroll-mt-4 text-lg font-semibold outline-none"
+          >
+            Timeline
+          </h2>
+          <ZoomBar range={range} lengthS={network.curve.lengthS} onChange={setRange} />
+        </div>
+        <p className="-mt-1 text-[13px] text-fg-3">
+          Drag across a chart to zoom in on a stretch; double-click a chart to see the whole run.
+        </p>
         <RunCharts
           curve={network.curve}
           run={undefined}
           events={run.events}
           untilS={metrics.endS}
           markers={markers}
+          range={range}
+          onPick={setRange}
         />
       </section>
 
@@ -241,6 +268,18 @@ function Report({ run }: { run: SavedRun }) {
                     {note.end - note.start >= 1 && `–${formatClock(note.end)}`}
                   </p>
                   <p className="mt-0.5">{note.text}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showNote(note);
+                    }}
+                    className="mt-0.5 inline-flex min-h-6 items-center text-[13px] text-accent underline underline-offset-2 hover:text-accent-hover"
+                  >
+                    Show on the chart
+                    <span className="sr-only">
+                      : note {i + 1}, {formatClock(note.start)}
+                    </span>
+                  </button>
                 </div>
               </li>
             ))}

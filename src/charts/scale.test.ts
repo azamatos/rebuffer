@@ -57,10 +57,16 @@ describe("bandwidthDomain", () => {
 
 describe("timeTicks", () => {
   it("picks a round step that leaves room between labels", () => {
-    expect(timeTicks(90, 900)).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90]);
-    expect(timeTicks(90, 300)).toEqual([0, 30, 60, 90]);
-    expect(timeTicks(600, 900)).toEqual([0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600]);
-    expect(timeTicks(0, 900)).toEqual([0]);
+    expect(timeTicks(0, 90, 900)).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90]);
+    expect(timeTicks(0, 90, 300)).toEqual([0, 30, 60, 90]);
+    expect(timeTicks(0, 600, 900)).toEqual([0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600]);
+    expect(timeTicks(0, 0, 900)).toEqual([0]);
+  });
+
+  it("starts a zoomed axis at the first round time in view", () => {
+    expect(timeTicks(42, 54, 900)).toEqual([42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]);
+    expect(timeTicks(37.4, 58.6, 600)).toEqual([40, 45, 50, 55]);
+    expect(timeTicks(30, 30, 600)).toEqual([30]);
   });
 });
 
