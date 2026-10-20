@@ -23,7 +23,7 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 | Budgets | size-limit, Lighthouse CI | 14.2 / 0.15 | Bundle size per route; Lighthouse ≥ 95 |
 | Lint, format | ESLint flat + typescript-eslint, Prettier | 10.13 / 3.9 | Owner's default |
 | Runtime | Node ≥ 22.12, pnpm 10 | — | Owner's default; Vite 8 needs Node 20.19+ or 22.12+ |
-| Hosting | Cloudflare Pages at rebuffer.azamatos.com, R2 at media.azamatos.com (Web Analytics optional, not on yet) | wrangler 4.151 (devDependency) | Free tiers; R2 is the route Cloudflare's terms allow for video |
+| Hosting | Cloudflare Pages at rebuffer.azamatos.com, R2 at media.azamatos.com (Web Analytics: its beacon loads on the live pages, seen 2026-10-20) | wrangler 4.151 (devDependency) | Free tiers; R2 is the route Cloudflare's terms allow for video |
 | Fonts | Geist (variable) and Space Mono, self-hosted via Fontsource | 5.3 | Same faces as azamatos.com; no third-party font requests |
 
 ## How the network is simulated
@@ -82,10 +82,17 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
   - What's kept: plain GETs (no `Range`) answered 200 and not marked `no-store`; playlists only when they can't
     change (a multivariant playlist, or a media playlist with `#EXT-X-ENDLIST`), never a live one. A copy is read
     alongside the original and saved once it has fully arrived, so an aborted download is never kept.
-  - Budget: 300 MB, oldest first out, tracked in an index stored in the same cache (one update at a time).
+  - Budget: 300 MB, the downloads used longest ago go first (since 2026-10-20: each answer from the copy moves its
+    entry to the end, so the playlists every repeat reads stay), tracked in an index stored in the same cache (one
+    update at a time; the uses that come together share one write).
   - Saved answers carry `saved: true` and no real-network timings, so the report counts them and leaves them out of
-    the real speed. The check before the run still runs; its heads-up stays quiet when the stream is saved.
-  - The result's "Forget saved downloads" button deletes the cache. The test file server's `/keep/` prefix serves
+    the real speed. The check before the run still runs; when the stream is saved, its heads-up says that only the
+    saved downloads skip the real network (it said nothing before 2026-10-20, though the segments a run needs may not
+    be saved).
+  - A download that isn't saved goes over the real network: the worker fetches with `cache: "no-store"` (since
+    2026-10-20). The browser's HTTP cache kept our segments for a year (`immutable`), so after "Forget" they still
+    came from disk while the result called that the real network.
+  - The result's "Forget saved downloads" button deletes the cache; the next run downloads everything again. The test file server's `/keep/` prefix serves
     cacheable files for the e2e test of a repeat run; elsewhere it sends `no-store`, so other tests always use the wire.
   - **Measured 2026-10-20** (Playwright Chromium on the owner's Mac, local build against media.azamatos.com, one
     browser profile): Tunnel four times scored 31, 25, 25, 25. Run 1 went over the real network (49 of 97 downloads
@@ -142,10 +149,11 @@ stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP
 src/
   core/            framework-free, unit-tested (no React, no DOM UI)
     hls/           playlist parser (multivariant + media), codec strings → names, lint rules with spec refs
-    netsim/        curve model, link scheduler (fair share, RTT, outages), presets, trace import
+    netsim/        curve model, link scheduler (fair share, RTT, outages), presets, trace import (planned)
     player/        PlayerAdapter interface, hls.js adapter (Shaka later)
-    run/           RunController: SW session + player + clock → event log
-    metrics/       event log → metrics, score, "what happened" notes, "try next" ideas
+    run/           RunController: SW session + player + clock → event log; the charts' timeline and text; the
+                   Report's "what happened" notes and "try next" ideas
+    metrics/       event log → metrics, score, honesty count
     persist/       IndexedDB: saved runs (built: `runs.ts`, light enough for Home; `summary.ts` with the metrics),
                    networks (planned)
   sw/              Service Worker: shaping transport (imports core/netsim), cache for repeat runs
@@ -168,7 +176,7 @@ A run, step by step:
    alternatives (a sentence each and a data table, from `chart-text.ts`), from a copy of the log taken 4 times a
    second.
 6. At the end, `metrics` turns the log into numbers, notes and ideas (pure functions); the run (setup, versions,
-   log, metrics) is saved to IndexedDB and the Report opens.
+   log, metrics) is saved to IndexedDB, and the Run screen offers "See the report".
 
 ## Metrics and score
 
@@ -227,7 +235,7 @@ reference code is non-commercial research only, with patent notices.
 
 | What | Budget |
 |---|---|
-| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 90.4 KB on 2026-10-20, mostly React and TanStack Router. Lazy chunks: the Run screen, the Report, the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
+| Home route JavaScript | ≤ 100 KB brotli, every script `index.html` loads (`.size-limit.js` reads the list from the built page: on 2026-10-20 the bundler briefly split React into a chunk named `settings-*.js`, which a file-name pattern missed). 90.9 KB on 2026-10-20, mostly React and TanStack Router. Lazy chunks: the Run screen, the Report, the Runs list and Home's recent runs, and hls.js (179 KB gzip, loaded when a run starts) |
 | Live charts during a run | ≤ 4 ms per frame; no long task over 50 ms; dropped video frames with charts on equal those with charts off (4× CPU throttling) |
 | Memory | JS heap flat over a 10-minute run; event log for 10 minutes < 5 MB |
 | Lighthouse | ≥ 95 in every category on Home and a Report |

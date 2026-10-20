@@ -88,11 +88,12 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   **started late** because the real latency is above the simulated one, downloads that **arrived late** because the
   real network couldn't keep up with the simulated bandwidth (with the speed it managed), and time the tab spent in
   the background.
-- **Saved downloads (built 2026-10-20):** the browser keeps what runs download (up to 300 MB, oldest first out;
-  never what the server marks `no-store`, never a live playlist), and later runs take those downloads from there,
-  still through the simulated network. Repeat runs of a setup then don't depend on the real network. The result says
-  how many downloads came from the saved copy, and a button forgets it. The heads-up about real latency stays quiet
-  when the stream is saved.
+- **Saved downloads (built 2026-10-20):** the browser keeps what runs download (up to 300 MB, what was used longest
+  ago goes first; never what the server marks `no-store`, never a live playlist), and later runs take those
+  downloads from there, still through the simulated network. Repeat runs of a setup then don't depend on the real
+  network. Everything else goes over the real network, not the browser's own cache. The result says how many
+  downloads came from the saved copy, and a button forgets it. When the stream is saved, the heads-up about real
+  latency says that only the saved downloads skip it.
 
 ### Report
 
