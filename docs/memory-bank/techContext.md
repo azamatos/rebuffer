@@ -213,9 +213,8 @@ reference code is non-commercial research only, with patent notices.
   rungs, subtitles, I-frames), Apple advanced fMP4 example, Unified Streaming Tears of Steel (TS, 5 rungs, 4 s),
   Mux Big Buck Bunny (TS, 10 s). Bitmovin's demo streams refuse other origins: don't use.
 - **Hosting (live 2026-10-19):** R2 bucket `azamatos-media` on `media.azamatos.com`; `r2.dev` off. Segments carry
-  `Cache-Control: public, max-age=31536000, immutable`, playlists `max-age=300` (the upload script sets a day,
-  `max-age=86400`, since 2026-10-20; the live playlists change when the owner runs `upload.mjs --playlists`); a zone
-  cache rule ("media: cache
+  `Cache-Control: public, max-age=31536000, immutable`, playlists `public, max-age=86400` (a day; it was 5 minutes
+  until the owner re-uploaded the playlists on 2026-10-20); a zone cache rule ("media: cache
   segments and playlists", hostname equals media.azamatos.com, eligible for cache, edge TTL from Cache-Control)
   makes Cloudflare cache them. CORS allows any origin for GET and HEAD with `Range`
   (`scripts/media/r2-cors.json`); R2 sends `Vary: Origin`, and Cloudflare keeps one cached copy per origin, so the

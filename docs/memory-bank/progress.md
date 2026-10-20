@@ -118,6 +118,5 @@ building and every milestone is shippable on its own.
 - 2026-10-20 (third session): the owner said "go with recommendations". Honest lateness pushed and deployed by hand
   (a clean build of `3b7f739`). Live charts on the Run screen (own canvas code, not uPlot; a sentence and a data
   table each; 1.8 ms per frame at worst at 4× CPU throttling). Saved downloads: the worker keeps what runs download
-  (300 MB) and answers repeat runs from it; Tunnel scored 31, then 25, 25, 25 (runs 2–4 identical). The upload
-  script sets a one-day cache time on playlists; re-uploading them is left to the owner (the agent's permission
-  checker blocks R2 writes). 367 unit tests, 64 Playwright checks.
+  (300 MB) and answers repeat runs from it; Tunnel scored 31, then 25, 25, 25 (runs 2–4 identical). Playlists now
+  cache for a day at Cloudflare (the owner re-uploaded them with `upload.mjs --playlists`). 367 unit tests, 64 Playwright checks.

@@ -59,7 +59,7 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 | 11 | Repo | github.com/azamatos/rebuffer, public (owner created it 2026-10-19), pushed over SSH |
 | 12 | Deploys | By hand until push-triggered builds are fixed; the owner deferred that on 2026-10-19 |
 | 13 | Repeat runs | The browser keeps what runs download (300 MB) so repeats match; approved 2026-10-20 ("go with recommendations"), built the same day |
-| 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the live files change when the owner re-uploads them |
+| 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the owner re-uploaded the 14 playlists the same day (`upload.mjs --playlists`) |
 
 ## Design and plan artifacts
 
@@ -74,10 +74,6 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
   main`); deploying by hand is a clean build plus `pnpm exec wrangler pages deploy dist --project-name rebuffer
   --branch main` (`techContext.md`, "Deploying"). The agent's permission checker blocks deploys and R2 writes, so the
   owner runs them or allows them.
-- **Playlists' cache time at Cloudflare** (approved 2026-10-20): `scripts/media/upload.mjs` now sets a day; the 14
-  live playlists still say 5 minutes until the owner runs `node scripts/media/upload.mjs --playlists` (local copies
-  match the live ones byte for byte, checked 2026-10-20). Low priority now: with saved downloads, playlists come
-  from Cloudflare only on a setup's first run.
 - **Score on slow networks (observation, decision 5 stays as is until the owner reopens it).** Rural 3G played with
   no stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.
