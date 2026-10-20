@@ -97,14 +97,14 @@ export interface Frame {
 
 /** Room on the right for axis labels. Every chart keeps the same, so their time axes line up. */
 export const GUTTER_PX = 84;
-const FONT = '12px "Space Mono", ui-monospace, monospace';
+export const FONT = '12px "Space Mono", ui-monospace, monospace';
 const LABEL_GAP_PX = 14;
 
 const timeScale = (frame: Frame, painter: Painter): Scale =>
   linearScale([frame.range.from, frame.range.to], [0, Math.max(1, painter.width - GUTTER_PX)]);
 
 /** Keeps what's drawn next inside the plot, out of the labels' gutter. Undo with `ctx.restore()`. */
-function clipToPlot({ ctx, width, height }: Painter): void {
+export function clipToPlot({ ctx, width, height }: Painter): void {
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, Math.max(0, width - GUTTER_PX), height);
@@ -133,7 +133,7 @@ function drawSelection(
   ctx.restore();
 }
 
-function hairline(ctx: CanvasRenderingContext2D, y: number, x0: number, x1: number): void {
+export function hairline(ctx: CanvasRenderingContext2D, y: number, x0: number, x1: number): void {
   const snapped = Math.round(y) + 0.5;
   ctx.beginPath();
   ctx.moveTo(x0, snapped);
@@ -179,7 +179,11 @@ function drawPlayhead(
   ctx.restore();
 }
 
-function drawGutterLabels({ ctx, width }: Painter, theme: ChartTheme, labels: AxisLabel[]): void {
+export function drawGutterLabels(
+  { ctx, width }: Painter,
+  theme: ChartTheme,
+  labels: AxisLabel[],
+): void {
   ctx.save();
   ctx.font = FONT;
   ctx.fillStyle = theme.fgMuted;
@@ -191,7 +195,7 @@ function drawGutterLabels({ ctx, width }: Painter, theme: ChartTheme, labels: Ax
   ctx.restore();
 }
 
-function tracePath(
+export function tracePath(
   ctx: CanvasRenderingContext2D,
   corners: CurveCorner[],
   x: Scale,
@@ -359,10 +363,10 @@ function drawMarkers(
 }
 
 /** Clock labels along the bottom, and the playhead's time in a pill while the run is live. */
-function drawTimeAxis(
+export function drawTimeAxis(
   { ctx, width }: Painter,
   theme: ChartTheme,
-  frame: Frame,
+  frame: Pick<Frame, "live" | "now" | "range">,
   x: Scale,
   y: number,
 ): void {

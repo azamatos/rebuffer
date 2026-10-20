@@ -172,6 +172,9 @@ function Report({ run }: { run: SavedRun }) {
           <Link to="/networks" search={{ run: run.id }} className={secondaryButton}>
             Change network
           </Link>
+          <Link to="/runs/compare" search={{ a: run.id }} className={secondaryButton}>
+            Compare with…
+          </Link>
           <button type="button" onClick={exportJson} className={secondaryButton}>
             Export JSON
           </button>

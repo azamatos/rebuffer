@@ -9,6 +9,7 @@ import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
 import type { NetworksSearch } from "@/ui/networks/NetworkList";
+import type { CompareSearch } from "@/ui/pages/ComparePage";
 import type { InspectSearch } from "@/ui/pages/InspectPage";
 import type { RunSearch } from "@/ui/pages/RunPage";
 
@@ -24,6 +25,9 @@ const InspectPage = lazy(() =>
 );
 const NetworksPage = lazy(() =>
   import("@/ui/pages/NetworksPage").then((module) => ({ default: module.NetworksPage })),
+);
+const ComparePage = lazy(() =>
+  import("@/ui/pages/ComparePage").then((module) => ({ default: module.ComparePage })),
 );
 const AboutPage = lazy(() =>
   import("@/ui/pages/AboutPage").then((module) => ({ default: module.AboutPage })),
@@ -101,6 +105,33 @@ function ReportRoute() {
   );
 }
 
+// A static segment, so it wins over /runs/$runId.
+const compareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/compare",
+  head: () => title("Compare runs"),
+  validateSearch: (search: Record<string, unknown>): CompareSearch => {
+    const result: CompareSearch = {};
+    for (const key of ["a", "b"] as const) {
+      const value = search[key];
+      // The router reads an id that looks like a number as one.
+      if ((typeof value === "string" && value !== "") || typeof value === "number")
+        result[key] = String(value);
+    }
+    return result;
+  },
+  component: CompareRoute,
+});
+
+function CompareRoute() {
+  const search = compareRoute.useSearch();
+  return (
+    <Suspense fallback={<p className="px-8 py-10 text-fg-2">Loading the comparison…</p>}>
+      <ComparePage search={search} />
+    </Suspense>
+  );
+}
+
 /** Keeps the string params the Networks screen knows. */
 function networksSearch(search: Record<string, unknown>): NetworksSearch {
   const result: NetworksSearch = {};
@@ -161,6 +192,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   runRoute,
   runsRoute,
+  compareRoute,
   reportRoute,
   networksRoute,
   inspectRoute,

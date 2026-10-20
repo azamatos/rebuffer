@@ -15,6 +15,16 @@ export function RunsPage() {
           Saved in this browser only, the newest {MAX_SAVED_RUNS}.
         </p>
       </div>
+      {Array.isArray(runs) && runs.length >= 2 && (
+        <p>
+          <Link
+            to="/runs/compare"
+            className="text-accent underline underline-offset-2 hover:text-accent-hover"
+          >
+            Compare two runs
+          </Link>
+        </p>
+      )}
       {runs === undefined && <p className="text-fg-2">Loading…</p>}
       {runs === "unavailable" && (
         <p className="text-warning-text">
