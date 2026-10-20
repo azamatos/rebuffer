@@ -1,7 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the fifth session: M4 and Compare built, not pushed).** Read this first, then
-`progress.md`.
+**Updated 2026-10-20 (end of the fifth session: M4, Compare and the font fixes live; the UI polish approved, not
+started).** Read this first, then `progress.md` (M4.5 holds the approved polish plan).
 
 ## Where things stand
 
@@ -41,8 +41,10 @@
 
 ## Next step (in this order)
 
-1. **The owner reviews the polish proposal** (link under "Design and plan artifacts"); build what they approve.
-2. **Push the docs commits** with the next change (ask first).
+1. **Build the approved UI polish (M4.5 in `progress.md`),** in its order, one commit and its tests per item. The
+   design: https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K. Show the owner screenshots in both themes before
+   asking to push.
+2. **Push the docs commits** with the first polish change (ask first).
 3. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
 4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
 5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
@@ -79,17 +81,18 @@ that needs their eye under "Waiting for the owner".
 | 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the owner re-uploaded the 14 playlists the same day |
 | 15 | Charts | Own canvas code instead of uPlot: the agent's call on 2026-10-20 (reasons in `techContext.md`, Stack), shown to the owner with the results |
 | 16 | Themes | A light theme next to the dark one, with a System / Light / Dark switch; System is the default. The owner asked for it on 2026-10-20 ("not everyone will like" dark only); the light palette is the agent's, for the owner's eye |
+| 18 | UI polish | The proposal (header, Run, Report, Networks, Inspect, motion) approved as drawn on 2026-10-20, with the eighth Report tile (the real network's speed) and the simulation check as a banner; the build is left to a new session (the owner's request) |
 | 17 | First paint | Home rendered at build time and hydrated, the app's code after the first paint: the agent's call on 2026-10-20 (`techContext.md`, "Themes and the first paint") |
 
 ## Design and plan artifacts
 
 - **Design canvas** (Home, Run, Report, Network editor, Inspector, visual system):
   https://claude.ai/artifact/BgVz6NLex5nHa9G5hGKej6. Private to the owner. The screens follow it.
-- **Polish proposal (2026-10-20, waiting for the owner's review):** https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K.
+- **Polish proposal (2026-10-20, approved the same day, not built yet):** https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K.
   The owner asked for a friendlier, more compact UI: the wordmark sized to the nav, fewer and better-matched blocks,
   clearer labels, smooth motion (disclosures, the paste panel, run progress, state changes, scrolling). Six boards:
-  header before/after, Run, Report, Networks, Inspect, and an interactive motion board. Nothing is built yet; the
-  owner reviews, then the work starts.
+  header before/after, Run, Report, Networks, Inspect, and an interactive motion board. The plan to build it is
+  M4.5 in `progress.md`.
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 

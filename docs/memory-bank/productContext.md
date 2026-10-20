@@ -62,6 +62,12 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - The stream's ladder is drawn as horizontal lines over the curve, so you see where the network falls below each
   quality.
 - Latency (RTT, ms) and run length. Import or export a trace as JSON or CSV.
+- **A network has a length, and a run lasts exactly that long** (or until the video ends; our film is 12:14, so runs
+  end with the network). The length is what the curve covers: the simulator needs a bandwidth for every second, and
+  a fixed length makes runs comparable. Presets run 1:00–2:00 (the Tunnel, the default, 1:30: long enough for the
+  drop, the dead zone and the recovery); the recorded traces are 90 s excerpts. The editor's Length field takes 1 s
+  to 1 hour (`CURVE_LIMITS.maxLengthS`); after the last point, its value holds to the end. (The owner asked why 1:30
+  on 2026-10-20.)
 - **Built 2026-10-20:** the list (presets, four recorded traces: train, car, bus and walking, 90 s each, with their
   credit; "Yours", saved in this browser; "+ New network"), the editor (log-scale chart with our film's five
   qualities as dashed lines; points moved by arrows, Shift for 5 s or the next quality line; `[` `]` for the point

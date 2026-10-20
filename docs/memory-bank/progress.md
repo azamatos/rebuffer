@@ -15,6 +15,7 @@ building and every milestone is shippable on its own.
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
+| M4.5 UI polish | before Dec 6 | **approved 2026-10-20, not started** (the owner's "Lets apply everything u mentioned and drew"); the plan is below |
 | M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
@@ -100,6 +101,57 @@ building and every milestone is shippable on its own.
 - [x] README: pitch, architecture, measured numbers, how to run and test (2026-10-20); the GIF is recorded by
       `scripts/readme/record-gif.mjs`; the owner uploaded it to media.azamatos.com the same day
 
+## M4.5: UI polish (approved 2026-10-20, not started)
+
+The owner found the UI too boxy and "AI-looking" and asked for a friendlier, more compact one with smooth motion. The
+proposal (https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K: header before/after, Run, Report, Networks, Inspect,
+an interactive motion board) was approved as drawn: "Lets apply everything u mentioned and drew". The owner asked a
+new session to build it. Build order, one commit (and its tests) per item:
+
+- [ ] **Shared:** header (wordmark 22 → 18 px on the links' line, links 15 px, header 60 px, active link a quiet
+      pill); motion CSS (`details::details-content` height + `interpolate-size: allow-keywords`, `scroll-behavior:
+      smooth`, a `flash` ring for jump targets, all under `prefers-reduced-motion: no-preference`); toasts (bottom
+      right, `aria-live="polite"` region **without** `role="status"`: the Run, Report and Networks tests rely on
+      one `status` per page); a "more" disclosure menu component (button + `aria-expanded`, Escape and outside click
+      close it); a Chart | Table toggle in `src/ui/run/chart-parts.tsx`, replacing the "… as a table" disclosures.
+- [ ] **Run screen:** status chip (`role="status"`: Ready, Checking your connection…, Running, Finished, Couldn't
+      run; colour and dot fade 180 ms); progress fill driven by `requestAnimationFrame` on the run clock (transform
+      scaleX), `aria-valuenow` still at 4 Hz; the first-run hint as one slim line; left column = video, four compact
+      tiles, the result when finished, the event log (`flex: 1 1 0`, own scroll, "newest first"), so both columns end
+      together; each chart's Chart | Table toggle in its header, the table in the chart's place (canvases stay
+      mounted: `visibility: hidden`, the table absolutely positioned, an opacity cross-fade).
+- [ ] **Report:** actions Run again, Change network, Compare with…, Copy link (icon), "⋯" (Export JSON, Delete);
+      Copy link and Export JSON confirm in toasts; the simulation check as a banner under the title (`<details>`;
+      one quiet line when the simulation held); score card with breakdown bars and an **eighth tile, the real
+      network's average speed** (`honesty.bandwidth.realBps`; "—" when every download came from the saved copy);
+      the timeline with the toggles; "What happened" as one row per note (number, time, sentence, "Show ↗" whose
+      accessible name stays "Show on the chart …"); "Try next" as a row of cards; Setup as a compact grid with the
+      11 player settings in a disclosure; "How the score is computed" as a disclosure that the score card's link
+      opens and scrolls to.
+- [ ] **Networks:** the list as compact rows (64×20 thumbnail, name, range) in a sidebar that scrolls on its own on
+      wide screens, with the page title at its top; the editor's header holds the name, an "edited copy" badge,
+      Steps | Slopes, undo, redo, a "?" shortcuts popover (also the `?` key; Escape closes), **Save** and **Run
+      with this network**; under the chart one panel: "Point n of m" (time, bandwidth, + Add point after, Delete) and
+      "Whole network" (name, latency, length, an Import / Export menu with Import JSON or CSV, Export JSON, Export
+      CSV); the points table through the Chart | Table toggle; Save confirms in a toast.
+- [ ] **Inspect:** input as tabs Link | Paste text | File (WAI-ARIA tabs: arrow keys between tabs), each panel saying
+      what it takes ("Paste the text of an .m3u8 playlist…", "Inspect this text"; a drop zone and "Choose an .m3u8
+      file"), the panel opening smoothly with focus in its field; samples as chips ("Or try"); finding counts as
+      chips; the Segments panel's playlist picker as chips (radios) with a dot coloured by that playlist's worst
+      finding, instead of the native select.
+- [ ] **Labels:** Use in a run → Run with this network; Save to my networks → Save; Paste playlist text / Open file →
+      the tabs; Show on the chart → Show ↗; the "… as a table" disclosures → the toggle; Import JSON or CSV / Export
+      JSON / Export CSV → one Import / Export menu.
+- [ ] **Tests to update with the labels** (from a grep on 2026-10-20): `run.spec.ts` (status texts "Running." and
+      "Finished.", the "Segment downloads as a table" summary), `home.spec.ts` (status texts), `report.spec.ts`
+      (status text, "Simulation check" region, "Use in a run" link, Export JSON, Copy link's notice, Delete, "Buffer
+      as a table", the "Show on the chart" button), `networks.spec.ts` (Export JSON, Save to my networks, Use in a
+      run, Import JSON or CSV, its `status` region), `inspect.spec.ts` (Open file, Paste playlist text),
+      `compare.spec.ts` ("Both runs as a table"). Add tests for the new parts: the toggle, the menus, the popover and
+      its `?` key, the tabs, the playlist chips, toasts; axe in both themes.
+- [ ] Measure again after it: Lighthouse (Mac and the Linux container), the font-delay shift test, the budgets
+      (Home's JavaScript was 95.8 of 100 KB: watch it), the full e2e suite and the timing-sensitive specs repeated.
+
 ## M5: compare and launch (target Dec 6)
 
 - [x] Compare two saved runs (differences in words, what changed, overlaid charts) (2026-10-20)
@@ -181,3 +233,5 @@ building and every milestone is shippable on its own.
   1.5 s, Home's layout shift is 0.0000–0.0001 on macOS and Linux; Lighthouse 1.0 in Linux Chromium, 0.99 on the Mac.
   Pushed with the owner's "Lets push" (`5a16d13`): live, CI green, Lighthouse on GitHub's runner 100 in every
   category.
+- 2026-10-20 (end of the fifth session): the owner reviewed the polish proposal and approved all of it, then asked to
+  stop coding and leave the build to a new session. M4.5's plan above records the decisions; nothing of it is built.
