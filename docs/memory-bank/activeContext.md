@@ -1,7 +1,7 @@
 # Active context
 
-**Updated 2026-10-20 (end of the third session: M2 done, most of the Report built).** Read this first, then
-`progress.md`.
+**Updated 2026-10-20 (end of the fourth session: the third session's work reviewed and fixed; the Report done,
+zoom included).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,8 +10,10 @@
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `8b89fe6`** (pushed 2026-10-20). **Every push to `main` deploys on its own** (Cloudflare
-  builds it in about a minute; checked 2026-10-20). Pushing is outward-facing: ask the owner before each push.
+- **Live site = `main` at `8b89fe6`** (pushed 2026-10-20). **Not pushed yet:** the review fixes and the chart zoom
+  (`34009d6`…`667d07a`, plus this hand-off), waiting for the owner's go. **Every push to `main` deploys on its own**
+  (Cloudflare builds it in about a minute; checked 2026-10-20). Pushing is outward-facing: ask the owner before each
+  push.
 - **What works today:**
   - **Home:** hero ("Try the tunnel" starts it), a setup (our two films, three public test streams or your own HLS
     link; seven network presets with a thumbnail each; four player presets; Run), recent runs, how it works.
@@ -21,23 +23,26 @@
     (300 MB), so they match.
   - **Report (`/runs/<id>`):** score with its breakdown, seven tiles, the charts from the saved log with numbered
     markers, "What happened" notes, "Try next" ideas (each the setup with one change), setup, simulation check, how
-    the score is computed; Run again, Export JSON, Copy link, Delete. **Not built yet: zoom on the charts.**
+    the score is computed; Run again, Export JSON, Copy link, Delete. **Zoom** (2026-10-20, not pushed yet): buttons
+    above the charts (in, out, earlier, later, whole run), a drag across a chart, "Show on the chart" on each note;
+    the axis, markers, sentences and tables follow the view.
   - **Runs (`/runs`):** the runs saved in this browser (the newest 50).
   - Placeholders: Inspect, Networks, About.
-- **Quality bar today:** 402 unit tests; 79 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
-  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 90.9 KB of a 100 KB brotli
+- **Quality bar today:** 426 unit tests; 82 Playwright checks in Chromium, Firefox and WebKit (axe on every screen;
+  2 keyboard checks skipped in WebKit, which only tabs to text fields); Home's JavaScript 91.0 KB of a 100 KB brotli
   budget, counting every script `index.html` loads.
 - **Schedule:** M0, M1 and M2 are done (targets were Oct 25, Nov 1 and Nov 8). M3 (Nov 15) is in progress: the Report
-  is done except zoom; the network editor and the inspector screen are not started. MVP live by Nov 22, launch Dec 6.
+  is done; the network editor and the inspector screen are not started. MVP live by Nov 22, launch Dec 6.
 
 ## Next step (in this order)
 
-1. **Zoom on the Report's charts** (the last Report slice). The design says "static, zoomable": a time range chosen
-   with the keyboard as well as the mouse (rule 4), the three charts zoomed together, the notes' markers and the
-   charts' sentences and tables following the range, and a way back to the whole run.
-2. **Network editor (`/networks`, M3):** presets, recorded traces (the Irish 4G converter, CC BY 4.0, with
-   attribution), a curve editor that works with the keyboard alone, import and export (JSON; CSV), then "Change
-   network" on the Report. Follow the design canvas (Network board).
+1. **Ask the owner to push** the review fixes and the zoom (see "Waiting for the owner"), then check the live site.
+2. **Network editor (`/networks`, M3)**, in slices: the presets and networks saved in IndexedDB
+   (`persist/networks.ts`, planned) with "Run with this"; a curve editor (a chart plus a table of points; arrows move
+   the chosen point, Insert and Delete add and remove points; dragging with a mouse); import and export (JSON, where
+   `curveFromJson` already validates; CSV); recorded traces (the Irish 4G converter, CC BY 4.0, with attribution;
+   check the licence at the source first); then "Change network" on the Report. Follow the design canvas (Network
+   board).
 3. **Inspector screen (`/inspect`, M3)** on top of `src/core/hls`: ladder, tracks, segments, measured bitrate,
    findings. Follow the design canvas (Inspect board).
 4. Then M4: About, first-run hints, accessibility pass, pre-rendered Home (Lighthouse), real Safari check, README.
@@ -82,6 +87,18 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20)
 
+- **Push:** seven fix commits from a review of the third session's work, a docs fix, the chart zoom and this
+  hand-off. All checks pass locally (426 unit tests, 82 Playwright checks).
+- **Behaviour change to know about (review fix, rule 2):** the Service Worker now fetches with `cache: "no-store"`.
+  Before, the browser's HTTP cache (our segments are `immutable` for a year) answered downloads after "Forget saved
+  downloads" while the result called them the real network. Now a setup's first run always goes over the real
+  network, and repeats come from the saved copy, as the docs said.
+- **The blinking logo cursor and WCAG 2.2.2 (Pause, Stop, Hide; level A).** It blinks for as long as a page is open,
+  as the owner asked on 2026-10-20 ("as on pass.azamatos.com"); only the OS reduced-motion setting stops it. WCAG
+  asks for a way to stop blinking that lasts over 5 s. Not changed: the owner's call. Options: keep it as it is; blink
+  for the first 5 s after each page loads, then stay solid; or keep blinking and add a way to pause it. Recommended:
+  the 5 s blink, which passes 2.2.2 and still greets every page with the family's blinking cursor.
+
 - **Score on slow networks (observation; decision 5 stays until the owner reopens it).** Rural 3G played with no
   stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.
@@ -113,6 +130,12 @@ that needs their eye under "Waiting for the owner".
 - **Live runs against media.azamatos.com are noisy run to run** (one waited 21 s for a playlist on 2026-10-20); the
   saved copy makes repeats match, and the honesty paragraph says when the real network interfered.
 - **A local `vite preview` left on port 4012 makes Playwright reuse a stale build.** Stop it before `pnpm e2e`.
+- **WebKit doesn't scroll to an element it focuses from script** (found 2026-10-20 with "Show on the chart"): call
+  `scrollIntoView` after `focus({ preventScroll: true })`, and check `toBeInViewport()` in tests.
+- **An `sr-only` span adds a space to the accessible name** ("31 Report : Custom network…"), so Playwright name
+  patterns use `\b.*` rather than a literal colon.
+- **The code review (`/code-review high <range>`) earned its keep:** 10 findings on the third session, 8 real. Its
+  findings aren't verified, so check each against the code before fixing.
 
 ## Local state on the owner's Mac (git-ignored, not needed to continue)
 

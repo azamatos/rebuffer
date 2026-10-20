@@ -118,7 +118,12 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   or faster reactions (`abrEwmaFastVoD` → 1.5); six or more switches, a slower climb (`abrBandWidthUpFactor` → 0.5);
   a first frame after 2 s, the lowest quality first; a smooth run, the Low-memory TV preset or the tunnel. Changed
   settings travel in the run link as `set=` and show in headings ("hls.js defaults · abrBandWidthFactor 0.8").
-  _Planned:_ zoom, Change network (needs the network editor), Compare (M5).
+- **Zoom (built 2026-10-20):** buttons above the charts (Zoom in, Zoom out, Earlier, Later, Whole run) with the
+  stretch on view read out ("Showing 0:42–0:54 of 1:30"); a drag across any chart picks a stretch, a double-click
+  shows the whole run; each note's "Show on the chart" zooms to it and moves focus to the charts. The three charts
+  zoom together, down to 4 s; the time axis, markers, sentences and tables follow the view, and the vertical scales
+  stay those of the whole run.
+- _Planned:_ Change network (needs the network editor), Compare (M5).
 
 ### Compare (after the MVP)
 

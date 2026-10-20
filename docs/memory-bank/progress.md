@@ -13,7 +13,7 @@ building and every milestone is shippable on its own.
 | M0 Decisions and setup | Oct 25 | done 2026-10-19; push-triggered deploys work since 2026-10-20 |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
-| M3 Report, network editor, inspector | Nov 15 | in progress: the Report done except zoom (2026-10-20, live); network editor and inspector not started |
+| M3 Report, network editor, inspector | Nov 15 | in progress: the Report done, zoom included (2026-10-20; zoom not pushed yet); network editor and inspector not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
 
@@ -75,7 +75,9 @@ building and every milestone is shippable on its own.
       buffer for 1.5 s and no stall)
 - [x] Report: "what happened" notes with numbered markers on the bandwidth chart (2026-10-20)
 - [x] Report: "try next" ideas, each the setup with one change; player settings in run links (`set=`) (2026-10-20)
-- [ ] Report: zoom on the charts
+- [x] Review of the third session's work (`/code-review high`): 10 findings, 8 fixed (2026-10-20); the logo's
+      blinking left for the owner, one cleanup skipped
+- [x] Report: zoom on the charts, by keyboard and by mouse; notes show their stretch (2026-10-20)
 - [ ] Network editor: presets, recorded traces, keyboard editing, import and export
 - [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
 - [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
@@ -138,3 +140,12 @@ building and every milestone is shippable on its own.
   "try next" ideas with player settings in run links. 402 unit tests, 79 Playwright checks. CI failed on GitHub's
   slower Linux runners (WebKit picked a low quality and buffered the whole 20 s test stream, so the forced stall
   never came); the test now caps the buffer. All of it pushed as `8b89fe6` and live.
+- 2026-10-20 (fourth session): a review of the third session's work (`3b7f739..4d45ef2`) found 10 issues; 8 were
+  real and are fixed: run links took `constructor` and other inherited names as player settings; the stall backstop
+  could date a stall before the frame or stall end before it; "What happened" lost abandons when it summed up
+  switches and cut notes past seven without a word; the Wasted data tile counted abandons differently from the
+  chart; saved downloads went oldest-saved first (now least recently used); after "Forget" the HTTP cache still
+  answered while the result said real network (now `no-store`); the heads-up about latency hid itself when only
+  the master playlist was saved; the Report's actions and the Runs list weren't tested by keyboard. Docs that no
+  longer matched the code were corrected. Then zoom on the Report's charts. 426 unit tests, 82 Playwright checks,
+  Home's JavaScript 91.0 KB. Not pushed yet.

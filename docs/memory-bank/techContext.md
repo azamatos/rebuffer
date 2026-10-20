@@ -15,7 +15,7 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 | Routing | TanStack Router | 1.170 | Typed, validated search params: a run setup lives in the URL and can be shared |
 | App state | Zustand | 5.0 | Settings and UI state only; run data stays outside React |
 | Player | hls.js | 1.7.3 (no 2.x) | The player under test. Pinned; the version is saved with every run. Shaka Player 5.3 later |
-| Charts | Our own canvas code (`src/charts`) | — | **Changed 2026-10-20 from uPlot (1.6.32).** The design needs a curve that is filled up to the playhead and dashed after it, a log axis labelled by the ladder, stall bands, a playhead with a time pill and a downloads lane; with uPlot most of that was draw hooks anyway, and uPlot redraws everything on each `setData`. Own code draws a frame in 0.1 ms (p50) and 1.8 ms (max) at 4× CPU throttling, adds no dependency, and its scales and labels are unit-tested. Zoom for the Report (M3) is ours to build |
+| Charts | Our own canvas code (`src/charts`) | — | **Changed 2026-10-20 from uPlot (1.6.32).** The design needs a curve that is filled up to the playhead and dashed after it, a log axis labelled by the ladder, stall bands, a playhead with a time pill and a downloads lane; with uPlot most of that was draw hooks anyway, and uPlot redraws everything on each `setData`. Own code draws a frame in 0.1 ms (p50) and 1.8 ms (max) at 4× CPU throttling, adds no dependency, and its scales and labels are unit-tested. The Report's zoom (2026-10-20) is ours too: the range maths in `src/core/run/range.ts`, drawing clipped to the view, a pointer drag in `src/charts/live.ts` |
 | Validation | zod | 4.6 | Imported traces, exported runs, URL state |
 | Storage | idb-keyval (IndexedDB) | 6.3 | Saved runs and networks; small API |
 | Unit tests | Vitest | 5.0 | Core logic, with fake timers for the simulator |
@@ -251,8 +251,9 @@ reference code is non-commercial research only, with patent notices.
   charts' text and a data table, a repeat run from saved downloads; skipped in a browser build that can't decode
   H.264 through MSE), `home.spec.ts` (Home's setup by keyboard: own stream link, network, player, Run, then Stop on
   the Run screen; a bad link explained; the "Try the tunnel" link), `report.spec.ts` (a run saved and opened by
-  keyboard, every section of the report, Export JSON, Copy link, the Runs list, Home's recent runs, Delete; axe on
-  each). Shared helpers in `tests/e2e/helpers.ts`.
+  keyboard, every section of the report; Export JSON, Copy link and Delete by keyboard; the Runs list opens the
+  report by keyboard; Home's recent runs; zoom by keyboard, by a note's button and by a mouse drag, with the
+  sentences and a table following the view; axe on each). Shared helpers in `tests/e2e/helpers.ts`.
   Planned: Home → Run → Report, the network editor by keyboard, Inspect the version with problems.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
