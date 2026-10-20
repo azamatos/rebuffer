@@ -40,9 +40,9 @@
 
 ## Next step (in this order)
 
-1. **M3, the Report's next slices:** "what happened" notes (pure, from the timeline: drops, abandons, stalls,
-   recovery) with numbered markers on the charts; "try next" ideas that rerun the setup with one setting changed
-   (needs player settings in the run link); zoom on the report's charts. Then the network editor and the inspector.
+1. **M3, the Report's next slices:** "try next" ideas that rerun the setup with one setting changed (needs player
+   settings in the run link); zoom on the report's charts. Then the network editor and the inspector. ("What
+   happened" notes with chart markers are built: `src/core/run/notes.ts`.)
 2. The owner collects fixes and reviews them when everything is ready (said 2026-10-20).
 
 Pushes to `main` deploy to rebuffer.azamatos.com on their own (checked 2026-10-20). Pushing is still outward-facing:

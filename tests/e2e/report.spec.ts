@@ -43,6 +43,8 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
     page.getByRole("img", { name: /^Over 0:08, the network gave between 400 kbps and 4 Mbps\./ }),
   ).toBeVisible();
   await expect(page.getByRole("img", { name: /^\d+ video segments? downloaded/ })).toBeVisible();
+  const notes = page.getByRole("region", { name: "What happened" });
+  await expect(notes.getByRole("listitem").first()).toContainText(/The first frame appeared at /);
   const setup = page.getByRole("region", { name: "Setup" });
   await expect(setup).toContainText("hls.js 1.7.3 · Defaults");
   await expect(setup).toContainText("maxBufferLength 30");

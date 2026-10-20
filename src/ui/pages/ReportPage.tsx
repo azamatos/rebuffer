@@ -5,7 +5,9 @@ import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
 import { describeHonesty, formatMbps } from "@/core/run/describe";
 import { eventsOfType } from "@/core/run/events";
+import { whatHappened } from "@/core/run/notes";
 import { describeSettings, savedRunSearch } from "@/core/run/report";
+import { buildTimeline } from "@/core/run/timeline";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { useNow } from "@/ui/runs/useNow";
 
@@ -73,6 +75,14 @@ function Report({ run }: { run: SavedRun }) {
   const [notice, setNotice] = useState<string>();
   const now = useNow();
   const metrics = useMemo(() => computeMetrics(run.events), [run]);
+  const notes = useMemo(
+    () => whatHappened(buildTimeline(run.events), run.setup.network.curve),
+    [run],
+  );
+  const markers = useMemo(
+    () => notes.map((note, i) => ({ t: note.start, label: String(i + 1) })),
+    [notes],
+  );
   const score = computeScore(metrics);
   const { network, player, streamName, streamUrl } = run.setup;
   const honesty = describeHonesty(metrics.honesty, network.curve);
@@ -193,7 +203,36 @@ function Report({ run }: { run: SavedRun }) {
           run={undefined}
           events={run.events}
           untilS={metrics.endS}
+          markers={markers}
         />
+      </section>
+
+      <section aria-labelledby="what-h" className={`${card} p-5`}>
+        <h2 id="what-h" className="mb-1 text-lg font-semibold">
+          What happened
+        </h2>
+        <p className="mb-3.5 text-sm text-fg-3">
+          The numbers match the markers on the bandwidth chart.
+        </p>
+        <ol className="flex flex-col gap-3.5">
+          {notes.map((note, i) => (
+            <li key={`${note.start}-${i}`} className="flex gap-3.5">
+              <span
+                aria-hidden="true"
+                className="inline-flex size-6.5 flex-none items-center justify-center rounded-full bg-fg text-sm font-semibold text-ground"
+              >
+                {i + 1}
+              </span>
+              <div>
+                <p className="font-mono text-[13px] text-fg-3 tabular-nums">
+                  {formatClock(note.start)}
+                  {note.end - note.start >= 1 && `–${formatClock(note.end)}`}
+                </p>
+                <p className="mt-0.5">{note.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <div className="flex flex-wrap items-start gap-4">

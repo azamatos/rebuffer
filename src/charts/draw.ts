@@ -71,6 +71,12 @@ export function fitCanvas(canvas: HTMLCanvasElement): Painter | undefined {
   return { ctx, width, height };
 }
 
+/** A numbered marker on the bandwidth chart, matching a note in the Report. */
+export interface ChartMarker {
+  t: number;
+  label: string;
+}
+
 /** What one frame shows. */
 export interface Frame {
   timeline: Timeline;
@@ -79,6 +85,7 @@ export interface Frame {
   now: number;
   /** A live run gets a playhead at `now`. */
   live: boolean;
+  markers: readonly ChartMarker[];
 }
 
 /** Room on the right for axis labels. Every chart keeps the same, so their time axes line up. */
@@ -271,8 +278,42 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   ctx.stroke();
   ctx.restore();
 
+  drawMarkers(painter, theme, frame, x, top + 10);
   drawPlayhead(painter, theme, frame, x, bottom);
   drawTimeAxis(painter, theme, frame, x, height - 12);
+}
+
+const MARKER_RADIUS = 9;
+
+/** Numbered circles along the top, nudged apart when two notes start close together. */
+function drawMarkers(
+  { ctx, width }: Painter,
+  theme: ChartTheme,
+  frame: Frame,
+  x: Scale,
+  y: number,
+): void {
+  const plotRight = width - GUTTER_PX;
+  ctx.save();
+  ctx.font = '600 12px "Geist Variable", system-ui, sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  let previous = Number.NEGATIVE_INFINITY;
+  for (const marker of frame.markers) {
+    if (marker.t > frame.now) continue;
+    const at = Math.max(
+      previous + 2 * MARKER_RADIUS + 3,
+      Math.min(Math.max(MARKER_RADIUS, x(marker.t)), plotRight - MARKER_RADIUS),
+    );
+    previous = at;
+    ctx.fillStyle = theme.fg;
+    ctx.beginPath();
+    ctx.arc(at, y, MARKER_RADIUS, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = theme.ground;
+    ctx.fillText(marker.label, at, y + 0.5);
+  }
+  ctx.restore();
 }
 
 /** Clock labels along the bottom, and the playhead's time in a pill while the run is live. */

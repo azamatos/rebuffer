@@ -7,6 +7,7 @@ import {
   drawNetwork,
   fitCanvas,
   readTheme,
+  type ChartMarker,
   type ChartTheme,
   type Frame,
   type Painter,
@@ -27,8 +28,8 @@ export interface RunCharts {
   follow(now: () => number): void;
   /** Adds one event of the run being followed. Its `end` event stops the animation and draws the result. */
   add(event: RunEvent): void;
-  /** Draws a finished run from its whole log at once (the Report). */
-  show(events: readonly RunEvent[]): void;
+  /** Draws a finished run from its whole log at once (the Report), with numbered markers for its notes. */
+  show(events: readonly RunEvent[], markers?: readonly ChartMarker[]): void;
   destroy(): void;
 }
 
@@ -39,6 +40,7 @@ export interface RunCharts {
 export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve): RunCharts {
   let timeline: Timeline = createTimeline();
   let clock: (() => number) | undefined;
+  let markers: readonly ChartMarker[] = [];
   let frameId = 0;
   const theme: ChartTheme = readTheme(canvases.network);
   const painters = new Map<HTMLCanvasElement, Painter | undefined>();
@@ -52,7 +54,7 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
     const live = isLive();
     const now =
       live && clock ? Math.min(Math.max(0, clock()), curve.lengthS) : (timeline.endS ?? 0);
-    const frame: Frame = { timeline, curve, now, live };
+    const frame: Frame = { timeline, curve, now, live, markers };
     const network = painters.get(canvases.network);
     const buffer = painters.get(canvases.buffer);
     const downloads = painters.get(canvases.downloads);
@@ -84,6 +86,7 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
     follow(now) {
       cancelAnimationFrame(frameId);
       timeline = createTimeline();
+      markers = [];
       clock = now;
       frameId = requestAnimationFrame(loop);
     },
@@ -92,9 +95,10 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
       // A hidden tab gets no animation frames: draw the end now so the result is there when it comes back.
       if (event.type === "end") draw();
     },
-    show(events) {
+    show(events, numbered = []) {
       cancelAnimationFrame(frameId);
       clock = undefined;
+      markers = numbered;
       timeline = createTimeline();
       for (const event of events) addEvent(timeline, event);
       draw();

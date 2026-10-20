@@ -106,8 +106,13 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   (stream, network, every player setting, browser and player size), the simulation check, how the score is
   computed; Run again (starts at once), Export JSON, Copy link, Delete. Runs are saved in IndexedDB (the newest 50);
   `/runs` lists them and Home shows the newest five under "Recent runs". The Run screen offers "See the report" at
-  the end rather than opening it by itself, so the live result stays in view. _Planned:_ "what happened" notes with
-  markers on the charts, "try next" ideas, zoom, Change network (needs the network editor), Compare (M5).
+  the end rather than opening it by itself, so the live result stays in view.
+- **"What happened" (built 2026-10-20):** up to seven numbered notes, matching numbered markers on the bandwidth
+  chart: the first frame, each stretch with no signal (how far the buffer ran down, whether playback carried on or
+  stalled), groups of quality switches (with the network's low point, or the player's estimate when the network
+  carried enough), abandoned downloads, and other stalls. A note names a cause only when the numbers show one; a
+  stall the simulated network doesn't explain points to the simulation check. _Planned:_ "try next" ideas, zoom,
+  Change network (needs the network editor), Compare (M5).
 
 ### Compare (after the MVP)
 

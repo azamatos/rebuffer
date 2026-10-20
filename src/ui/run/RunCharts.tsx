@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { ChartMarker } from "@/charts/draw";
 import { mountRunCharts, type RunCharts as Charts } from "@/charts/live";
 import { formatClock, formatDuration } from "@/core/format/time";
 import type { NetworkCurve } from "@/core/netsim/curve";
@@ -22,10 +23,14 @@ interface RunChartsProps {
   events: readonly RunEvent[];
   /** How far the run has got, seconds. */
   untilS: number;
+  /** Numbered markers on the bandwidth chart for a finished run's notes. */
+  markers?: readonly ChartMarker[];
 }
 
+const NO_MARKERS: readonly ChartMarker[] = [];
+
 /** Bandwidth and quality, buffer and downloads on one time axis, each with a sentence and a data table. */
-export function RunCharts({ curve, run, events, untilS }: RunChartsProps) {
+export function RunCharts({ curve, run, events, untilS, markers = NO_MARKERS }: RunChartsProps) {
   const networkRef = useRef<HTMLCanvasElement>(null);
   const bufferRef = useRef<HTMLCanvasElement>(null);
   const downloadsRef = useRef<HTMLCanvasElement>(null);
@@ -73,8 +78,8 @@ export function RunCharts({ curve, run, events, untilS }: RunChartsProps) {
   useEffect(() => {
     const charts = chartsRef.current;
     if (!charts || run || !finished) return;
-    charts.show(finished);
-  }, [run, finished, curve]);
+    charts.show(finished, markers);
+  }, [run, finished, curve, markers]);
 
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const levels = timeline.levels;

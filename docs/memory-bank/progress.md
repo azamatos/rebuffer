@@ -73,7 +73,8 @@ building and every milestone is shippable on its own.
       Runs list; Home's recent runs
 - [x] Stalls that start during hls.js's own gap-jumping seeks are counted (2026-10-20; a run had shown an empty
       buffer for 1.5 s and no stall)
-- [ ] Report: "what happened" notes with chart markers, "try next" ideas (rerun with one setting changed), zoom
+- [x] Report: "what happened" notes with numbered markers on the bandwidth chart (2026-10-20)
+- [ ] Report: "try next" ideas (rerun with one setting changed), zoom
 - [ ] Network editor: presets, recorded traces, keyboard editing, import and export
 - [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
 - [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
