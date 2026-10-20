@@ -43,7 +43,7 @@ test("Home sets up a run and starts it, with the keyboard alone", async ({ page,
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Home fibre · hls.js low-memory tv",
   );
-  await expect(page.getByRole("status")).toHaveText("Running.", { timeout: 15_000 });
+  await expect(page.getByRole("status")).toHaveText("Running", { timeout: 15_000 });
   const url = new URL(page.url());
   expect(url.pathname).toBe("/run");
   expect(Object.fromEntries(url.searchParams)).toEqual({
@@ -54,7 +54,7 @@ test("Home sets up a run and starts it, with the keyboard alone", async ({ page,
 
   await tabTo(page, browserName, page.getByRole("button", { name: "Stop" }));
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 10_000 });
+  await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 10_000 });
   await expect(page.getByText("Run stopped.")).toBeVisible();
 });
 

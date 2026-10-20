@@ -12,7 +12,7 @@ async function runAndOpenReport(page: Page, browserName: string): Promise<string
     `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&start=now`,
   );
   test.skip(!(await canPlayH264(page)), "This browser build can't decode H.264 through MSE");
-  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
 
   const seeReport = page.getByRole("link", { name: "See the report" });
   await tabTo(page, browserName, seeReport);

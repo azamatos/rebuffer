@@ -24,11 +24,30 @@ test("a run plays the stream through the simulated network and reports it", asyn
   await tabTo(page, browserName, page.getByRole("button", { name: "Start run" }));
   await page.keyboard.press("Enter");
 
-  await expect(page.getByRole("status")).toHaveText("Running.", { timeout: 15_000 });
+  await expect(page.getByRole("status")).toHaveText("Running", { timeout: 15_000 });
   await expect(page.getByText("First frame on screen.")).toBeVisible({ timeout: 15_000 });
+  // The progress bar follows the run's clock every frame, rather than stepping four times a second.
+  const fill = page.getByRole("progressbar", { name: "Run progress" }).locator("div");
+  const frames = await fill.evaluate(async (element) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 6; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      seen.add((element as HTMLElement).style.transform);
+    }
+    return seen.size;
+  });
+  expect(frames).toBeGreaterThan(3);
+  // On a wide screen the left column (video, tiles, event log) ends where the charts do.
+  const logBox = await page.getByRole("region", { name: /^Event log/ }).boundingBox();
+  const chartsBox = await page
+    .getByRole("figure")
+    .filter({ hasText: "Segment downloads" })
+    .boundingBox();
+  if (!logBox || !chartsBox) throw new Error("The event log or the charts have no box");
+  expect(Math.abs(logBox.y + logBox.height - (chartsBox.y + chartsBox.height))).toBeLessThan(2);
   // Switches and stalls are read out by screen readers as they happen.
   await expect(page.getByRole("log", { name: "Switches and stalls" })).toContainText(/Playing /);
-  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
   await expect(page.getByText("Run finished.")).toBeVisible();
 
   const result = page.getByRole("region", { name: "Result" });
@@ -89,7 +108,7 @@ test("a run says when the real latency is above the simulated one", async ({ pag
   ).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
 
   const result = page.getByRole("region", { name: "Result" });
   await expect(result).toContainText(/\d+ of \d+ downloads started late/);
@@ -113,14 +132,14 @@ test("a repeat run takes its downloads from the copy the first run saved", async
     page.evaluate(async () => (await (await caches.open("rebuffer-saved-v1")).keys()).length);
 
   await page.getByRole("button", { name: "Start run" }).click();
-  await expect(status).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(status).toHaveText("Finished", { timeout: 30_000 });
   await expect(result).not.toContainText("came from the copy saved");
   // Each download is saved just after it ends.
   await expect.poll(savedCount).toBeGreaterThan(3);
 
   await page.getByRole("button", { name: "Run again" }).click();
-  await expect(status).toHaveText("Running.", { timeout: 15_000 });
-  await expect(status).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(status).toHaveText("Running", { timeout: 15_000 });
+  await expect(status).toHaveText("Finished", { timeout: 30_000 });
   await expect(result).toContainText(
     /(All \d+|\d+ of \d+) downloads came from the copy saved in this browser by an earlier run/,
   );
@@ -140,7 +159,7 @@ test("a run counts the stall when the network goes silent", async ({ page }) => 
     `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(silent)}&set=${smallBuffer}&start=now`,
   );
   test.skip(!(await canPlayH264(page)), "This browser build can't decode H.264 through MSE");
-  await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
+  await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
   // One stall at least; the player may stall again when its small buffer runs dry twice.
   await expect(page.getByText("Stall: the buffer ran out.").first()).toBeVisible();
   await expect(page.getByText(/^Playing again after \d+\.\d s\.$/).first()).toBeVisible();

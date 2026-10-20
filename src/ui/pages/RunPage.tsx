@@ -1,5 +1,5 @@
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { computeMetrics, computeScore, type RunMetrics } from "@/core/metrics";
 import { ShapingError } from "@/core/netsim/client";
@@ -46,6 +46,19 @@ export interface RunSearch {
 }
 
 type Phase = "ready" | "starting" | "running" | "finished" | "failed";
+
+/** The run's state as its chip says it: a word, a colour and a dot, which fade into the next state's. */
+const PHASE_CHIPS: Record<Phase, { label: string; chip: string; dot: string }> = {
+  ready: { label: "Ready", chip: "bg-fg/6 text-fg-2", dot: "bg-fg-3" },
+  starting: { label: "Checking your connection…", chip: "bg-net/12 text-fg", dot: "bg-net" },
+  running: {
+    label: "Running",
+    chip: "bg-accent/12 text-accent-hover",
+    dot: "bg-accent shadow-[0_0_0_3px] shadow-accent/20",
+  },
+  finished: { label: "Finished", chip: "bg-toast text-toast-fg", dot: "bg-toast-icon" },
+  failed: { label: "Couldn't run", chip: "bg-error/12 text-error-text", dot: "bg-error" },
+};
 
 interface ResolvedSetup {
   streamUrl: string;
@@ -256,107 +269,127 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
   }, [autostart, navigate]);
 
   const metrics = events.length > 0 ? computeMetrics(events) : undefined;
-  const elapsed = Math.min(metrics?.endS ?? 0, setup.curve.lengthS);
+  const lengthS = setup.curve.lengthS;
+  const elapsed = Math.min(metrics?.endS ?? 0, lengthS);
+
+  // The progress bar follows the run's clock every frame while it runs, so it glides instead of stepping with the
+  // four copies a second; React never sets its transform, so the two don't fight.
+  const fillRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (phase !== "running" && fillRef.current)
+      fillRef.current.style.transform = `scaleX(${elapsed / lengthS})`;
+  });
+  useEffect(() => {
+    if (phase !== "running" || !run) return;
+    let frame = 0;
+    const draw = () => {
+      const s = (performance.timeOrigin + performance.now() - run.startedAt) / 1000;
+      if (fillRef.current)
+        fillRef.current.style.transform = `scaleX(${Math.min(Math.max(s, 0), lengthS) / lengthS})`;
+      frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [phase, run, lengthS]);
   const chronological = describeEvents(events);
   const lines = [...chronological].reverse();
   // Switches and stalls are read out as they happen (polite); the rest of the log is there to read on demand.
   const spoken = chronological.filter((line) => line.kind === "switch" || line.kind === "stall");
   const headsUp = describeNetworkCheck(eventsOfType(events, "network-check")[0], setup.curve.rttMs);
 
+  const chip = PHASE_CHIPS[phase];
+
   return (
-    <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 py-6 sm:px-8">
+    <div className="mx-auto flex max-w-[1360px] flex-col gap-4 px-4 py-5 sm:px-8">
       <section
         aria-label="Run status"
-        className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[14px] border border-line bg-surface px-5 py-3.5"
+        className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-[18px] py-3.5"
       >
-        <div className="min-w-0 flex-[1_1_360px]">
-          <h1 className="text-lg font-semibold">
-            {setup.streamName} · {setup.networkName} · hls.js{" "}
-            {playerTitle(setup.player.name, setup.changes)}
-          </h1>
-          <div className="mt-1.5 flex items-center gap-3">
+        <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <h1 className="text-[17px] font-semibold">
+              {setup.streamName} · {setup.networkName} · hls.js{" "}
+              {playerTitle(setup.player.name, setup.changes)}
+            </h1>
+            <p
+              role="status"
+              className={`inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2.5 pl-2 text-[13px] font-medium transition-colors duration-[180ms] motion-reduce:transition-none ${chip.chip}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`size-[7px] rounded-full transition-colors duration-[180ms] motion-reduce:transition-none ${chip.dot}`}
+              />
+              {chip.label}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
             <div
               role="progressbar"
               aria-label="Run progress"
               aria-valuemin={0}
-              aria-valuemax={setup.curve.lengthS}
+              aria-valuemax={lengthS}
               aria-valuenow={Math.round(elapsed)}
-              aria-valuetext={`${formatClock(elapsed)} of ${formatClock(setup.curve.lengthS)}`}
+              aria-valuetext={`${formatClock(elapsed)} of ${formatClock(lengthS)}`}
               className="h-1.5 flex-auto overflow-hidden rounded-full bg-fg/8"
             >
-              <div
-                className="h-1.5 bg-accent"
-                style={{ width: `${(100 * elapsed) / setup.curve.lengthS}%` }}
-              />
+              <div ref={fillRef} className="h-1.5 origin-left rounded-full bg-accent" />
             </div>
-            <span className="font-mono text-[13px] text-fg-2 tabular-nums">
-              {formatClock(elapsed)} / {formatClock(setup.curve.lengthS)}
+            <span className="font-mono text-[13px] whitespace-nowrap text-fg-2 tabular-nums">
+              {formatClock(elapsed)} / {formatClock(lengthS)}
             </span>
           </div>
         </div>
-        <p role="status" className="text-sm text-fg-2">
-          {phase === "ready" && "Ready."}
-          {phase === "starting" && "Checking your connection, then starting the network simulator…"}
-          {phase === "running" && "Running."}
-          {phase === "finished" && "Finished."}
-          {phase === "failed" && "Couldn't run."}
-        </p>
-        <div className="flex gap-2">
-          {phase === "running" ? (
-            <button
-              type="button"
-              onClick={() => runRef.current?.stop()}
-              className="min-h-10 rounded-lg bg-fg px-4 font-medium text-ground"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void start()}
-              disabled={phase === "starting"}
-              className="min-h-10 rounded-lg bg-accent px-4 font-semibold text-accent-ink disabled:opacity-60"
-            >
-              {phase === "finished" || phase === "failed" ? "Run again" : "Start run"}
-            </button>
-          )}
-        </div>
+        {phase === "running" ? (
+          <button
+            type="button"
+            onClick={() => runRef.current?.stop()}
+            className="inline-flex min-h-10 items-center gap-2 rounded-[10px] bg-fg px-4 font-medium text-ground"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+              <rect x="1" y="1" width="10" height="10" rx="2" fill="currentColor" />
+            </svg>
+            Stop
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void start()}
+            disabled={phase === "starting"}
+            className="inline-flex min-h-10 items-center gap-2 rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover disabled:opacity-60"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M2.5 1.5 L10.5 6 L2.5 10.5 Z" fill="currentColor" />
+            </svg>
+            {phase === "finished" || phase === "failed" ? "Run again" : "Start run"}
+          </button>
+        )}
       </section>
 
       {headsUp && (
-        <p className="rounded-xl border border-warning/50 px-4 py-3 text-sm text-warning-text">
+        <p className="rounded-[10px] border border-warning/50 px-3.5 py-2.5 text-sm text-warning-text">
           {headsUp}
         </p>
       )}
 
       {error && (
-        <p role="alert" className="rounded-xl border border-error/50 px-4 py-3 text-error-text">
+        <p
+          role="alert"
+          className="rounded-[10px] border border-error/50 px-3.5 py-2.5 text-error-text"
+        >
           {error}
         </p>
       )}
 
       <Hint id="run-charts" title="What to watch">
-        <ul className="flex list-disc flex-col gap-1 pl-4.5">
-          <li>
-            <span className="text-fg">Bandwidth and quality:</span> the blue area is the network
-            (dashed ahead of the run), the pink dashed line is the player&apos;s estimate of it, and
-            the green steps are the quality on screen.
-          </li>
-          <li>
-            <span className="text-fg">Buffer:</span> seconds of video ready to play. When it runs
-            out, playback stalls, marked by a red band.
-          </li>
-          <li>
-            <span className="text-fg">Segment downloads:</span> one bar per segment, coloured by the
-            quality it was downloaded at.
-          </li>
-        </ul>
-        <p className="mt-1.5">At the end you get a score, and the report explains what happened.</p>
+        First run? On the charts, the blue area is the network, pink dashes the player&apos;s
+        estimate, green steps the quality on screen, purple the buffer, red bands stalls.
       </Hint>
 
-      <div className="flex flex-wrap items-start gap-5">
-        <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-4">
-          <div className="relative aspect-video overflow-hidden rounded-[14px] border border-line bg-[#0b0d10]">
+      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="relative aspect-video overflow-hidden rounded-xl bg-[#0b0d10]">
             <video
               ref={videoRef}
               muted
@@ -367,42 +400,47 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
           </div>
           {metrics && <Tiles metrics={metrics} />}
           {result && <Outcome result={result} savedId={savedId} />}
+          <section
+            aria-labelledby="log-h"
+            className="flex max-h-96 min-h-32 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-[1_1_0]"
+          >
+            <h2 id="log-h" className="px-3.5 pt-3 pb-2 text-sm font-semibold">
+              Event log <span className="font-normal text-fg-3">· newest first</span>
+            </h2>
+            <div role="log" aria-label="Switches and stalls" className="sr-only">
+              {spoken.map((line, i) => (
+                <p key={`${line.t}-${i}`}>
+                  {line.time}: {line.text}
+                </p>
+              ))}
+            </div>
+            {lines.length === 0 ? (
+              <p className="px-3.5 pb-3 text-sm text-fg-3">
+                Events appear here once the run starts.
+              </p>
+            ) : (
+              <ol
+                tabIndex={0}
+                aria-labelledby="log-h"
+                className="min-h-0 flex-auto overflow-auto px-3.5 pb-2.5 text-sm tabular-nums"
+              >
+                {lines.map((line, i) => (
+                  <li key={`${line.t}-${i}`} className="flex gap-3 border-t border-fg/6 py-[7px]">
+                    <span
+                      className={`w-[52px] flex-none pt-px font-mono text-xs ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
+                    >
+                      {line.time}
+                    </span>
+                    <span>{line.text}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
         </div>
 
         <RunCharts curve={setup.curve} run={run} events={events} untilS={elapsed} />
       </div>
-
-      <section
-        aria-labelledby="log-h"
-        className="rounded-[14px] border border-line bg-surface px-5 py-4"
-      >
-        <h2 id="log-h" className="mb-2 text-[15px] font-semibold">
-          Event log
-        </h2>
-        <div role="log" aria-label="Switches and stalls" className="sr-only">
-          {spoken.map((line, i) => (
-            <p key={`${line.t}-${i}`}>
-              {line.time}: {line.text}
-            </p>
-          ))}
-        </div>
-        {lines.length === 0 ? (
-          <p className="text-sm text-fg-3">Events appear here once the run starts.</p>
-        ) : (
-          <ol className="text-sm tabular-nums">
-            {lines.map((line, i) => (
-              <li key={`${line.t}-${i}`} className="flex gap-4 border-t border-fg/6 py-2">
-                <span
-                  className={`w-14 flex-none font-mono ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
-                >
-                  {line.time}
-                </span>
-                <span>{line.text}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
     </div>
   );
 }
@@ -420,12 +458,12 @@ function Tile({
 }) {
   return (
     <div
-      className={`rounded-xl border bg-surface px-4 py-3.5 ${alert ? "border-error/50" : "border-line"}`}
+      className={`rounded-[10px] border bg-surface px-3 py-2.5 ${alert ? "border-error/50" : "border-line"}`}
     >
-      <p className="text-[13px] text-fg-2">{label}</p>
-      <p className="mt-0.5 text-[26px] font-semibold tabular-nums">
+      <p className="text-xs text-fg-2">{label}</p>
+      <p className="mt-0.5 text-[22px] font-semibold tracking-[-0.01em] tabular-nums">
         {value}
-        {detail && <span className="text-base font-medium text-fg-2"> · {detail}</span>}
+        {detail && <span className="text-[13px] font-normal text-fg-2"> · {detail}</span>}
       </p>
     </div>
   );
@@ -433,7 +471,7 @@ function Tile({
 
 function Tiles({ metrics }: { metrics: RunMetrics }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-2">
       <Tile
         label="First frame"
         value={metrics.firstFrameS === undefined ? "—" : `${metrics.firstFrameS.toFixed(2)} s`}
@@ -464,23 +502,27 @@ function Outcome({ result, savedId }: { result: RunResult; savedId: string | fal
   return (
     <section
       aria-label="Result"
-      className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface px-5 py-4"
+      className="fade-in flex flex-col gap-2 rounded-xl border border-line bg-surface px-4 py-3.5"
     >
-      <p className="text-sm text-fg-2">QoE score</p>
-      <p className="text-5xl font-semibold tabular-nums">
-        {Math.round(score.score)}
-        <span className="text-xl font-medium text-fg-3"> / 100</span>
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs text-fg-2">QoE score</p>
+          <p className="mt-1 text-[40px] leading-none font-semibold tabular-nums">
+            {Math.round(score.score)}
+            <span className="text-lg font-medium text-fg-3"> / 100</span>
+          </p>
+        </div>
+        {savedId && (
+          <Link
+            to="/runs/$runId"
+            params={{ runId: savedId }}
+            className="inline-flex min-h-10 items-center rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover"
+          >
+            See the report
+          </Link>
+        )}
+      </div>
       {honesty.length > 0 && <p className="text-sm text-fg-2">{honesty.join(" ")}</p>}
-      {savedId && (
-        <Link
-          to="/runs/$runId"
-          params={{ runId: savedId }}
-          className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover"
-        >
-          See the report
-        </Link>
-      )}
       {savedId === false && (
         <p className="text-sm text-warning-text">
           This browser didn't let the lab save the run, so it has no report page.

@@ -20,7 +20,7 @@ function dismiss(id: string): void {
   }
 }
 
-/** A tip for a first visit, until "Got it" (remembered in this browser). */
+/** A one-line tip for a first visit, until "Got it" (remembered in this browser). `title` names it. */
 export function Hint({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   const [hidden, setHidden] = useState(() => dismissed().includes(id));
   if (hidden) return null;
@@ -28,12 +28,9 @@ export function Hint({ id, title, children }: { id: string; title: string; child
     <div
       role="note"
       aria-label={title}
-      className="flex flex-wrap items-start gap-x-6 gap-y-3 rounded-[14px] border border-accent/35 bg-accent/6 px-5 py-4"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[10px] bg-accent/8 py-1.5 pr-1.5 pl-3.5 text-sm text-fg-2"
     >
-      <div className="min-w-0 flex-[1_1_480px]">
-        <p className="mb-1.5 font-semibold">{title}</p>
-        <div className="text-[15px] text-fg-2">{children}</div>
-      </div>
+      <p className="min-w-0 flex-[1_1_520px] py-1">{children}</p>
       <button
         type="button"
         onClick={() => {
@@ -42,7 +39,7 @@ export function Hint({ id, title, children }: { id: string; title: string; child
           // The button goes with the hint; keep keyboard users where they were, at the top of the screen.
           document.getElementById("main")?.focus();
         }}
-        className="min-h-10 rounded-lg border border-line-strong px-4 font-medium hover:border-fg-3"
+        className="min-h-9 rounded-md px-2.5 font-medium text-accent-hover hover:bg-accent/10"
       >
         Got it
       </button>

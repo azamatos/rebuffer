@@ -30,11 +30,14 @@ export function AppShell() {
       </a>
       <div className="flex min-h-dvh flex-col">
         <header className="border-b border-line">
-          <div className="mx-auto flex min-h-15 max-w-[1360px] flex-wrap items-center gap-x-7 gap-y-1 px-4 py-2.5 sm:px-8">
+          <div className="mx-auto flex min-h-15 max-w-[1360px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:gap-x-7 sm:px-8">
             <Link to="/" className="text-fg">
               <Wordmark />
             </Link>
-            <nav aria-label="Main" className="flex flex-auto flex-wrap gap-0.5 text-[15px]">
+            <nav
+              aria-label="Main"
+              className="flex flex-auto flex-wrap gap-0.5 text-[15px] max-sm:order-last max-sm:-mx-3 max-sm:w-full"
+            >
               {nav.map((item) => (
                 <Link
                   key={item.to}
@@ -48,7 +51,9 @@ export function AppShell() {
                 </Link>
               ))}
             </nav>
-            <ThemeSwitch />
+            <div className="max-sm:ml-auto">
+              <ThemeSwitch />
+            </div>
           </div>
         </header>
 
