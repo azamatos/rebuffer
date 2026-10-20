@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { openApp, tabTo } from "./helpers";
+import { openApp, settle, tabTo } from "./helpers";
 
 // Two saved runs written straight into the app's IndexedDB (src/core/persist/runs.ts), so this needs no video
 // decoding: A on hls.js defaults stalls for 2 s; B, with Fast start, starts sooner on 240p and never stalls.
@@ -170,6 +170,7 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
   );
   await page.keyboard.press("Enter");
   const table = page.getByRole("region", { name: "Both runs as a table" });
+  await settle(table);
   await expect(table.getByRole("row", { name: /^0:12 / })).toContainText("Stalled");
 
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

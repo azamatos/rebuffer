@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { canPlayH264, openApp, STREAM, tabTo } from "./helpers";
+import { canPlayH264, openApp, settle, steady, STREAM, tabTo } from "./helpers";
 
 // 8 s: 4 Mbps, a drop to 0.4 Mbps from 0:03 to 0:05, then 4 Mbps; RTT 50 ms.
 const CURVE = "steps,50,8,0:4|3:0.4|5:4";
@@ -40,6 +40,7 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
     "Startup",
     "Rebuffer ratio",
     "Wasted data",
+    "Real network",
   ]) {
     await expect(results).toContainText(part);
   }
@@ -83,7 +84,22 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
     start: "now",
   });
 
-  // The actions work from the keyboard (AGENTS.md rule 4).
+  // The actions work from the keyboard (AGENTS.md rule 4), in the order they're on the page.
+  await tabTo(page, browserName, page.getByRole("button", { name: "Copy link" }));
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/Copied a link to this setup|didn't let the lab copy/)).toBeVisible();
+
+  // The rest are behind "More actions": Escape closes it and leaves focus on its button.
+  const more = page.getByRole("button", { name: "More actions" });
+  await tabTo(page, browserName, more);
+  await page.keyboard.press("Enter");
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await settle(page.getByRole("button", { name: "Export JSON" }).locator(".."));
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await expect(more).toBeFocused();
+  await page.keyboard.press("Enter");
   const download = page.waitForEvent("download");
   await tabTo(page, browserName, page.getByRole("button", { name: "Export JSON" }));
   await page.keyboard.press("Enter");
@@ -94,11 +110,13 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   };
   expect(exported.format).toBe("rebuffer-run");
   expect(exported.events.length).toBeGreaterThan(10);
-
-  await tabTo(page, browserName, page.getByRole("button", { name: "Copy link" }));
-  await page.keyboard.press("Enter");
-  await expect(page.getByText(/Copied a link to this setup|didn't let the lab copy/)).toBeVisible();
-
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  // A toast confirms it, read out politely; the zoom keeps the page's one status.
+  await expect(
+    page.locator("[aria-live=polite]").getByText("Downloaded the run as JSON."),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toHaveCount(1);
+  await settle(page.locator("[aria-live=polite]"));
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   // The run is listed on Home and on the Runs page, which opens its report from the keyboard.
@@ -113,6 +131,8 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(page).toHaveURL(reportUrl);
 
   // Delete forgets it.
+  await tabTo(page, browserName, page.getByRole("button", { name: "More actions" }));
+  await page.keyboard.press("Enter");
   await tabTo(page, browserName, page.getByRole("button", { name: "Delete" }));
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/runs$/);
@@ -157,6 +177,7 @@ test("the report's charts zoom by keyboard and by mouse", async ({ page, browser
   );
   await page.keyboard.press("Enter");
   const table = page.getByRole("region", { name: "Buffer as a table" });
+  await settle(table);
   await expect(table.getByRole("row").nth(1)).toContainText("0:04");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
@@ -171,6 +192,7 @@ test("the report's charts zoom by keyboard and by mouse", async ({ page, browser
   await expect(status).toHaveText("Showing all 0:08");
   const chart = page.getByRole("img", { name: /^Over 0:08, the network gave/ });
   await expect(chart).toBeInViewport();
+  await steady(chart);
 
   // With a mouse: a drag across a chart picks a stretch, a double-click shows the whole run again.
   const box = await chart.boundingBox();
@@ -184,4 +206,13 @@ test("the report's charts zoom by keyboard and by mouse", async ({ page, browser
   await expect(status).toHaveText("Showing 0:00–0:04 of 0:08");
   await page.getByRole("img", { name: /^From 0:00 to 0:04, the network gave/ }).dblclick();
   await expect(status).toHaveText("Showing all 0:08");
+
+  // The score card's link opens the explanation at the bottom and takes focus there.
+  await page.getByRole("link", { name: "How the score is computed" }).focus();
+  await page.keyboard.press("Enter");
+  const method = page.locator("details#score");
+  await expect(method).toHaveAttribute("open", "");
+  await expect(method.locator("summary")).toBeFocused();
+  await expect(method).toBeInViewport();
+  await expect(method).toContainText("Yin et al.");
 });

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { canPlayH264, STREAM, tabTo } from "./helpers";
+import { canPlayH264, settle, STREAM, tabTo } from "./helpers";
 
 // 12 s: 4 Mbps, a drop to 0.4 Mbps from 0:04 to 0:08, then 4 Mbps again; RTT 50 ms.
 const CURVE = "steps,50,12,0:4|4:0.4|8:4";
@@ -83,6 +83,7 @@ test("a run plays the stream through the simulated network and reports it", asyn
   const table = page.getByRole("region", { name: "Segment downloads as a table" });
   await expect(table.getByRole("row").nth(1)).toContainText("Done");
   await expect(lane).toBeHidden();
+  await settle(table);
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
   await showAs.getByRole("button", { name: "Chart" }).focus();
@@ -116,6 +117,23 @@ test("a run says when the real latency is above the simulated one", async ({ pag
 
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+
+  // Its report leads with the check: one line, and the details on demand.
+  await page.getByRole("link", { name: "See the report" }).click();
+  const check = page.getByRole("region", { name: "Simulation check" });
+  await expect(check).toContainText(
+    /^Simulation check: Your real network took longer to answer than the simulated latency at times: \d+ of \d+ downloads started late/,
+  );
+  const details = check.getByText("Details");
+  await expect(check.getByText("Measured before the run")).toBeHidden();
+  await details.click();
+  await expect(check.getByText(/^Measured before the run, localhost:4013 answered/)).toBeVisible();
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    // Colours fade between the themes.
+    await settle(page.locator("body"));
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  }
 });
 
 test("a repeat run takes its downloads from the copy the first run saved", async ({ page }) => {

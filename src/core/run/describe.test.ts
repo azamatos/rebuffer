@@ -7,6 +7,7 @@ import {
   describeHonesty,
   describeNetworkCheck,
   formatMbps,
+  honestyWarning,
   levelLabel,
 } from "./describe";
 
@@ -235,5 +236,40 @@ describe("describeHonesty", () => {
 
   it("says nothing about downloads when there were none", () => {
     expect(describeHonesty({ ...honesty({}), requests: 0 }, network(80, 6))).toEqual([]);
+  });
+
+  describe("honestyWarning", () => {
+    it("is quiet when the simulated network alone shaped the run", () => {
+      expect(honestyWarning(honesty({}))).toBeUndefined();
+      expect(honestyWarning(honesty({ saved: 94 }))).toBeUndefined();
+    });
+
+    it("leads with late bytes, which slow the run itself", () => {
+      expect(
+        honestyWarning(
+          honesty({
+            latency: { late: 3, typicalLateMs: 90, worstLateMs: 120 },
+            bandwidth: { late: 7, typicalLateMs: 300, worstLateMs: 1240 },
+            hiddenS: 12,
+          }),
+        ),
+      ).toBe(
+        "Your real network was slower than the simulated one at times: 7 of 94 downloads arrived late, so this run is slower than the simulated network alone.",
+      );
+    });
+
+    it("names late first bytes when the bytes themselves kept up", () => {
+      expect(
+        honestyWarning(honesty({ latency: { late: 78, typicalLateMs: 101, worstLateMs: 300 } })),
+      ).toBe(
+        "Your real network took longer to answer than the simulated latency at times: 78 of 94 downloads started late, typically by 101 ms.",
+      );
+    });
+
+    it("names a background tab on its own", () => {
+      expect(honestyWarning(honesty({ hiddenS: 20 }))).toBe(
+        "The tab was in the background for 20 s, where browsers slow down timers.",
+      );
+    });
   });
 });

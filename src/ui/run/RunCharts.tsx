@@ -124,7 +124,7 @@ export function RunCharts({
   const canvasClass = onPick ? "cursor-crosshair touch-pan-y" : "";
 
   return (
-    <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-3">
       <ChartFrame
         title="Bandwidth and quality"
         unit="Mbps, log scale"

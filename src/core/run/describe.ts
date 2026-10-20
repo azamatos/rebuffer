@@ -174,3 +174,18 @@ export function describeHonesty(honesty: Honesty, curve: NetworkCurve): string[]
   }
   return sentences;
 }
+
+/**
+ * The simulation check in one line, for the top of the Report: the main way the real network (or a background tab)
+ * shaped the run, or undefined when the simulated network alone did. `describeHonesty` has the details.
+ */
+export function honestyWarning(honesty: Honesty): string | undefined {
+  const { requests, latency, bandwidth, hiddenS } = honesty;
+  if (bandwidth.late > 0)
+    return `Your real network was slower than the simulated one at times: ${bandwidth.late} of ${requests} downloads arrived late, so this run is slower than the simulated network alone.`;
+  if (latency.late > 0)
+    return `Your real network took longer to answer than the simulated latency at times: ${latency.late} of ${requests} downloads started late, typically by ${formatMs(latency.typicalLateMs)}.`;
+  if (hiddenS > 0)
+    return `The tab was in the background for ${formatDuration(hiddenS)}, where browsers slow down timers.`;
+  return undefined;
+}

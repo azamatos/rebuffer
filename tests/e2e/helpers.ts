@@ -31,3 +31,29 @@ export async function canPlayH264(page: Page): Promise<boolean> {
       MediaSource.isTypeSupported('video/mp4; codecs="avc1.64001f,mp4a.40.2"'),
   );
 }
+
+/**
+ * Waits for the animations on `target` and inside it to finish: a table fading in or a menu popping open. axe
+ * measures contrast on what's painted, so a check halfway through a fade fails.
+ */
+export async function settle(target: Locator): Promise<void> {
+  await target.evaluate((element) =>
+    Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+  );
+}
+
+/** Waits until `target` stops moving: jumps within a page scroll smoothly, so a box measured mid-way is stale. */
+export async function steady(target: Locator): Promise<void> {
+  let last: string | undefined;
+  await expect
+    .poll(
+      async () => {
+        const box = JSON.stringify(await target.boundingBox());
+        const same = box === last;
+        last = box;
+        return same;
+      },
+      { intervals: [100] },
+    )
+    .toBe(true);
+}
