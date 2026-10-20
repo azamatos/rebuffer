@@ -45,7 +45,7 @@ export function AppShell() {
                   className="rounded-lg px-3 py-1.5 transition-colors"
                   activeProps={{ className: "bg-fg/7 font-medium text-fg" }}
                   inactiveProps={{ className: "text-fg-2 hover:bg-fg/4 hover:text-fg" }}
-                  activeOptions={{ exact: item.exact }}
+                  activeOptions={{ exact: item.exact, includeSearch: false }}
                 >
                   {item.label}
                 </Link>

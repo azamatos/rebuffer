@@ -280,6 +280,15 @@ export function countFindings(findings: readonly SourcedFinding[]): Record<Sever
   return counts;
 }
 
+/** A media playlist's most serious finding, for its chip in the Segments panel; undefined when it has none. */
+export function worstSeverity(playlist: MediaPlaylist): Severity | undefined {
+  let worst: Severity | undefined;
+  for (const { severity } of lintMedia(playlist)) {
+    if (worst === undefined || SEVERITY_ORDER[severity] < SEVERITY_ORDER[worst]) worst = severity;
+  }
+  return worst;
+}
+
 /** A media playlist's segments, for the Segments panel. */
 export interface SegmentStats {
   count: number;

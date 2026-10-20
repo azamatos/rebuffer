@@ -15,6 +15,7 @@ import {
   playbackQuery,
   relativeName,
   segmentStats,
+  worstSeverity,
 } from "./model";
 import { describeReadError, ReadError, type Reader } from "./read";
 
@@ -193,6 +194,11 @@ describe("the screen's model", () => {
     expect(stats.description).toBe(
       "15 segments, 13 of them 6 s. Segment 12 lasts 6.6 s, over the 6 s target; the last lasts 3.4 s.",
     );
+  });
+
+  it("gives each media playlist its most serious finding, for its chip", () => {
+    expect(worstSeverity(parseMedia(problemsMedia, `${BASE}1280/index.m3u8`))).toBe("error");
+    expect(worstSeverity(parseMedia(fmp4Vod, `${BASE}fmp4/index.m3u8`))).toBeUndefined();
   });
 
   it("names media playlists by their folder, and builds the links the screen offers", () => {

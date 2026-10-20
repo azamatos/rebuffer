@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { STREAM, tabTo } from "./helpers";
+import { settle, STREAM, tabTo } from "./helpers";
 
 test("a stream is inspected from a link typed with the keyboard", async ({ page, browserName }) => {
   await page.goto("/inspect");
@@ -31,16 +31,32 @@ test("a stream is inspected from a link typed with the keyboard", async ({ page,
   await expect(page.getByRole("region", { name: "Findings" })).toContainText(
     "The playlist has no I-frame playlists",
   );
+  // The header marks the screen, whatever its link carries.
+  await expect(
+    page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Inspect" }),
+  ).toHaveAttribute("aria-current", "page");
 
-  // The segments of another playlist, chosen from the keyboard.
-  const choose = page.getByLabel("Playlist");
-  await tabTo(page, browserName, choose);
-  await choose.selectOption({ label: "480p" });
+  // The segments of another playlist, chosen from the keyboard: the chips are radios.
+  const playlists = page.getByRole("group", { name: "Playlist" });
+  await tabTo(page, browserName, playlists.getByRole("radio", { name: "720p" }));
+  await page.keyboard.press("ArrowRight");
+  await expect(playlists.getByRole("radio", { name: "480p" })).toBeChecked();
   await expect(page.getByRole("img", { name: /^480p: 10 segments, each 2 s\.$/ })).toBeVisible();
+  // Their table, in the chart's place.
+  const showAs = page.getByRole("group", { name: "Segments: show as" });
+  await tabTo(page, browserName, showAs.getByRole("button", { name: "Table" }));
+  await page.keyboard.press("Enter");
+  const table = page.getByRole("region", { name: "Segments as a table" });
+  await expect(table.getByRole("row")).toHaveCount(11);
+  await settle(table);
 
   const run = await page.getByRole("link", { name: "Run this stream" }).getAttribute("href");
   expect(new URL(run ?? "", "http://localhost").searchParams.get("stream")).toBe(STREAM);
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await settle(page.locator("body"));
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  }
 });
 
 test("pasted text and an opened file are inspected; a blocked server and a bad link are explained", async ({
@@ -49,9 +65,26 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
 }) => {
   await page.goto("/inspect");
 
+  // The ways in are tabs: arrow keys move between them, and Enter goes into the panel.
+  const link = page.getByRole("tab", { name: "Link" });
+  await tabTo(page, browserName, link);
+  await expect(link).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  const file = page.getByRole("tab", { name: "File" });
+  await expect(file).toBeFocused();
+  await expect(file).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel", { name: "File" })).toContainText(
+    "Drop an .m3u8 file here",
+  );
+  await page.keyboard.press("Enter");
+  const choose = page.getByRole("button", { name: "Choose an .m3u8 file" });
+  await expect(choose).toBeFocused();
+  await settle(page.getByRole("tabpanel"));
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
   // A media playlist from a file, with a segment over its target duration.
   const chooser = page.waitForEvent("filechooser");
-  await tabTo(page, browserName, page.getByRole("button", { name: "Open file" }));
   await page.keyboard.press("Enter");
   await (
     await chooser
@@ -70,16 +103,18 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
   );
   await expect(page.getByText(/^late\.m3u8, line 6 ·/)).toBeVisible();
 
-  // Pasted text: the ladder, but no media playlists, since relative links can't be followed.
+  // Pasted text: the ladder, but no media playlists, since relative links can't be followed. A click on the tab
+  // puts the cursor in its field.
   await page.goto("/inspect");
-  await tabTo(page, browserName, page.getByRole("button", { name: "Paste playlist text" }));
-  await page.keyboard.press("Enter");
+  await page.getByRole("tab", { name: "Paste text" }).click();
+  const text = page.getByLabel("Paste the text of an .m3u8 playlist");
+  await expect(text).toBeFocused();
   const master = await readFile(
     new URL("../../media/e2e/ladder/master.m3u8", import.meta.url),
     "utf8",
   );
-  await page.getByLabel("Playlist text").fill(master);
-  await tabTo(page, browserName, page.getByRole("button", { name: "Inspect the text" }));
+  await text.fill(master);
+  await tabTo(page, browserName, page.getByRole("button", { name: "Inspect this text" }));
   await page.keyboard.press("Enter");
   await expect(page.getByRole("region", { name: "Summary" })).toContainText(
     "Multivariant playlist · HLS v7 · 3 qualities · 1 audio track",
@@ -100,9 +135,9 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
   ).toBeVisible();
 
   // A link that isn't one.
-  const link = page.getByLabel("HLS link (.m3u8)");
-  await link.fill("not a link");
-  await link.press("Enter");
+  const field = page.getByLabel("HLS link (.m3u8)");
+  await field.fill("not a link");
+  await field.press("Enter");
   await expect(page.getByRole("alert")).toHaveText(/^That isn't a web address\./);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
