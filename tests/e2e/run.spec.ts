@@ -26,6 +26,8 @@ test("a run plays the stream through the simulated network and reports it", asyn
 
   await expect(page.getByRole("status")).toHaveText("Running.", { timeout: 15_000 });
   await expect(page.getByText("First frame on screen.")).toBeVisible({ timeout: 15_000 });
+  // Switches and stalls are read out by screen readers as they happen.
+  await expect(page.getByRole("log", { name: "Switches and stalls" })).toContainText(/Playing /);
   await expect(page.getByRole("status")).toHaveText("Finished.", { timeout: 30_000 });
   await expect(page.getByText("Run finished.")).toBeVisible();
 
@@ -133,6 +135,9 @@ test("a run counts the stall when the network goes silent", async ({ page }) => 
   // One stall at least; the player may stall again when its small buffer runs dry twice.
   await expect(page.getByText("Stall: the buffer ran out.").first()).toBeVisible();
   await expect(page.getByText(/^Playing again after \d+\.\d s\.$/).first()).toBeVisible();
+  await expect(page.getByRole("log", { name: "Switches and stalls" })).toContainText(
+    /\d:\d\d\.\d: Stall: the buffer ran out\..*Playing again after/,
+  );
 });
 
 test("a broken network link explains itself", async ({ page }) => {

@@ -249,7 +249,10 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
 
   const metrics = events.length > 0 ? computeMetrics(events) : undefined;
   const elapsed = Math.min(metrics?.endS ?? 0, setup.curve.lengthS);
-  const lines = describeEvents(events).reverse();
+  const chronological = describeEvents(events);
+  const lines = [...chronological].reverse();
+  // Switches and stalls are read out as they happen (polite); the rest of the log is there to read on demand.
+  const spoken = chronological.filter((line) => line.kind === "switch" || line.kind === "stall");
   const headsUp = describeNetworkCheck(eventsOfType(events, "network-check")[0], setup.curve.rttMs);
 
   return (
@@ -349,6 +352,13 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         <h2 id="log-h" className="mb-2 text-[15px] font-semibold">
           Event log
         </h2>
+        <div role="log" aria-label="Switches and stalls" className="sr-only">
+          {spoken.map((line, i) => (
+            <p key={`${line.t}-${i}`}>
+              {line.time}: {line.text}
+            </p>
+          ))}
+        </div>
         {lines.length === 0 ? (
           <p className="text-sm text-fg-3">Events appear here once the run starts.</p>
         ) : (
