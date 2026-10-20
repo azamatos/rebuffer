@@ -41,10 +41,11 @@
 
 ## Next step (in this order)
 
-1. **Push this docs commit** with the next change (ask first).
-2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
-3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-4. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+1. **The owner reviews the polish proposal** (link under "Design and plan artifacts"); build what they approve.
+2. **Push the docs commits** with the next change (ask first).
+3. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
+4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
@@ -84,6 +85,11 @@ that needs their eye under "Waiting for the owner".
 
 - **Design canvas** (Home, Run, Report, Network editor, Inspector, visual system):
   https://claude.ai/artifact/BgVz6NLex5nHa9G5hGKej6. Private to the owner. The screens follow it.
+- **Polish proposal (2026-10-20, waiting for the owner's review):** https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K.
+  The owner asked for a friendlier, more compact UI: the wordmark sized to the nav, fewer and better-matched blocks,
+  clearer labels, smooth motion (disclosures, the paste panel, run progress, state changes, scrolling). Six boards:
+  header before/after, Run, Report, Networks, Inspect, and an interactive motion board. Nothing is built yet; the
+  owner reviews, then the work starts.
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 
