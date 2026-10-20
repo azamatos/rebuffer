@@ -12,7 +12,7 @@ building and every milestone is shippable on its own.
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
 | M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
-| M2 Live run | Nov 8 | in progress: honest lateness, live charts and saved downloads are live; Home setup left |
+| M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
 | M3 Report, network editor, inspector | Nov 15 | not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
@@ -31,6 +31,7 @@ building and every milestone is shippable on its own.
 - [x] R2 bucket `azamatos-media` at https://media.azamatos.com: CORS open to any origin (GET, HEAD), cache rule
       "media: cache segments and playlists", r2.dev off; all 1,740 files uploaded and verified (2026-10-19)
 - [x] Push-triggered deploys: every push to `main` deploys (checked 2026-10-20)
+- [x] Logo cursor keeps blinking, as on pass.azamatos.com (owner's request, 2026-10-20)
 - [x] Folder renamed to `~/www/me/rebuffer` (by 2026-10-19)
 - [ ] shadcn/ui, when the first component needs it
 
@@ -44,7 +45,7 @@ building and every milestone is shippable on its own.
 - [x] Run event log; metrics, score and the honesty count (2026-10-18)
 - [x] hls.js adapter and player presets; levels named by width class (1280×534 → 720p) (2026-10-19)
 
-## M2: live run (target Nov 8)
+## M2: live run (target Nov 8) — done
 
 - [x] Run controller; setup in the URL (stream, network preset or compact curve, player preset) (2026-10-18)
 - [x] Run screen, first version: setup, progress, video, live tiles, event log, score, honesty line (2026-10-18)
@@ -60,8 +61,10 @@ building and every milestone is shippable on its own.
 - [x] **Saved downloads for repeat runs** (2026-10-20, live; the owner approved it after the charts): the
       worker keeps what runs download in Cache Storage (300 MB, oldest out) and answers repeat runs from it, still
       shaped; the result says how many came from it and can forget it
-- [ ] Home setup (stream, network, player pickers) wired to `/run`; "Try the tunnel" from Home
-- [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
+- [x] **Home setup** (2026-10-20): stream (our two films, public test streams, your own link), network presets with
+      a thumbnail each, player presets as chips, Run; "Try the tunnel" and Run open `/run` and start it
+- [x] Keyboard-only Playwright test: Home → setup → Run → the run starts → Stop (2026-10-20). "Try the tunnel" is
+      checked by its link, so CI doesn't depend on media.azamatos.com
 
 ## M3: report, network editor, inspector (target Nov 15)
 
@@ -121,3 +124,5 @@ building and every milestone is shippable on its own.
   (300 MB) and answers repeat runs from it; Tunnel scored 31, then 25, 25, 25 (runs 2–4 identical). Playlists now
   cache for a day at Cloudflare (the owner re-uploaded them with `upload.mjs --playlists`). 367 unit tests, 64 Playwright checks.
   Then pushed: Cloudflare built and deployed `7b7d527` from the push on its own (auto-deploy works now), and CI passed.
+  Later the same day: the logo cursor keeps blinking (owner's request), and Home's setup (stream, network, player,
+  Run) opens the Run screen and starts it; M2 done. 372 unit tests, 73 Playwright checks, home JavaScript 89.5 KB.

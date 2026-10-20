@@ -7,7 +7,7 @@ Studio's _Tears of Steel_ (CC BY 3.0), re-encoded, never cut. Owner: Azamat Jora
 rebuffer.azamatos.com; sample media at media.azamatos.com. Applies to every agent tool; Claude Code also reads
 `CLAUDE.md`.
 
-**Status (2026-10-20): M0 and M1 done, M2 in progress (live charts and saved downloads built; Home setup left).**
+**Status (2026-10-20): M0, M1 and M2 done; M3 (report, network editor, inspector) next.**
 Live at https://rebuffer.azamatos.com (every push to `main` deploys; see `techContext.md`, "Deploying"). Start with
 `docs/memory-bank/activeContext.md`.
 

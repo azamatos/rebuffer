@@ -1,6 +1,6 @@
 # Active context
 
-**Updated 2026-10-20 (third session: live charts, saved downloads, auto-deploy works).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (third session: live charts, saved downloads, auto-deploy, Home setup; M2 done).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,9 +10,9 @@
   hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **What works today:** Home (hero, how it works), the Run screen (setup from the URL, Start, video, live tiles, three
-  live charts, a plain-English event log, score and an honesty paragraph at the end), and placeholders for Inspect,
-  Networks, Runs and About. The core under it is done: playlist parser and lint rules, network simulator and
+- **What works today:** Home (hero, a setup of stream, network and player, how it works), the Run screen (setup from
+  the URL, Start or a start from Home, video, live tiles, three live charts, a plain-English event log, score and an
+  honesty paragraph at the end), and placeholders for Inspect, Networks, Runs and About. The core under it is done: playlist parser and lint rules, network simulator and
   Service Worker shaper, hls.js adapter, run controller, metrics and score.
 - **Live site = commit `7b7d527`** (honest lateness, live charts, saved downloads), pushed on 2026-10-20 and built by
   Cloudflare from the push. **Pushes to `main` now deploy on their own** (checked 2026-10-20: the deployment and
@@ -26,16 +26,20 @@
 - **Saved downloads (built 2026-10-20):** the worker keeps what runs download (300 MB, oldest out) and answers repeat
   runs from it, still shaped. The result says how many downloads came from it and has a "Forget saved downloads"
   button. Live results in `techContext.md`, "Saved downloads for repeat runs".
-- **Quality bar today:** 367 unit tests, 64 Playwright checks (axe on every screen; 2 keyboard checks skipped in
-  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 85.5 KB brotli, Run chunk 41 KB gzip.
+- **Home setup (built 2026-10-20):** our two films, the public test streams or your own HLS link; the network presets
+  with a thumbnail each; the player presets; Run opens `/run` with the setup in the URL and starts it. The logo
+  cursor keeps blinking, as on pass.azamatos.com (owner's request; solid with reduced motion).
+- **Quality bar today:** 372 unit tests, 73 Playwright checks (axe on every screen; 2 keyboard checks skipped in
+  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 89.5 KB brotli, Run chunk 41 KB gzip.
+- **M2 is done** (target was Nov 8).
 - **Ahead of schedule:** M0 and M1 were planned for Oct 25 and Nov 1 and are done; M2 (Nov 8) is half done.
 
 ## Next step (in this order)
 
-1. **Home setup (M2).** Stream, network and player pickers on Home that open `/run` with the setup in the URL; a
-   keyboard-only Playwright test from Home through a finished run.
-2. Then M3: Report screen (notes, "try next", export, share link, saved runs, zoomable charts), network editor,
-   inspector screen.
+1. **M3, Report screen first:** score with its breakdown, tiles, the three charts static and zoomable, "what
+   happened" notes, "try next" ideas, export JSON, a share link (setup only), runs saved in IndexedDB, the Runs list
+   (and Home's "Recent runs" from the design). Then the network editor and the inspector screen.
+2. The owner collects fixes and reviews them when everything is ready (said 2026-10-20).
 
 Pushes to `main` deploy to rebuffer.azamatos.com on their own (checked 2026-10-20). Pushing is still outward-facing:
 ask the owner first.

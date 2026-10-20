@@ -1,4 +1,14 @@
 import { Link } from "@tanstack/react-router";
+import { presetById } from "@/core/netsim/presets";
+import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID, runSearchFor } from "@/core/run/setup";
+import { DEFAULT_STREAM } from "@/core/samples";
+import { RunSetup } from "@/ui/home/RunSetup";
+
+const tunnelS = presetById(DEFAULT_NETWORK_ID)?.curve.lengthS ?? 90;
+const tryTheTunnel = runSearchFor(
+  { streamUrl: DEFAULT_STREAM.url, networkId: DEFAULT_NETWORK_ID, playerId: DEFAULT_PLAYER_ID },
+  { start: true },
+);
 
 const steps = [
   {
@@ -33,6 +43,7 @@ export function HomePage() {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             to="/run"
+            search={tryTheTunnel}
             className="inline-flex min-h-12 items-center gap-2.5 rounded-[10px] bg-accent px-5.5 text-[17px] font-semibold text-accent-ink hover:bg-accent-hover"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -40,15 +51,19 @@ export function HomePage() {
             </svg>
             Try the tunnel
           </Link>
-          <Link
-            to="/networks"
+          <a
+            href="#setup"
             className="inline-flex min-h-12 items-center rounded-[10px] border border-line-strong px-5 font-medium text-fg hover:border-fg-3"
           >
             Set up your own run
-          </Link>
+          </a>
         </div>
-        <p className="text-sm text-fg-3">Runs in your browser; nothing is uploaded.</p>
+        <p className="text-sm text-fg-3">
+          {tunnelS} seconds. Runs in your browser; nothing is uploaded.
+        </p>
       </section>
+
+      <RunSetup />
 
       <section aria-labelledby="how-h" className="mx-auto max-w-[1280px] px-4 pt-2 pb-16 sm:px-8">
         <h2 id="how-h" className="mb-4 text-[22px] font-semibold">

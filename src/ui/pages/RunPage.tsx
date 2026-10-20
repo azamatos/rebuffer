@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { formatClock, formatDuration } from "@/core/format/time";
 import { computeMetrics, computeScore, type RunMetrics } from "@/core/metrics";
 import { ShapingError } from "@/core/netsim/client";
@@ -15,6 +16,7 @@ import {
   formatMbps,
 } from "@/core/run/describe";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
+import { DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 import { RunCharts } from "@/ui/run/RunCharts";
 
@@ -23,6 +25,8 @@ export interface RunSearch {
   network?: string;
   curve?: string;
   player?: string;
+  /** Start as soon as the screen opens (Home's Run button); dropped from the URL once the run starts. */
+  start?: string;
 }
 
 type Phase = "ready" | "starting" | "running" | "finished" | "failed";
@@ -51,14 +55,16 @@ function resolveSetup(
     curve = parsed.curve;
     networkName = "Custom network";
   } else {
-    const preset = presetById(search.network ?? "tunnel");
+    const preset = presetById(search.network ?? DEFAULT_NETWORK_ID);
     if (!preset)
       return { ok: false, error: `There's no network called “${search.network ?? ""}”.` };
     curve = preset.curve;
     networkName = preset.name;
   }
 
-  const player = PLAYER_PRESETS.find((preset) => preset.id === (search.player ?? "defaults"));
+  const player = PLAYER_PRESETS.find(
+    (preset) => preset.id === (search.player ?? DEFAULT_PLAYER_ID),
+  );
   if (!player)
     return { ok: false, error: `There's no player setup called “${search.player ?? ""}”.` };
 
@@ -82,6 +88,21 @@ function errorMessage(error: unknown): string {
 
 export function RunPage({ search }: { search: RunSearch }) {
   const resolved = useMemo(() => resolveSetup(search), [search]);
+  if (!resolved.ok) {
+    return (
+      <section className="mx-auto max-w-[1360px] px-4 py-10 sm:px-8">
+        <h1 className="text-[32px] font-semibold tracking-tight">Run</h1>
+        <p role="alert" className="mt-4 text-error-text">
+          {resolved.error}
+        </p>
+      </section>
+    );
+  }
+  return <RunScreen setup={resolved.setup} autostart={search.start !== undefined} />;
+}
+
+function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: boolean }) {
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const runRef = useRef<Run | undefined>(undefined);
   // The run's handle, so the charts can follow it; its data never goes through React state.
@@ -109,18 +130,6 @@ export function RunPage({ search }: { search: RunSearch }) {
     [],
   );
 
-  if (!resolved.ok) {
-    return (
-      <section className="mx-auto max-w-[1360px] px-4 py-10 sm:px-8">
-        <h1 className="text-[32px] font-semibold tracking-tight">Run</h1>
-        <p role="alert" className="mt-4 text-error-text">
-          {resolved.error}
-        </p>
-      </section>
-    );
-  }
-  const { setup } = resolved;
-
   const start = async () => {
     const video = videoRef.current;
     if (!video) return;
@@ -145,6 +154,26 @@ export function RunPage({ search }: { search: RunSearch }) {
       setPhase("failed");
     }
   };
+
+  // Home's Run button opens the screen with `start`: run once, then drop it, so a reload or a copied link doesn't.
+  const autostarted = useRef(false);
+  const startNow = useEffectEvent(() => {
+    void start();
+  });
+  useEffect(() => {
+    if (!autostart || autostarted.current) return;
+    autostarted.current = true;
+    startNow();
+    void navigate({
+      to: "/run",
+      search: (previous) => {
+        const next = { ...previous };
+        delete next.start;
+        return next;
+      },
+      replace: true,
+    });
+  }, [autostart, navigate]);
 
   const metrics = events.length > 0 ? computeMetrics(events) : undefined;
   const elapsed = Math.min(metrics?.endS ?? 0, setup.curve.lengthS);

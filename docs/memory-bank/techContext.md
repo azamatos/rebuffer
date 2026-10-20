@@ -130,7 +130,8 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 
 ## Routes (code-based TanStack Router, real paths; Pages serves `index.html` for unknown paths)
 
-`/` home and setup · `/run` live run · `/runs` saved runs and reports · `/networks` network editor · `/inspect`
+`/` home and setup · `/run` live run (`?stream=&network=|curve=&player=`; `start=now` from Home's buttons starts it
+and is then dropped from the URL) · `/runs` saved runs and reports · `/networks` network editor · `/inspect`
 stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 
@@ -236,9 +237,11 @@ reference code is non-commercial research only, with patent notices.
   synthetic logs, notes and ideas, URL codec, trace import.
 - **Playwright today** (Chromium, Firefox, WebKit; axe on every screen): `shell.spec.ts` (routes, skip link,
   keyboard navigation), `shaper.spec.ts` (byte-exact shaped downloads within tolerance, fair sharing, Range,
-  redirects, aborts, the `*` wildcard), `run.spec.ts` (a full run on the synthetic stream; skipped in a browser build
-  that can't decode H.264 through MSE). Planned: Home → Try the tunnel → Report, the network editor by keyboard,
-  Inspect the version with problems.
+  redirects, aborts, the `*` wildcard), `run.spec.ts` (a full run on the synthetic stream started by keyboard, its
+  charts' text and a data table, a repeat run from saved downloads; skipped in a browser build that can't decode
+  H.264 through MSE), `home.spec.ts` (Home's setup by keyboard: own stream link, network, player, Run, then Stop on
+  the Run screen; a bad link explained; the "Try the tunnel" link). Shared helpers in `tests/e2e/helpers.ts`.
+  Planned: Home → Run → Report, the network editor by keyboard, Inspect the version with problems.
 - **Test stream:** `tests/e2e/fixtures/make-stream.mjs` (ffmpeg `testsrc2` + a tone, 3 rungs, 2 s segments, 20 s)
   writes `media/e2e/ladder/`; Playwright's global setup builds it once; `tests/e2e/servers/files.mjs` serves it
   cross-origin on port 4013 under `/hls/`, next to deterministic `/bytes/<size>` files. CI installs ffmpeg.

@@ -1,30 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { canPlayH264, STREAM, tabTo } from "./helpers";
 
-// The synthetic stream from tests/e2e/fixtures/make-stream.mjs, served cross-origin by tests/e2e/servers/files.mjs.
-const STREAM = "http://localhost:4013/hls/ladder/master.m3u8";
 // 12 s: 4 Mbps, a drop to 0.4 Mbps from 0:04 to 0:08, then 4 Mbps again; RTT 50 ms.
 const CURVE = "steps,50,12,0:4|4:0.4|8:4";
-
-/** Moves focus to `target` with Tab, as a keyboard user would. WebKit only tabs to form fields by default. */
-async function tabTo(page: Page, browserName: string, target: Locator): Promise<void> {
-  if (browserName === "webkit") {
-    await target.focus();
-    return;
-  }
-  for (let i = 0; i < 40 && !(await target.evaluate((el) => el === document.activeElement)); i++) {
-    await page.keyboard.press("Tab");
-  }
-  await expect(target).toBeFocused();
-}
-
-async function canPlayH264(page: Page): Promise<boolean> {
-  return page.evaluate(
-    () =>
-      typeof MediaSource !== "undefined" &&
-      MediaSource.isTypeSupported('video/mp4; codecs="avc1.64001f,mp4a.40.2"'),
-  );
-}
 
 test("a run plays the stream through the simulated network and reports it", async ({
   page,

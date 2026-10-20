@@ -28,7 +28,7 @@ const homeRoute = createRoute({
 /** Keeps the string params the Run screen knows; anything else in the URL is ignored. */
 function runSearch(search: Record<string, unknown>): RunSearch {
   const result: RunSearch = {};
-  for (const key of ["stream", "network", "curve", "player"] as const) {
+  for (const key of ["stream", "network", "curve", "player", "start"] as const) {
     const value = search[key];
     if (typeof value === "string" && value !== "") result[key] = value;
   }
