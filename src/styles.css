@@ -29,6 +29,12 @@
   --color-accent-ink: #03140e;
   /* The wordmark's tilde, as on azamatos.com. */
   --color-prompt: #5bc8c0;
+  /* The pressed half of a Chart | Table toggle, on its track (fg at 6%). */
+  --color-segment: #2b3035;
+  /* Toasts are dark in both themes; the tick keeps the dark theme's mint. */
+  --color-toast: #22272c;
+  --color-toast-fg: #f2f4f5;
+  --color-toast-icon: #68edc0;
 
   /* Chart series: each colour means one thing everywhere. */
   --color-net: #3d85d1;
@@ -80,6 +86,8 @@
   --color-accent-hover: #065c43;
   --color-accent-ink: #ffffff;
   --color-prompt: #12807a;
+  --color-segment: #ffffff;
+  --color-toast: #0f1316;
 
   --color-net: #2b6cb5;
   --color-estimate: #b03a80;
@@ -97,6 +105,67 @@
   --color-warning-text: #8a4f00;
   --color-note: #5f7388;
   --color-note-text: #46586b;
+}
+
+/* Motion, from the polish proposal's motion board: 150–250 ms, easing out, only for what changes state (a
+   disclosure opening, a toast, a jump within the page); none of it with reduced motion. The router scrolls between
+   screens instantly (src/router.tsx), so `smooth` only applies to jumps within a page. */
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    interpolate-size: allow-keywords;
+    scroll-behavior: smooth;
+  }
+  details::details-content {
+    height: 0;
+    overflow: clip;
+    /* Room for the focus ring of a control at the disclosure's edge. */
+    overflow-clip-margin: 6px;
+    transition:
+      height 220ms ease-out,
+      content-visibility 220ms allow-discrete;
+  }
+  details[open]::details-content {
+    height: auto;
+  }
+  /* A jump target (Show on the chart, the score's "how it's computed") rings for a moment where the eye lands. */
+  .flash {
+    animation: flash 1.2s ease-out;
+  }
+  .fade-in {
+    animation: fade-in 180ms ease-out;
+  }
+  .pop-in {
+    animation: pop-in 150ms ease-out;
+  }
+  .toast-in {
+    animation: toast-in 220ms ease-out;
+  }
+}
+
+@keyframes flash {
+  from {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 /* Home's markup comes with every page (scripts/prerender.mjs); on other paths it waits hidden for the app. */

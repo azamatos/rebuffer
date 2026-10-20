@@ -162,9 +162,12 @@ test("two runs compare side by side, by keyboard", async ({ page, browserName })
     /0\.40 s later▼ worse/,
   );
 
-  // The table, at the bottom.
-  const summary = page.locator("summary", { hasText: "Both runs as a table" });
-  await tabTo(page, browserName, summary);
+  // The charts as one table, in their place.
+  await tabTo(
+    page,
+    browserName,
+    page.getByRole("group", { name: "Both runs: show as" }).getByRole("button", { name: "Table" }),
+  );
   await page.keyboard.press("Enter");
   const table = page.getByRole("region", { name: "Both runs as a table" });
   await expect(table.getByRole("row", { name: /^0:12 / })).toContainText("Stalled");

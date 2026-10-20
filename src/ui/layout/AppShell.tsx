@@ -1,5 +1,6 @@
 import { HeadContent, Link, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Toaster } from "@/ui/feedback/Toaster";
 import { ThemeSwitch } from "@/ui/theme/ThemeSwitch";
 import { Wordmark } from "./Logo";
 
@@ -29,17 +30,18 @@ export function AppShell() {
       </a>
       <div className="flex min-h-dvh flex-col">
         <header className="border-b border-line">
-          <div className="mx-auto flex max-w-[1360px] flex-wrap items-center gap-6 px-4 py-4 sm:px-8">
+          <div className="mx-auto flex min-h-15 max-w-[1360px] flex-wrap items-center gap-x-7 gap-y-1 px-4 py-2.5 sm:px-8">
             <Link to="/" className="text-fg">
               <Wordmark />
             </Link>
-            <nav aria-label="Main" className="flex flex-auto flex-wrap gap-1">
+            <nav aria-label="Main" className="flex flex-auto flex-wrap gap-0.5 text-[15px]">
               {nav.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="rounded-lg px-3 py-2 text-fg-2 hover:text-fg"
-                  activeProps={{ className: "bg-fg/6 text-fg" }}
+                  className="rounded-lg px-3 py-1.5 transition-colors"
+                  activeProps={{ className: "bg-fg/7 font-medium text-fg" }}
+                  inactiveProps={{ className: "text-fg-2 hover:bg-fg/4 hover:text-fg" }}
                   activeOptions={{ exact: item.exact }}
                 >
                   {item.label}
@@ -69,6 +71,7 @@ export function AppShell() {
           </div>
         </footer>
       </div>
+      <Toaster />
     </>
   );
 }

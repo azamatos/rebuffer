@@ -150,7 +150,11 @@ test("the report's charts zoom by keyboard and by mouse", async ({ page, browser
   await expect(
     page.getByRole("img", { name: /^From 0:04 to 0:08 the buffer went from/ }),
   ).toBeVisible();
-  await tabTo(page, browserName, page.getByText("Buffer as a table"));
+  await tabTo(
+    page,
+    browserName,
+    page.getByRole("group", { name: "Buffer: show as" }).getByRole("button", { name: "Table" }),
+  );
   await page.keyboard.press("Enter");
   const table = page.getByRole("region", { name: "Buffer as a table" });
   await expect(table.getByRole("row").nth(1)).toContainText("0:04");

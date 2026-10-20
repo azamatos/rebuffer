@@ -53,14 +53,23 @@ test("a run plays the stream through the simulated network and reports it", asyn
   });
   expect(painted).toBeGreaterThan(0);
 
-  const summary = page.locator("summary", { hasText: "Segment downloads as a table" });
-  await tabTo(page, browserName, summary);
+  // Chart | Table: the table takes the chart's place, and the chart comes back.
+  const showAs = page.getByRole("group", { name: "Segment downloads: show as" });
+  await tabTo(page, browserName, showAs.getByRole("button", { name: "Table" }));
   await page.keyboard.press("Enter");
+  await expect(showAs.getByRole("button", { name: "Table" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   const table = page.getByRole("region", { name: "Segment downloads as a table" });
   await expect(table.getByRole("row").nth(1)).toContainText("Done");
-
+  await expect(lane).toBeHidden();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+  await showAs.getByRole("button", { name: "Chart" }).focus();
+  await page.keyboard.press("Space");
+  await expect(lane).toBeVisible();
+  await expect(table).toHaveCount(0);
 });
 
 test("a run says when the real latency is above the simulated one", async ({ page }) => {

@@ -3,8 +3,8 @@ import { currentChoice, setChoice, subscribeTheme, type ThemeChoice } from "./th
 
 const icon = (path: ReactNode) => (
   <svg
-    width="16"
-    height="16"
+    width="15"
+    height="15"
     viewBox="0 0 16 16"
     aria-hidden="true"
     className="fill-none stroke-current"
@@ -48,13 +48,13 @@ const options: { value: ThemeChoice; label: string; icon: ReactNode }[] = [
 export function ThemeSwitch() {
   const choice = useSyncExternalStore(subscribeTheme, currentChoice, () => "system" as const);
   return (
-    <fieldset className="flex rounded-lg border border-line p-0.5">
+    <fieldset className="flex rounded-[9px] border border-line p-0.5">
       <legend className="sr-only">Theme</legend>
       {options.map((option) => (
         <label
           key={option.value}
           title={option.label}
-          className="relative flex size-8 cursor-pointer items-center justify-center rounded-md text-fg-3 hover:text-fg has-checked:bg-fg/8 has-checked:text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-accent"
+          className="relative flex size-[30px] cursor-pointer items-center justify-center rounded-[7px] text-fg-3 hover:text-fg has-checked:bg-fg/8 has-checked:text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-accent"
         >
           <input
             type="radio"

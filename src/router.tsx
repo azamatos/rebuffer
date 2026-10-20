@@ -143,6 +143,8 @@ export function createAppRouter(history?: RouterHistory) {
   return createRouter({
     routeTree,
     defaultPreload: "intent",
+    // The page scrolls smoothly within a screen (src/styles.css); a new screen starts at its top at once.
+    scrollRestorationBehavior: "instant",
     ...(history && { history }),
   });
 }

@@ -5,7 +5,7 @@
  */
 export function Wordmark() {
   return (
-    <span className="inline-flex items-center gap-[0.25em] font-mono text-xl whitespace-nowrap select-none sm:text-[22px]">
+    <span className="inline-flex items-center gap-[0.3em] font-mono text-lg whitespace-nowrap select-none">
       <span aria-hidden="true" className="text-accent">
         ➜
       </span>

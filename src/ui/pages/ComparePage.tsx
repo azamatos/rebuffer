@@ -16,7 +16,7 @@ import {
   type Verdict,
 } from "@/core/run/compare";
 import { playerChanges } from "@/core/run/report";
-import { DataTable, Key, Td, Th } from "@/ui/run/chart-parts";
+import { ChartOrTable, Key, ShowAs, Td, Th } from "@/ui/run/chart-parts";
 import { useNow } from "@/ui/runs/useNow";
 import { useSavedRuns } from "@/ui/runs/useSavedRuns";
 import { useTheme } from "@/ui/theme/useTheme";
@@ -390,12 +390,12 @@ function ChartFigure({
   children: ReactNode;
 }) {
   return (
-    <figure className="rounded-[14px] border border-line bg-surface px-[18px] pt-4 pb-3">
-      <figcaption className="mb-2 flex flex-wrap justify-between gap-x-4 gap-y-2">
-        <span className="text-[15px] font-semibold">
+    <figure className="rounded-xl border border-line bg-surface px-4 pt-3 pb-2.5">
+      <figcaption className="mb-1.5 flex flex-wrap justify-between gap-x-3.5 gap-y-2">
+        <span className="text-sm font-semibold">
           {title} <span className="font-normal text-fg-3">· {unit}</span>
         </span>
-        <span className="flex flex-wrap gap-3.5 text-[13px] text-fg-2">{keys}</span>
+        <span className="flex flex-wrap gap-3 text-xs text-fg-2">{keys}</span>
       </figcaption>
       {children}
     </figure>
@@ -416,6 +416,7 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
   const curveA = a.run.setup.network.curve;
   const curveB = b.run.setup.network.curve;
   const sameNetwork = JSON.stringify(curveA) === JSON.stringify(curveB);
+  const [table, setTable] = useState(false);
 
   useEffect(() => {
     const quality = qualityRef.current;
@@ -452,93 +453,102 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
 
   return (
     <section aria-labelledby="charts-h" className="flex flex-col gap-3">
-      <h2 id="charts-h" className="text-lg font-semibold">
-        On one time axis
-      </h2>
-      <ChartFigure
-        title="Quality on screen"
-        unit="Mbps, log scale"
-        keys={
-          <>
-            <Key
-              swatch={<rect width="14" height="10" rx="2" className="fill-net/45" />}
-              label={sameNetwork ? "Network" : "A's network"}
-            />
-            {!sameNetwork && (
-              <Key
-                swatch={
-                  <path
-                    d="M0 5 H16"
-                    strokeWidth="1.5"
-                    strokeDasharray="2 3"
-                    className="stroke-net"
-                  />
-                }
-                label="B's network"
-              />
-            )}
-            {keysAB}
-          </>
-        }
-      >
-        <canvas
-          ref={qualityRef}
-          role="img"
-          aria-label={describeCompareQuality(a, b)}
-          className="block h-[200px] w-full"
-        />
-      </ChartFigure>
-      <ChartFigure title="Buffer" unit="seconds of video ahead" keys={keysAB}>
-        <canvas
-          ref={bufferRef}
-          role="img"
-          aria-label={describeCompareBuffer(a, b)}
-          className="block h-[140px] w-full"
-        />
-      </ChartFigure>
-      <ChartFigure
-        title="Stalls"
-        unit="A above, B below"
-        keys={
-          <Key
-            swatch={<rect width="12" height="10" rx="2" className="fill-error" />}
-            label="Stall"
-          />
-        }
-      >
-        <canvas
-          ref={stallsRef}
-          role="img"
-          aria-label={describeCompareStalls(a, b)}
-          className="block h-[64px] w-full"
-        />
-        <DataTable label="Both runs as a table">
-          {() => (
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <Th>Time</Th>
-                  <Th>A on screen</Th>
-                  <Th>B on screen</Th>
-                  <Th>A&apos;s buffer</Th>
-                  <Th>B&apos;s buffer</Th>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="charts-h" className="text-lg font-semibold">
+          On one time axis
+        </h2>
+        <ShowAs name="Both runs" table={table} onChange={setTable} />
+      </div>
+      <ChartOrTable
+        table={table}
+        label="Both runs as a table"
+        minHeight={360}
+        renderTable={() => (
+          <table className="w-full bg-surface text-left">
+            <thead>
+              <tr>
+                <Th>Time</Th>
+                <Th>A on screen</Th>
+                <Th>B on screen</Th>
+                <Th>A&apos;s buffer</Th>
+                <Th>B&apos;s buffer</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {compareRows(a, b).map((row) => (
+                <tr key={row.t} className="border-t border-fg/6">
+                  <Td mono>{formatClock(row.t)}</Td>
+                  <Td>{row.a.stalled ? "Stalled" : (row.a.shown ?? "—")}</Td>
+                  <Td>{row.b.stalled ? "Stalled" : (row.b.shown ?? "—")}</Td>
+                  <Td>{row.a.bufferS === undefined ? "—" : formatDuration(row.a.bufferS)}</Td>
+                  <Td>{row.b.bufferS === undefined ? "—" : formatDuration(row.b.bufferS)}</Td>
                 </tr>
-              </thead>
-              <tbody>
-                {compareRows(a, b).map((row) => (
-                  <tr key={row.t} className="border-t border-fg/6">
-                    <Td mono>{formatClock(row.t)}</Td>
-                    <Td>{row.a.stalled ? "Stalled" : (row.a.shown ?? "—")}</Td>
-                    <Td>{row.b.stalled ? "Stalled" : (row.b.shown ?? "—")}</Td>
-                    <Td>{row.a.bufferS === undefined ? "—" : formatDuration(row.a.bufferS)}</Td>
-                    <Td>{row.b.bufferS === undefined ? "—" : formatDuration(row.b.bufferS)}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </DataTable>
-      </ChartFigure>
+              ))}
+            </tbody>
+          </table>
+        )}
+      >
+        <div className="flex flex-col gap-3">
+          <ChartFigure
+            title="Quality on screen"
+            unit="Mbps, log scale"
+            keys={
+              <>
+                <Key
+                  swatch={<rect width="14" height="10" rx="2" className="fill-net/45" />}
+                  label={sameNetwork ? "Network" : "A's network"}
+                />
+                {!sameNetwork && (
+                  <Key
+                    swatch={
+                      <path
+                        d="M0 5 H16"
+                        strokeWidth="1.5"
+                        strokeDasharray="2 3"
+                        className="stroke-net"
+                      />
+                    }
+                    label="B's network"
+                  />
+                )}
+                {keysAB}
+              </>
+            }
+          >
+            <canvas
+              ref={qualityRef}
+              role="img"
+              aria-label={describeCompareQuality(a, b)}
+              className="block h-[200px] w-full"
+            />
+          </ChartFigure>
+          <ChartFigure title="Buffer" unit="seconds of video ahead" keys={keysAB}>
+            <canvas
+              ref={bufferRef}
+              role="img"
+              aria-label={describeCompareBuffer(a, b)}
+              className="block h-[140px] w-full"
+            />
+          </ChartFigure>
+          <ChartFigure
+            title="Stalls"
+            unit="A above, B below"
+            keys={
+              <Key
+                swatch={<rect width="12" height="10" rx="2" className="fill-error" />}
+                label="Stall"
+              />
+            }
+          >
+            <canvas
+              ref={stallsRef}
+              role="img"
+              aria-label={describeCompareStalls(a, b)}
+              className="block h-[64px] w-full"
+            />
+          </ChartFigure>
+        </div>
+      </ChartOrTable>
     </section>
   );
 }

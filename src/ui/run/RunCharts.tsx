@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ChartMarker } from "@/charts/draw";
 import { mountRunCharts, type RunCharts as Charts } from "@/charts/live";
 import { formatClock, formatDuration } from "@/core/format/time";
@@ -16,7 +16,7 @@ import type { Level, RunEvent } from "@/core/run/events";
 import type { TimeRange } from "@/core/run/range";
 import { buildTimeline } from "@/core/run/timeline";
 import { useTheme } from "@/ui/theme/useTheme";
-import { DataTable, Key, Td, Th } from "./chart-parts";
+import { ChartOrTable, Key, ShowAs, Td, Th } from "./chart-parts";
 
 interface RunChartsProps {
   curve: NetworkCurve;
@@ -111,18 +111,25 @@ export function RunCharts({
     return charts.pick(onPick);
   }, [onPick, curve]);
 
+  const [tables, setTables] = useState({ network: false, buffer: false, downloads: false });
+  const showAs = (chart: keyof typeof tables) => ({
+    table: tables[chart],
+    onChange: (table: boolean) => {
+      setTables((previous) => ({ ...previous, [chart]: table }));
+    },
+  });
+
   const timeline = useMemo(() => buildTimeline(events), [events]);
   const levels = timeline.levels;
   const canvasClass = onPick ? "cursor-crosshair touch-pan-y" : "";
 
   return (
     <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-3">
-      <figure className="rounded-[14px] border border-line bg-surface px-[18px] pt-4 pb-3">
-        <figcaption className="mb-2 flex flex-wrap justify-between gap-x-4 gap-y-2">
-          <span className="text-[15px] font-semibold">
-            Bandwidth and quality <span className="font-normal text-fg-3">· Mbps, log scale</span>
-          </span>
-          <span className="flex flex-wrap gap-3.5 text-[13px] text-fg-2">
+      <ChartFrame
+        title="Bandwidth and quality"
+        unit="Mbps, log scale"
+        keys={
+          <>
             <Key
               swatch={<rect width="14" height="10" rx="2" className="fill-net/45" />}
               label="Network"
@@ -146,46 +153,45 @@ export function RunCharts({
               swatch={<rect width="12" height="10" rx="2" className="fill-error/35" />}
               label="Stall"
             />
-          </span>
-        </figcaption>
+          </>
+        }
+        {...showAs("network")}
+        renderTable={() => (
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                <Th>Time</Th>
+                <Th>Network</Th>
+                <Th>Player's estimate</Th>
+                <Th>On screen</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartRows(timeline, curve, untilS, range).map((row) => (
+                <tr key={row.t} className="border-t border-fg/6">
+                  <Td mono>{formatClock(row.t)}</Td>
+                  <Td>{formatRate(row.networkBps)}</Td>
+                  <Td>{row.estimateBps === undefined ? "—" : formatRate(row.estimateBps)}</Td>
+                  <Td>{row.shown ?? "—"}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      >
         <canvas
           ref={networkRef}
           role="img"
           aria-label={describeNetworkChart(timeline, curve, untilS, range)}
           className={`block h-[200px] w-full ${canvasClass}`}
         />
-        <DataTable label="Bandwidth and quality as a table">
-          {() => (
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <Th>Time</Th>
-                  <Th>Network</Th>
-                  <Th>Player's estimate</Th>
-                  <Th>On screen</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {chartRows(timeline, curve, untilS, range).map((row) => (
-                  <tr key={row.t} className="border-t border-fg/6">
-                    <Td mono>{formatClock(row.t)}</Td>
-                    <Td>{formatRate(row.networkBps)}</Td>
-                    <Td>{row.estimateBps === undefined ? "—" : formatRate(row.estimateBps)}</Td>
-                    <Td>{row.shown ?? "—"}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </DataTable>
-      </figure>
+      </ChartFrame>
 
-      <figure className="rounded-[14px] border border-line bg-surface px-[18px] pt-4 pb-3">
-        <figcaption className="mb-2 flex flex-wrap justify-between gap-2">
-          <span className="text-[15px] font-semibold">
-            Buffer <span className="font-normal text-fg-3">· seconds of video ahead</span>
-          </span>
-          <span className="flex flex-wrap gap-3.5 text-[13px] text-fg-2">
+      <ChartFrame
+        title="Buffer"
+        unit="seconds of video ahead"
+        keys={
+          <>
             <Key
               swatch={<rect width="14" height="10" rx="2" className="fill-buffer/45" />}
               label="Buffer"
@@ -194,47 +200,43 @@ export function RunCharts({
               swatch={<rect width="12" height="10" rx="2" className="fill-error/35" />}
               label="Stall"
             />
-          </span>
-        </figcaption>
+          </>
+        }
+        {...showAs("buffer")}
+        renderTable={() => (
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                <Th>Time</Th>
+                <Th>Buffer</Th>
+                <Th>Playback</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartRows(timeline, curve, untilS, range).map((row) => (
+                <tr key={row.t} className="border-t border-fg/6">
+                  <Td mono>{formatClock(row.t)}</Td>
+                  <Td>{row.bufferS === undefined ? "—" : `${row.bufferS.toFixed(1)} s`}</Td>
+                  <Td>{row.stalled ? "Stalled" : row.bufferS === undefined ? "—" : "Playing"}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      >
         <canvas
           ref={bufferRef}
           role="img"
           aria-label={describeBufferChart(timeline, untilS, range, curve.lengthS)}
           className={`block h-[110px] w-full ${canvasClass}`}
         />
-        <DataTable label="Buffer as a table">
-          {() => (
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <Th>Time</Th>
-                  <Th>Buffer</Th>
-                  <Th>Playback</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {chartRows(timeline, curve, untilS, range).map((row) => (
-                  <tr key={row.t} className="border-t border-fg/6">
-                    <Td mono>{formatClock(row.t)}</Td>
-                    <Td>{row.bufferS === undefined ? "—" : `${row.bufferS.toFixed(1)} s`}</Td>
-                    <Td>{row.stalled ? "Stalled" : row.bufferS === undefined ? "—" : "Playing"}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </DataTable>
-      </figure>
+      </ChartFrame>
 
-      <figure className="rounded-[14px] border border-line bg-surface px-[18px] pt-4 pb-3">
-        <figcaption className="mb-2 flex flex-wrap justify-between gap-2">
-          <span className="text-[15px] font-semibold">
-            Segment downloads{" "}
-            <span className="font-normal text-fg-3">
-              · one bar per video segment, colour = quality
-            </span>
-          </span>
-          <span className="flex flex-wrap items-center gap-2.5 text-[13px] text-fg-2">
+      <ChartFrame
+        title="Segment downloads"
+        unit="one bar per segment, colour = quality"
+        keys={
+          <>
             <span className="inline-flex items-center gap-1.5">
               <span className="inline-flex gap-0.5" aria-hidden="true">
                 {(["fill-q0", "fill-q1", "fill-q2", "fill-q3", "fill-q4"] as const).map((shade) => (
@@ -260,48 +262,86 @@ export function RunCharts({
               }
               label="Abandoned"
             />
-          </span>
-        </figcaption>
+          </>
+        }
+        {...showAs("downloads")}
+        renderTable={() => (
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                <Th>Started</Th>
+                <Th>Quality</Th>
+                <Th>Took</Th>
+                <Th>Size</Th>
+                <Th>Result</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {downloadRows(timeline, range, untilS).map((row, i) => (
+                <tr key={`${row.start}-${i}`} className="border-t border-fg/6">
+                  <Td mono>{formatClock(row.start, 1)}</Td>
+                  <Td>{row.quality}</Td>
+                  <Td>{row.tookS === undefined ? "—" : formatDuration(row.tookS)}</Td>
+                  <Td>{row.bytes === undefined ? "—" : `${(row.bytes / 1e6).toFixed(2)} MB`}</Td>
+                  <Td>
+                    {row.state === "done"
+                      ? "Done"
+                      : row.state === "abandoned"
+                        ? "Abandoned"
+                        : "Downloading"}
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      >
         <canvas
           ref={downloadsRef}
           role="img"
           aria-label={describeDownloadsChart(timeline, untilS, range, curve.lengthS)}
           className={`block h-10 w-full ${canvasClass}`}
         />
-        <DataTable label="Segment downloads as a table">
-          {() => (
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <Th>Started</Th>
-                  <Th>Quality</Th>
-                  <Th>Took</Th>
-                  <Th>Size</Th>
-                  <Th>Result</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {downloadRows(timeline, range, untilS).map((row, i) => (
-                  <tr key={`${row.start}-${i}`} className="border-t border-fg/6">
-                    <Td mono>{formatClock(row.start, 1)}</Td>
-                    <Td>{row.quality}</Td>
-                    <Td>{row.tookS === undefined ? "—" : formatDuration(row.tookS)}</Td>
-                    <Td>{row.bytes === undefined ? "—" : `${(row.bytes / 1e6).toFixed(2)} MB`}</Td>
-                    <Td>
-                      {row.state === "done"
-                        ? "Done"
-                        : row.state === "abandoned"
-                          ? "Abandoned"
-                          : "Downloading"}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </DataTable>
-      </figure>
+      </ChartFrame>
     </div>
+  );
+}
+
+/** One chart's card: its title, legend and Chart | Table toggle on one line, then the chart or its table. */
+function ChartFrame({
+  title,
+  unit,
+  keys,
+  table,
+  onChange,
+  renderTable,
+  children,
+}: {
+  title: string;
+  unit: string;
+  keys: ReactNode;
+  table: boolean;
+  onChange: (table: boolean) => void;
+  renderTable: () => ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <figure className="rounded-xl border border-line bg-surface px-4 pt-3 pb-2.5">
+      <figcaption className="mb-1.5 flex items-start gap-3.5">
+        <span className="flex min-w-0 flex-auto flex-wrap items-center gap-x-3.5 gap-y-1 pt-0.5">
+          <span className="text-sm font-semibold">
+            {title} <span className="font-normal text-fg-3">· {unit}</span>
+          </span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-2">
+            {keys}
+          </span>
+        </span>
+        <ShowAs name={title} table={table} onChange={onChange} />
+      </figcaption>
+      <ChartOrTable table={table} label={`${title} as a table`} renderTable={renderTable}>
+        {children}
+      </ChartOrTable>
+    </figure>
   );
 }
 
