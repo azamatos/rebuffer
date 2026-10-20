@@ -64,7 +64,7 @@ that needs their eye under "Waiting for the owner".
 |---|---|---|
 | 1 | Name | **Rebuffer** |
 | 2 | Domains | App at **rebuffer.azamatos.com**; **media.azamatos.com** only serves media files (R2 bucket `azamatos-media`). `*.pages.dev` addresses send `noindex` |
-| 3 | Brand | The **family wordmark** shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊` in Space Mono, the cursor blinking as on pass.azamatos.com (owner's request 2026-10-20). The favicon keeps the prompt arrow plus a stepped quality line |
+| 3 | Brand | The **family wordmark** shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊` in Space Mono, the cursor blinks at pass.azamatos.com's pace for 4.4 s, then stays solid (the owner first asked for endless blinking, then chose this on 2026-10-20 for WCAG 2.2.2). The favicon keeps the prompt arrow plus a stepped quality line |
 | 4 | Design | The dark "instrument panel" look on the design canvas, accepted 2026-10-18 |
 | 5 | Score | Normalised linear QoE (Yin et al., 2015) out of 100, formula shown |
 | 6 | Network shaping | A Service Worker shapes the player's own requests, every origin except the app's own; a custom hls.js loader is the fallback |
@@ -93,12 +93,6 @@ that needs their eye under "Waiting for the owner".
   Before, the browser's HTTP cache (our segments are `immutable` for a year) answered downloads after "Forget saved
   downloads" while the result called them the real network. Now a setup's first run always goes over the real
   network, and repeats come from the saved copy, as the docs said.
-- **The blinking logo cursor and WCAG 2.2.2 (Pause, Stop, Hide; level A).** It blinks for as long as a page is open,
-  as the owner asked on 2026-10-20 ("as on pass.azamatos.com"); only the OS reduced-motion setting stops it. WCAG
-  asks for a way to stop blinking that lasts over 5 s. Not changed: the owner's call. Options: keep it as it is; blink
-  for the first 5 s after each page loads, then stay solid; or keep blinking and add a way to pause it. Recommended:
-  the 5 s blink, which passes 2.2.2 and still greets every page with the family's blinking cursor.
-
 - **Score on slow networks (observation; decision 5 stays until the owner reopens it).** Rural 3G played with no
   stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
   network allows. Possible later: show "best possible on this network" next to the score.

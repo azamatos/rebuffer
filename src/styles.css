@@ -40,7 +40,8 @@
   --color-note: #8fa3b8;
   --color-note-text: #b7c4d1;
 
-  --animate-cursor: cursor-blink 1.1s step-end infinite;
+  /* Four blinks at pass.azamatos.com's pace, 4.4 s, then solid: WCAG 2.2.2 allows blinking for up to 5 s. */
+  --animate-cursor: cursor-blink 1.1s step-end 4;
   @keyframes cursor-blink {
     0%,
     100% {
