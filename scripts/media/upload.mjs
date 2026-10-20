@@ -6,9 +6,11 @@
  *   node scripts/media/upload.mjs                 # media/out/tears-of-steel → azamatos-media/tears-of-steel
  *   node scripts/media/upload.mjs --dry-run       # list what would be uploaded
  *   node scripts/media/upload.mjs --only clean    # one version
+ *   node scripts/media/upload.mjs --playlists     # playlists only (say, to change their cache time)
  *
- * Segments never change for a given encode, so they're cached for a year; playlists for five minutes, so a fixed
- * playlist shows up quickly. Master playlists go last, so a half-uploaded stream is never advertised.
+ * Segments never change for a given encode, so they're cached for a year. Playlists of a finished film don't change
+ * either, but they're cached for a day only, so a fixed playlist shows up by the next day (or at once after a purge
+ * in Cloudflare). Master playlists go last, so a half-uploaded stream is never advertised.
  */
 import { spawn } from "node:child_process";
 import { readdir } from "node:fs/promises";
@@ -23,13 +25,14 @@ const TYPES = {
   ".vtt": "text/vtt",
 };
 const IMMUTABLE = "public, max-age=31536000, immutable";
-const PLAYLIST = "public, max-age=300";
+const PLAYLIST = "public, max-age=86400";
 
 const { values: args } = parseArgs({
   options: {
     bucket: { type: "string", default: "azamatos-media" },
     name: { type: "string", default: "tears-of-steel" },
     only: { type: "string" },
+    playlists: { type: "boolean", default: false },
     concurrency: { type: "string", default: "8" },
     "dry-run": { type: "boolean", default: false },
   },
@@ -43,6 +46,7 @@ const files = (await readdir(source, { recursive: true }))
   .map((file) => join(source, file))
   .filter((path) => TYPES[extname(path)])
   .filter((path) => !args.only || relative(source, path).startsWith(`${args.only}/`))
+  .filter((path) => !args.playlists || extname(path) === ".m3u8")
   // Masters last: nothing points at a stream until all of it is there.
   .sort((a, b) => Number(a.endsWith("master.m3u8")) - Number(b.endsWith("master.m3u8")));
 
