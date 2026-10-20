@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "size": "size-limit",
-    "media:encode": "node scripts/media/encode.mjs"
+    "media:encode": "node scripts/media/encode.mjs",
+    "traces:convert": "node scripts/traces/convert-irish4g.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

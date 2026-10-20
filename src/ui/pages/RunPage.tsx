@@ -14,7 +14,7 @@ import {
 } from "@/core/persist/runs";
 import { summarize } from "@/core/persist/summary";
 import type { NetworkCurve } from "@/core/netsim/curve";
-import { presetById } from "@/core/netsim/presets";
+import { networkById } from "@/core/netsim/networks";
 import { curveFromParam } from "@/core/netsim/url";
 import { PLAYER_PRESETS, PlayerUnsupportedError, type PlayerPreset } from "@/core/player";
 import { playerTitle, settingsFromParam, type PlayerSettings } from "@/core/player/settings";
@@ -72,7 +72,7 @@ function resolveSetup(
     curve = parsed.curve;
     networkName = "Custom network";
   } else {
-    const preset = presetById(search.network ?? DEFAULT_NETWORK_ID);
+    const preset = networkById(search.network ?? DEFAULT_NETWORK_ID);
     if (!preset)
       return { ok: false, error: `There's no network called “${search.network ?? ""}”.` };
     curve = preset.curve;
