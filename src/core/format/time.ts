@@ -20,6 +20,20 @@ export function formatClock(seconds: number, decimals: 0 | 1 | 2 = 0): string {
     : `${minutes}:${ss}${fraction}`;
 }
 
+/**
+ * Reads a time someone typed: "1:30", "0:42.5", "1:02:05" or plain seconds ("90", "42.5"). Undefined when it isn't
+ * one, or is negative.
+ */
+export function parseClock(text: string): number | undefined {
+  const parts = text.trim().split(":");
+  if (parts.length > 3 || parts.some((part) => !/^\d+(\.\d+)?$/.test(part))) return undefined;
+  const numbers = parts.map(Number);
+  // Only the last part may have decimals, and the parts after the first stay under 60.
+  if (numbers.slice(0, -1).some((value) => !Number.isInteger(value))) return undefined;
+  if (numbers.slice(1).some((value) => value >= 60)) return undefined;
+  return numbers.reduce((total, value) => total * 60 + value, 0);
+}
+
 /** Formats a duration in seconds for prose: `3.4` → "3.4 s", `0.25` → "250 ms", `125` → "2 min 5 s". */
 export function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return "0 s";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatDuration, formatWhen } from "./time";
+import { formatClock, formatDuration, formatWhen, parseClock } from "./time";
 
 describe("formatClock", () => {
   it("formats minutes and seconds", () => {
@@ -63,5 +63,21 @@ describe("formatWhen", () => {
     expect(formatWhen(new Date(2026, 9, 20, 14, 32).getTime(), now)).toBe("Today, 14:32");
     expect(formatWhen(new Date(2026, 9, 19, 9, 5).getTime(), now)).toBe("Yesterday, 09:05");
     expect(formatWhen(new Date(2026, 9, 18, 23, 59).getTime(), now)).toBe("18 Oct 2026, 23:59");
+  });
+});
+
+describe("parseClock", () => {
+  it("reads clocks and plain seconds", () => {
+    expect(parseClock("1:30")).toBe(90);
+    expect(parseClock(" 0:42.5 ")).toBe(42.5);
+    expect(parseClock("1:02:05")).toBe(3725);
+    expect(parseClock("90")).toBe(90);
+    expect(parseClock("0")).toBe(0);
+  });
+
+  it("refuses what isn't a time", () => {
+    for (const text of ["", "abc", "-5", "1:60", "1.5:00", "1:2:3:4", "1:", ":30", "1e3"]) {
+      expect(parseClock(text)).toBeUndefined();
+    }
   });
 });
