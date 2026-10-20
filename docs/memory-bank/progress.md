@@ -12,7 +12,7 @@ building and every milestone is shippable on its own.
 | Plan for the HLS network lab, design proposal | — | done 2026-10-18 |
 | M0 Decisions and setup | Oct 25 | done 2026-10-19 (push-triggered deploys deferred by the owner) |
 | M1 Core modules | Nov 1 | done 2026-10-18 (the Irish 4G trace converter moved to M3) |
-| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness done (not deployed yet); charts and Home setup left |
+| M2 Live run | Nov 8 | in progress: a real run works end to end, live; honest lateness deployed; charts and saved downloads built (not deployed yet); Home setup left |
 | M3 Report, network editor, inspector | Nov 15 | not started |
 | M4 Polish; MVP live | Nov 22 | not started (the site is already live; M4 makes it complete) |
 | M5 Compare and launch | Dec 6 | not started |
@@ -50,13 +50,16 @@ building and every milestone is shippable on its own.
 - [x] Run screen, first version: setup, progress, video, live tiles, event log, score, honesty line (2026-10-18)
 - [x] End-to-end Playwright run on a synthetic ffmpeg ladder in all three engines (2026-10-18)
 - [x] Our film is the default sample; a live run on rebuffer.azamatos.com plays it from media.azamatos.com (2026-10-19)
-- [x] **Honest lateness** (2026-10-19, not deployed yet): a check before the run measures the real latency and
+- [x] **Honest lateness** (2026-10-19, deployed 2026-10-20): a check before the run measures the real latency and
       opens the connection; the result tells late starts (the real network answered slower than the simulated RTT)
       from late bytes (it paused or couldn't keep up), quotes the real speed and the measured latency, and reports
       background-tab time. Live numbers are in `techContext.md`, "Honesty checks"
-- [ ] Cache segments in the worker so repeat runs of a setup match (the owner decides after seeing the live results;
-      recommended after the charts). Live runs showed why: Home fibre scored 76, then 85, on the same setup
-- [ ] Run screen charts: bandwidth and quality, buffer, downloads on one time axis (uPlot), per the design canvas
+- [x] **Run screen charts** (2026-10-20, not deployed yet): bandwidth and quality, buffer, downloads on one time
+      axis, per the design canvas; our own canvas code instead of uPlot (`techContext.md`, Stack); a sentence and a
+      data table per chart; 0.1 ms per frame (p50), 1.8 ms at most, at 4× CPU throttling
+- [x] **Saved downloads for repeat runs** (2026-10-20, not deployed yet; the owner approved it after the charts): the
+      worker keeps what runs download in Cache Storage (300 MB, oldest out) and answers repeat runs from it, still
+      shaped; the result says how many came from it and can forget it
 - [ ] Home setup (stream, network, player pickers) wired to `/run`; "Try the tunnel" from Home
 - [ ] Keyboard-only Playwright test: Home → Try the tunnel → run finishes
 
@@ -71,7 +74,7 @@ building and every milestone is shippable on its own.
 ## M4: polish; MVP complete (target Nov 22)
 
 - [ ] About (how it works, limits, credits), first-run hints
-- [ ] Accessibility pass (table views for charts, live region); budgets; Lighthouse ≥ 95
+- [ ] Accessibility pass (live region for switches and stalls; chart tables are built); budgets; Lighthouse ≥ 95
 - [ ] Pre-render the home page: CI measured Lighthouse performance 0.82 on GitHub's runners (0.98 locally) because
       the first paint waits for React; the CI assertion is a warning until this is done
 - [ ] Determinism job: spread per preset measured and published
@@ -112,3 +115,9 @@ building and every milestone is shippable on its own.
   bytes (with the real speed) and background-tab time in plain words; 321 unit tests, 61 Playwright checks (one new:
   a slow test server). Live runs against media.azamatos.com showed first bytes far later than the check suggests and
   run-to-run variation, so the wording names no cause it can't show.
+- 2026-10-20 (third session): the owner said "go with recommendations". Honest lateness pushed and deployed by hand
+  (a clean build of `3b7f739`). Live charts on the Run screen (own canvas code, not uPlot; a sentence and a data
+  table each; 1.8 ms per frame at worst at 4× CPU throttling). Saved downloads: the worker keeps what runs download
+  (300 MB) and answers repeat runs from it; Tunnel scored 31, then 25, 25, 25 (runs 2–4 identical). The upload
+  script sets a one-day cache time on playlists; re-uploading them is left to the owner (the agent's permission
+  checker blocks R2 writes). 367 unit tests, 64 Playwright checks.

@@ -1,8 +1,8 @@
 # Rebuffer
 
 > **Status: early development, live at [rebuffer.azamatos.com](https://rebuffer.azamatos.com).** A run already
-> plays a real stream through the simulated network and scores it; charts, the report, the network editor and the
-> inspector are in progress.
+> plays a real stream through the simulated network, with live charts, and scores it; the report, the network editor
+> and the inspector are in progress.
 
 See how a video player survives a bad network, in your browser. Pick a stream, pick a network ("train through a
 tunnel", "busy café Wi-Fi", or a bandwidth curve you draw), press **Run**, and watch a real hls.js player fight

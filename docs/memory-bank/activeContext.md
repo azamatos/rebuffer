@@ -1,6 +1,6 @@
 # Active context
 
-**Updated 2026-10-19 (end of the second session: honest lateness).** Read this first, then `progress.md`.
+**Updated 2026-10-20 (third session: deploy, live charts, saved downloads).** Read this first, then `progress.md`.
 
 ## Where things stand
 
@@ -10,32 +10,39 @@
   hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **What works today:** Home (hero, how it works), the Run screen first version (setup from the URL, Start, video,
-  live tiles, a plain-English event log, score and an honesty line at the end), and placeholders for Inspect,
+- **What works today:** Home (hero, how it works), the Run screen (setup from the URL, Start, video, live tiles, three
+  live charts, a plain-English event log, score and an honesty paragraph at the end), and placeholders for Inspect,
   Networks, Runs and About. The core under it is done: playlist parser and lint rules, network simulator and
   Service Worker shaper, hls.js adapter, run controller, metrics and score.
-- **Honest lateness is built** (commits `8af44c6`, `f3416da`; **not pushed or deployed yet**, waiting for the owner).
-  A check before the run measures the real latency to the stream's host and opens the connection. The Run screen
-  warns when that latency is above the simulated RTT. The result tells late starts from late bytes, quotes the real
-  speed and the measured latency, and reports background-tab time. Live numbers and what they showed: `techContext.md`,
-  "Honesty checks".
-- **Quality bar today:** 321 unit tests, 61 Playwright checks (axe on every screen; 2 keyboard checks skipped in
-  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 85.4 KB brotli.
+- **Live site = commit `3b7f739` (honest lateness)**, pushed and deployed by hand on 2026-10-20 (`wrangler pages
+  deploy` of a clean build of that commit). The charts and saved downloads are on `main` locally, **not pushed or
+  deployed yet**.
+- **Honest lateness (built 2026-10-19):** a check before the run measures the real latency to the stream's host and
+  opens the connection; the result tells late starts from late bytes, quotes the real speed and the measured
+  latency, and reports background-tab time (`techContext.md`, "Honesty checks").
+- **Live charts (built 2026-10-20):** bandwidth and quality, buffer, segment downloads on one time axis, per the
+  design canvas; our own canvas code instead of uPlot (reason in `techContext.md`, Stack). Each chart has a sentence
+  and a data table. Drawing costs 0.1 ms per frame (p50), 1.8 ms at most, at 4× CPU throttling.
+- **Saved downloads (built 2026-10-20):** the worker keeps what runs download (300 MB, oldest out) and answers repeat
+  runs from it, still shaped. The result says how many downloads came from it and has a "Forget saved downloads"
+  button. Live results in `techContext.md`, "Saved downloads for repeat runs".
+- **Quality bar today:** 367 unit tests, 64 Playwright checks (axe on every screen; 2 keyboard checks skipped in
+  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 85.5 KB brotli, Run chunk 41 KB gzip.
 - **Ahead of schedule:** M0 and M1 were planned for Oct 25 and Nov 1 and are done; M2 (Nov 8) is half done.
 
 ## Next step (in this order)
 
-1. **The owner decides** on the items in "Waiting for the owner" below (push and deploy first).
-2. **Run screen charts (M2).** Bandwidth and quality, buffer, downloads on one time axis, with uPlot behind our own
-   chart interface; live data stays out of React state (AGENTS.md rule 3). Follow the design canvas (Run board).
-3. **Home setup (M2).** Stream, network and player pickers on Home that open `/run` with the setup in the URL; a
+1. **The owner decides** on the items in "Waiting for the owner" below (push and deploy the charts and saved
+   downloads first).
+2. **Home setup (M2).** Stream, network and player pickers on Home that open `/run` with the setup in the URL; a
    keyboard-only Playwright test from Home through a finished run.
-4. Then M3: Report screen (notes, "try next", export, share link, saved runs), network editor, inspector screen.
+3. Then M3: Report screen (notes, "try next", export, share link, saved runs, zoomable charts), network editor,
+   inspector screen.
 
 Deploys are by hand for now (see "Deploying" in `techContext.md`): pushes to GitHub don't trigger Cloudflare
 builds, and the owner decided on 2026-10-19 to leave that for later.
 
-## Decisions (settled 2026-10-18 and 2026-10-19)
+## Decisions (settled 2026-10-18 to 2026-10-20)
 
 | # | Decision | Outcome |
 |---|---|---|
@@ -51,6 +58,8 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 | 10 | Scope by Dec 6 | Compare two runs and the case study; Shaka Player after launch |
 | 11 | Repo | github.com/azamatos/rebuffer, public (owner created it 2026-10-19), pushed over SSH |
 | 12 | Deploys | By hand until push-triggered builds are fixed; the owner deferred that on 2026-10-19 |
+| 13 | Repeat runs | The browser keeps what runs download (300 MB) so repeats match; approved 2026-10-20 ("go with recommendations"), built the same day |
+| 14 | Playlist cache time | A day instead of 5 minutes; approved 2026-10-20; the live files change when the owner re-uploads them |
 
 ## Design and plan artifacts
 
@@ -59,17 +68,22 @@ builds, and the owner decided on 2026-10-19 to leave that for later.
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 
-## Waiting for the owner (raised 2026-10-19, second session)
+## Waiting for the owner (raised 2026-10-20, third session)
 
-- **Push and deploy** the honest-lateness commits to GitHub and rebuffer.azamatos.com. Recommended: yes.
-- **Cache segments in the worker** so repeat runs of a setup match. Live runs showed the need: Home fibre scored 76,
-  then 85, on the same setup; first bytes vary by hundreds of ms run to run. Recommended: right after the charts.
-- **Playlists' cache time at Cloudflare.** They expire after 5 minutes (`max-age=300`), and the next fetch costs
-  about 100 ms more. VOD playlists never change, so a longer edge cache time (a day) is safe. Changing it is a Cloudflare
-  setting, so the owner decides. Recommended: yes, low priority.
+- **Push and deploy the charts and saved downloads.** Recommended: yes. Pushing is done over SSH (`git push origin
+  main`); deploying by hand is a clean build plus `pnpm exec wrangler pages deploy dist --project-name rebuffer
+  --branch main` (`techContext.md`, "Deploying"). The agent's permission checker blocks deploys and R2 writes, so the
+  owner runs them or allows them.
+- **Playlists' cache time at Cloudflare** (approved 2026-10-20): `scripts/media/upload.mjs` now sets a day; the 14
+  live playlists still say 5 minutes until the owner runs `node scripts/media/upload.mjs --playlists` (local copies
+  match the live ones byte for byte, checked 2026-10-20). Low priority now: with saved downloads, playlists come
+  from Cloudflare only on a setup's first run.
 - **Score on slow networks (observation, decision 5 stays as is until the owner reopens it).** Rural 3G played with
-  no stalls and scored 1/100, Tunnel 33–35 with no stalls: the score compares with the ladder's top quality, not with
-  what the network allows. Possible later: show "best possible on this network" next to the score.
+  no stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
+  network allows. Possible later: show "best possible on this network" next to the score.
+- **Idea, not started:** the first run of a setup carries the real network's noise. A "warm-up" could download the
+  ladder for the run's length first (about 140 MB for 1:30 of our film), so even the first run is clean. Recommended:
+  not now; the result already says when the real network held a run back, and the next run fixes it.
 
 ## Owner's open items
 

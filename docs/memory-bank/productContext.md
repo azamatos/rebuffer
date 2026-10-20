@@ -1,7 +1,7 @@
 # Product spec
 
-**Agreed 2026-10-18. Built by 2026-10-19: the shell, Home's hero, and the Run screen's first version (no charts
-yet); the other screens are placeholders.** Screens follow the design proposal (canvas linked in
+**Agreed 2026-10-18. Built by 2026-10-20: the shell, Home's hero, and the Run screen (live charts, saved downloads
+for repeat runs); the other screens are placeholders.** Screens follow the design proposal (canvas linked in
 `activeContext.md`), accepted on 2026-10-18. The app is Rebuffer, at rebuffer.azamatos.com. The header carries the
 family wordmark shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊`.
 
@@ -75,6 +75,10 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   1. Network: available bandwidth (area), the player's estimate (line) and the selected quality's bitrate (steps).
   2. Buffer: seconds of video ahead (area), stalls as marked bands.
   3. Requests: one bar per segment download, coloured by quality.
+  **Built 2026-10-20:** the network area fills up to the playhead and the rest of the curve is dashed (before a run
+  the chart previews the whole network); the bandwidth axis is logarithmic, labelled by the ladder; stalls are red
+  bands on the first two charts; the downloads lane shows video segments only, abandoned ones as dashed outlines.
+  Each chart has a sentence (its accessible name, refreshed 4 times a second) and a data table behind a disclosure.
 - **Event log:** quality switches, stalls, abandoned downloads, errors; also announced in a polite live region.
 - Controls: Stop, Restart. The run ends at the end of the network curve or the video.
 - Before the run, a quick check measures the visitor's real latency to the stream's host. If it is above the
@@ -84,6 +88,11 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   **started late** because the real latency is above the simulated one, downloads that **arrived late** because the
   real network couldn't keep up with the simulated bandwidth (with the speed it managed), and time the tab spent in
   the background.
+- **Saved downloads (built 2026-10-20):** the browser keeps what runs download (up to 300 MB, oldest first out;
+  never what the server marks `no-store`, never a live playlist), and later runs take those downloads from there,
+  still through the simulated network. Repeat runs of a setup then don't depend on the real network. The result says
+  how many downloads came from the saved copy, and a button forgets it. The heads-up about real latency stays quiet
+  when the stream is saved.
 
 ### Report
 
@@ -129,8 +138,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 
 ## Privacy
 
-Stream links, setups and runs stay in the visitor's browser (IndexedDB). The only requests leave for the stream's
-own host and our static files. Analytics: Cloudflare Web Analytics, no cookies.
+Stream links, setups and runs stay in the visitor's browser (IndexedDB). Downloaded media is kept in the browser's
+Cache Storage for repeat runs (up to 300 MB; the result has a button that forgets it). The only requests leave for
+the stream's own host and our static files. Analytics: Cloudflare Web Analytics, no cookies.
 
 ## Accessibility
 

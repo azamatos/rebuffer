@@ -33,8 +33,8 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 - During a run, the page registers a *session* with the Service Worker: the network curve, the latency, the origins
   to shape (the run controller passes `*`: every origin except the app's own, because segments often live on
   another host) and the start time. The SW intercepts those requests from that page and answers each one with a
-  `Response` whose body it releases on the schedule the curve allows. Bytes come from the real network (and
-  Cache Storage for repeat runs).
+  `Response` whose body it releases on the schedule the curve allows. Bytes come from the real network, or from the
+  copy saved by earlier runs (below).
 - **One bottleneck link per run.** Concurrent downloads (video and audio, a playlist refresh) share the bandwidth
   fairly; every request waits one RTT before its first byte. The scheduler ticks every 10–20 ms; the maths
   (integrating the curve, fair sharing) is a pure module in `src/core/netsim`, unit-tested with a fake clock.
@@ -76,6 +76,24 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
     cache hits (76–158 ms). The rest is unexplained (load on the real connection, the worker's fetch path), so the
     report names no cause for late starts: it gives typical and worst waits and quotes the measured latency as a
     fact. Late bytes mid-download came from pauses, not low speed: the real network averaged 48–71 Mbps.
+- **Saved downloads for repeat runs (built 2026-10-20, the owner approved it on 2026-10-20):** the worker keeps what
+  runs download in Cache Storage (`rebuffer-saved-v1`; rules in `src/core/netsim/saved.ts`, the worker side in
+  `src/sw/saved.ts`) and answers later requests for the same URL from there, still shaped by the link.
+  - What's kept: plain GETs (no `Range`) answered 200 and not marked `no-store`; playlists only when they can't
+    change (a multivariant playlist, or a media playlist with `#EXT-X-ENDLIST`), never a live one. A copy is read
+    alongside the original and saved once it has fully arrived, so an aborted download is never kept.
+  - Budget: 300 MB, oldest first out, tracked in an index stored in the same cache (one update at a time).
+  - Saved answers carry `saved: true` and no real-network timings, so the report counts them and leaves them out of
+    the real speed. The check before the run still runs; its heads-up stays quiet when the stream is saved.
+  - The result's "Forget saved downloads" button deletes the cache. The test file server's `/keep/` prefix serves
+    cacheable files for the e2e test of a repeat run; elsewhere it sends `no-store`, so other tests always use the wire.
+  - **Measured 2026-10-20** (Playwright Chromium on the owner's Mac, local build against media.azamatos.com, one
+    browser profile): Tunnel four times scored 31, 25, 25, 25. Run 1 went over the real network (49 of 97 downloads
+    started late, up to 782 ms) and the player chose differently; runs 2–4 matched exactly (first frame 0.41–0.42 s,
+    one 1.1 s stall, 2.2 Mbps, 6 switches), with 89, 94 and then all 96 downloads from the saved copy (runs 2–3
+    still fetched segments run 1 never picked). Home fibre three times: 89, then 90 and 90 (first frame 0.68 s, then
+    0.10 and 0.11 s). So a setup's first run carries the real network's noise (its result says so) and the repeats
+    show the simulated network alone.
 - **Built 2026-10-18** (`src/core/netsim`, `src/sw`, `tests/e2e/shaper.spec.ts`):
   - A small Vite plugin bundles `src/sw/sw.ts` into one classic script at `/sw.js` (dev middleware and
     `dist/sw.js`). It is 98 KB minified, mostly zod; `zod/mini` could shrink it.
@@ -195,7 +213,9 @@ reference code is non-commercial research only, with patent notices.
   rungs, subtitles, I-frames), Apple advanced fMP4 example, Unified Streaming Tears of Steel (TS, 5 rungs, 4 s),
   Mux Big Buck Bunny (TS, 10 s). Bitmovin's demo streams refuse other origins: don't use.
 - **Hosting (live 2026-10-19):** R2 bucket `azamatos-media` on `media.azamatos.com`; `r2.dev` off. Segments carry
-  `Cache-Control: public, max-age=31536000, immutable`, playlists `max-age=300`; a zone cache rule ("media: cache
+  `Cache-Control: public, max-age=31536000, immutable`, playlists `max-age=300` (the upload script sets a day,
+  `max-age=86400`, since 2026-10-20; the live playlists change when the owner runs `upload.mjs --playlists`); a zone
+  cache rule ("media: cache
   segments and playlists", hostname equals media.azamatos.com, eligible for cache, edge TTL from Cache-Control)
   makes Cloudflare cache them. CORS allows any origin for GET and HEAD with `Range`
   (`scripts/media/r2-cors.json`); R2 sends `Vary: Origin`, and Cloudflare keeps one cached copy per origin, so the
@@ -238,7 +258,7 @@ reference code is non-commercial research only, with patent notices.
 - **Headers:** `public/_headers` sets the CSP (`connect-src` and `media-src` open, because the lab plays any link)
   and `X-Robots-Tag: noindex` for `*.pages.dev` addresses, so only rebuffer.azamatos.com is indexed.
 - **Media:** `node scripts/media/upload.mjs` uploads `media/out/<name>` with wrangler (1,740 files for Tears of
-  Steel; master playlists last); `scripts/media/README.md` has the commands.
+  Steel; master playlists last; `--playlists` for playlists only); `scripts/media/README.md` has the commands.
 - **What wrangler's login can't do** (owner, in the dashboard): DNS records, enabling R2, cache rules, API tokens,
   and the GitHub app's repository access.
 
