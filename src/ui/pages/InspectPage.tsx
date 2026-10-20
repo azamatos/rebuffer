@@ -202,7 +202,7 @@ export function InspectPage({ search }: { search: InspectSearch }) {
                 choose(source.id, "field");
               }}
               onKeyDown={onTabKey}
-              className="-mb-px inline-flex min-h-10 items-center gap-1.5 rounded-t-md border-b-2 border-transparent px-3 text-fg-2 transition-colors duration-150 hover:text-fg aria-selected:border-accent aria-selected:font-semibold aria-selected:text-fg motion-reduce:transition-none"
+              className="-mb-px inline-flex min-h-10 items-center gap-1.5 border-b-2 border-transparent px-3 text-fg-2 transition-colors duration-200 hover:text-fg aria-selected:border-accent aria-selected:font-semibold aria-selected:text-fg motion-reduce:transition-none"
             >
               <svg
                 width="14"
@@ -352,9 +352,9 @@ export function InspectPage({ search }: { search: InspectSearch }) {
           onChange={(event) => void openFile(event)}
         />
         <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
-          <span className="mr-0.5 text-fg-3">Or try</span>
+          <span className="text-fg-3">Or try</span>
           {ours.map(sampleChip)}
-          <span className="mr-0.5 ml-2 text-fg-3">third-party test streams, no guarantees:</span>
+          <span className="ml-2 text-fg-3">third-party test streams, no guarantees:</span>
           {theirs.map(sampleChip)}
         </div>
       </section>
@@ -396,8 +396,8 @@ function statusText(state: InspectState): string {
 
 const countChip = {
   error: "bg-error/10 text-error-text",
-  warning: "bg-warning/12 text-warning-text",
-  note: "bg-note/12 text-note-text",
+  warning: "bg-warning/10 text-warning-text",
+  note: "bg-note/10 text-note-text",
 } as const;
 
 function Results({ state }: { state: Extract<InspectState, { status: "ready" }> }) {
@@ -419,14 +419,14 @@ function Results({ state }: { state: Extract<InspectState, { status: "ready" }> 
   return (
     <>
       <section aria-label="Summary" className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
-        <p className="min-w-0 flex-[1_1_420px] text-fg-2 tabular-nums">
+        <p className="min-w-0 flex-[1_1_520px] text-fg-2 tabular-nums">
           {describeSummary(inspection)}
         </p>
         <ul className="flex flex-wrap gap-1.5" aria-label="Findings">
           {(["error", "warning", "note"] as const).map((severity) => (
             <li
               key={severity}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[13px] ${counts[severity] === 0 ? "bg-fg/6 text-fg-2" : countChip[severity]}`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] ${counts[severity] === 0 ? "bg-fg/6 text-fg-2" : countChip[severity]}`}
             >
               <SeverityIcon severity={severity} size={10} />
               {counts[severity]} {severity}

@@ -17,7 +17,7 @@ export function Toaster() {
       {shown && (
         <p
           key={shown.id}
-          className={`toast-in flex max-w-[min(26rem,calc(100vw-2rem))] items-center gap-2.5 rounded-[10px] border border-line-strong bg-toast px-3.5 py-2.5 text-sm text-toast-fg shadow-[0_10px_28px_rgb(0_0_0/0.25)] transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none ${shown.leaving ? "translate-y-4 opacity-0" : ""}`}
+          className={`toast-in flex max-w-[min(26rem,calc(100vw-2rem))] items-center gap-2.5 rounded-[10px] border border-line-strong bg-toast px-3.5 py-2.5 text-sm text-toast-fg shadow-[0_12px_32px_rgb(0_0_0/0.2)] transition-[opacity,translate] duration-200 motion-reduce:transition-none ${shown.leaving ? "translate-y-4 opacity-0" : ""}`}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className="flex-none">
             <path

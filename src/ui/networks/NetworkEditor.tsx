@@ -212,7 +212,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
         <h2 id="editor-h" className="min-w-0 text-xl font-semibold">
           {name || "Untitled network"}
           {edited && (
-            <span className="ml-2.5 inline-block rounded-full bg-warning/12 px-2 py-px align-[3px] text-xs font-normal text-warning-text">
+            <span className="ml-2 inline-block rounded-full bg-warning/10 px-2 py-0.5 align-middle text-xs font-normal text-warning-text">
               {savedId ? "unsaved changes" : "edited copy"}
             </span>
           )}
@@ -231,7 +231,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
               onClick={() => {
                 edit(setShape(curve, shape));
               }}
-              className="min-h-[30px] rounded-md px-2.5 text-fg-2 transition-colors duration-150 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)] motion-reduce:transition-none"
+              className="min-h-8 rounded-md px-2.5 text-fg-2 transition-colors duration-200 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)] motion-reduce:transition-none"
             >
               {shape === "steps" ? "Steps" : "Slopes"}
             </button>
@@ -262,7 +262,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
           align="end"
           open={shortcuts}
           onOpenChange={setShortcuts}
-          buttonClassName="inline-flex size-[34px] items-center justify-center rounded-lg border border-line-strong font-semibold text-fg hover:border-fg-3 aria-expanded:border-accent aria-expanded:bg-accent/10 aria-expanded:text-accent-hover"
+          buttonClassName="inline-flex size-9 items-center justify-center rounded-lg border border-line-strong font-semibold text-fg hover:border-fg-3 aria-expanded:border-accent aria-expanded:bg-accent/10 aria-expanded:text-accent-hover"
           panelClassName="w-[min(22rem,calc(100vw-2rem))] px-3.5 py-3"
           button={<span aria-hidden="true">?</span>}
         >
@@ -284,14 +284,14 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
         <button
           type="button"
           onClick={() => void save()}
-          className="inline-flex min-h-9 items-center rounded-[9px] border border-line-strong px-3.5 text-fg hover:border-fg-3"
+          className="inline-flex min-h-9 items-center rounded-lg border border-line-strong px-3.5 text-fg hover:border-fg-3"
         >
           Save
         </button>
         <Link
           to="/run"
           search={runSearch}
-          className="inline-flex min-h-9 items-center rounded-[9px] bg-accent px-3.5 font-semibold text-accent-ink hover:bg-accent-hover"
+          className="inline-flex min-h-9 items-center rounded-lg bg-accent px-3.5 font-semibold text-accent-ink hover:bg-accent-hover"
         >
           Run with this network
         </Link>
@@ -422,7 +422,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             Whole network
           </h3>
           <div className="flex flex-wrap items-start gap-2.5">
-            <label className="flex w-44 flex-col gap-[3px] text-xs text-fg-2">
+            <label className="flex w-44 flex-col gap-1 text-xs text-fg-2">
               Name
               <input
                 type="text"
@@ -436,7 +436,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             </label>
             <NumberField
               label="Latency (RTT), ms"
-              width="w-[7.5rem]"
+              width="w-28"
               value={String(curve.rttMs)}
               read={(text): Read<number> => {
                 const ms = text.trim() === "" ? Number.NaN : Number(text);
@@ -450,7 +450,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             />
             <NumberField
               label="Length"
-              width="w-[4.5rem]"
+              width="w-20"
               value={formatClock(curve.lengthS)}
               read={(text): Read<number> => {
                 const t = parseClock(text);
@@ -549,7 +549,7 @@ function IconButton({
       onClick={() => {
         if (!off) onPress();
       }}
-      className="inline-flex size-[34px] items-center justify-center rounded-lg border border-line-strong text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3"
+      className="inline-flex size-9 items-center justify-center rounded-lg border border-line-strong text-fg hover:border-fg-3 aria-disabled:cursor-default aria-disabled:border-line aria-disabled:text-fg-3"
     >
       <svg
         width="16"
@@ -617,8 +617,8 @@ function NumberField<T>({
     apply(result.value);
   };
   return (
-    <div className={`flex flex-col gap-1 ${error ? "max-w-60 min-w-40" : ""}`}>
-      <label className={`flex flex-col gap-[3px] text-xs whitespace-nowrap text-fg-2 ${width}`}>
+    <div className={`flex flex-col gap-1 ${error ? "max-w-60" : ""}`}>
+      <label className={`flex flex-col gap-1 text-xs whitespace-nowrap text-fg-2 ${width}`}>
         {label}
         <input
           type="text"
@@ -671,7 +671,7 @@ function PointPanel({
       <div className="flex flex-wrap items-start gap-2.5">
         <NumberField
           label="Time"
-          width="w-[5.25rem]"
+          width="w-24"
           value={clock(point.t)}
           read={(text): Read<NetworkCurve> => {
             const t = parseClock(text);
@@ -683,7 +683,7 @@ function PointPanel({
         />
         <NumberField
           label="Bandwidth, Mbps"
-          width="w-[6.5rem]"
+          width="w-24"
           value={String(point.mbps)}
           read={(text): Read<NetworkCurve> => {
             const mbps = text.trim() === "" ? Number.NaN : Number(text.replace(",", "."));

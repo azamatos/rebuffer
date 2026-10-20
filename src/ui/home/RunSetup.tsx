@@ -223,7 +223,7 @@ export function RunSetup() {
             {PLAYER_PRESETS.map((preset) => (
               <label
                 key={preset.id}
-                className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line-strong px-3 text-sm text-fg-2 hover:text-fg has-checked:border-accent has-checked:bg-accent/12 has-checked:text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
+                className="inline-flex min-h-9 cursor-pointer items-center rounded-full border border-line-strong px-3 text-sm text-fg-2 hover:text-fg has-checked:border-accent has-checked:bg-accent/10 has-checked:text-fg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent"
               >
                 <input
                   type="radio"

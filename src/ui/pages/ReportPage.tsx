@@ -1,5 +1,6 @@
 import { getRouteApi, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
@@ -145,7 +146,10 @@ function Report({ run }: { run: SavedRun }) {
 
   // A note's "Show on the chart": zoom to it and take the reader to the charts, by keyboard as well.
   const showNote = (note: Note) => {
-    setRange(noteRange(note.start, note.end, network.curve.lengthS));
+    // The charts redraw for the new stretch first, so the page doesn't change under the scroll.
+    flushSync(() => {
+      setRange(noteRange(note.start, note.end, network.curve.lengthS));
+    });
     const heading = timelineHeading.current;
     // WebKit doesn't scroll to a heading it focuses, so scroll there explicitly.
     heading?.focus({ preventScroll: true });
@@ -174,7 +178,7 @@ function Report({ run }: { run: SavedRun }) {
       <section className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <p className="mb-0.5 font-mono text-xs tracking-[0.06em] text-accent">REPORT</p>
-          <h1 className="text-[28px] font-semibold tracking-[-0.01em]">
+          <h1 className="text-[28px] font-semibold tracking-tight">
             {network.name} · hls.js {playerTitle(player.name, playerChanges(run))}
           </h1>
           <p className="mt-0.5 text-fg-2">
@@ -256,14 +260,14 @@ function Report({ run }: { run: SavedRun }) {
 
       <section aria-label="Simulation check">
         {warning ? (
-          <details className="group rounded-xl border border-warning/40 bg-warning/8 px-3.5 py-2.5">
+          <details className="group rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5">
             <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 12 12"
                 aria-hidden="true"
-                className="mt-[3px] flex-none"
+                className="mt-1 flex-none"
               >
                 <path d="M6 0.8 L11.5 11 H0.5 Z" className="fill-warning" />
               </svg>
@@ -288,7 +292,7 @@ function Report({ run }: { run: SavedRun }) {
                 </svg>
               </span>
             </summary>
-            <ul className="mt-2 flex list-disc flex-col gap-1 pl-[46px] text-sm text-fg-2">
+            <ul className="mt-2 flex list-disc flex-col gap-1 pl-11 text-sm text-fg-2">
               {honesty.map((sentence) => (
                 <li key={sentence}>{sentence}</li>
               ))}
@@ -301,7 +305,7 @@ function Report({ run }: { run: SavedRun }) {
               height="16"
               viewBox="0 0 18 18"
               aria-hidden="true"
-              className="mt-px flex-none"
+              className="flex-none"
             >
               <circle cx="9" cy="9" r="8" fill="none" strokeWidth="1.6" className="stroke-accent" />
               <path
@@ -328,7 +332,7 @@ function Report({ run }: { run: SavedRun }) {
           className={`${card} flex max-w-full flex-[1_1_300px] flex-col gap-2.5 px-[18px] py-4 sm:max-w-[360px]`}
         >
           <p className="text-[13px] text-fg-2">QoE score</p>
-          <p className="text-[56px] leading-none font-semibold tracking-[-0.02em] tabular-nums">
+          <p className="text-[56px] leading-none font-semibold tracking-tight tabular-nums">
             {Math.round(score.score)}
             <span className="text-xl font-medium tracking-normal text-fg-3"> / 100</span>
           </p>
@@ -395,11 +399,11 @@ function Report({ run }: { run: SavedRun }) {
             >
               <span
                 aria-hidden="true"
-                className="mt-px inline-flex size-[22px] items-center justify-center rounded-full bg-fg text-xs font-semibold text-ground"
+                className="inline-flex size-[22px] items-center justify-center rounded-full bg-fg text-xs font-semibold text-ground"
               >
                 {i + 1}
               </span>
-              <span className="pt-[3px] font-mono text-xs text-fg-3 tabular-nums">
+              <span className="pt-1 font-mono text-xs text-fg-3 tabular-nums">
                 {formatClock(note.start)}
                 {note.end - note.start >= 1 && `–${formatClock(note.end)}`}
               </span>
@@ -432,7 +436,7 @@ function Report({ run }: { run: SavedRun }) {
             Ideas, not promises. Each one runs this setup again with one change.
           </p>
         </div>
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-2.5">
+        <ul className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
           {ideas.map((idea) => (
             <li key={idea.title} className={`${card} flex items-center gap-3 px-3.5 py-3`}>
               <div className="min-w-0 flex-auto">
@@ -458,7 +462,7 @@ function Report({ run }: { run: SavedRun }) {
         <h2 id="setup-h" className="mb-2 text-lg font-semibold">
           Setup
         </h2>
-        <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-x-6 gap-y-2.5">
+        <dl className="grid gap-x-6 gap-y-2.5 md:grid-cols-2 xl:grid-cols-4">
           <div className="min-w-0">
             <dt className="text-xs text-fg-3">Stream</dt>
             <dd>
@@ -550,7 +554,7 @@ function Tile({
       className={`rounded-[10px] border bg-surface px-3 py-2.5 ${alert ? "border-error/50" : "border-line"}`}
     >
       <p className="text-xs text-fg-2">{label}</p>
-      <p className="mt-0.5 text-[22px] font-semibold tracking-[-0.01em] tabular-nums">{value}</p>
+      <p className="mt-0.5 text-[22px] font-semibold tracking-tight tabular-nums">{value}</p>
       <p className="text-xs text-fg-3">{note}</p>
     </div>
   );

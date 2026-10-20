@@ -28,7 +28,7 @@ export function Hint({ id, title, children }: { id: string; title: string; child
     <div
       role="note"
       aria-label={title}
-      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[10px] bg-accent/8 py-1.5 pr-1.5 pl-3.5 text-sm text-fg-2"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[10px] bg-accent/10 py-1.5 pr-1.5 pl-3.5 text-sm text-fg-2"
     >
       <p className="min-w-0 flex-[1_1_520px] py-1">{children}</p>
       <button

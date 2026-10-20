@@ -36,7 +36,7 @@ export function SegmentsPanel({ choices }: { choices: readonly SegmentsChoice[] 
   return (
     <section
       aria-labelledby="segments-h"
-      className="flex min-w-0 flex-[1_1_340px] flex-col gap-2.5 rounded-xl border border-line bg-surface px-[18px] py-3.5"
+      className="flex min-w-0 flex-[1_1_360px] flex-col gap-2.5 rounded-xl border border-line bg-surface px-[18px] py-3.5"
     >
       <h2 id="segments-h" className="text-lg font-semibold">
         Segments

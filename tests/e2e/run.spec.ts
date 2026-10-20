@@ -32,7 +32,7 @@ test("a run plays the stream through the simulated network and reports it", asyn
     const seen = new Set<string>();
     for (let i = 0; i < 6; i++) {
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      seen.add((element as HTMLElement).style.transform);
+      seen.add((element as HTMLElement).style.scale);
     }
     return seen.size;
   });

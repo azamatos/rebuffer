@@ -95,7 +95,7 @@ export function Popover({
       <div
         id={id}
         hidden={!open}
-        className={`pop-in absolute top-full z-20 mt-1.5 rounded-xl border border-line-strong bg-surface p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.18)] ${align === "end" ? "right-0" : "left-0"} ${panelClassName}`}
+        className={`pop-in absolute top-full z-20 mt-1.5 rounded-xl border border-line-strong bg-surface p-1.5 shadow-[0_12px_32px_rgb(0_0_0/0.2)] ${align === "end" ? "right-0" : "left-0"} ${panelClassName}`}
       >
         {open && children(close)}
       </div>

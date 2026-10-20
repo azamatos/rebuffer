@@ -50,14 +50,14 @@ type Phase = "ready" | "starting" | "running" | "finished" | "failed";
 /** The run's state as its chip says it: a word, a colour and a dot, which fade into the next state's. */
 const PHASE_CHIPS: Record<Phase, { label: string; chip: string; dot: string }> = {
   ready: { label: "Ready", chip: "bg-fg/6 text-fg-2", dot: "bg-fg-3" },
-  starting: { label: "Checking your connection…", chip: "bg-net/12 text-fg", dot: "bg-net" },
+  starting: { label: "Checking your connection…", chip: "bg-net/10 text-fg", dot: "bg-net" },
   running: {
     label: "Running",
-    chip: "bg-accent/12 text-accent-hover",
-    dot: "bg-accent shadow-[0_0_0_3px] shadow-accent/20",
+    chip: "bg-accent/10 text-accent-hover",
+    dot: "bg-accent",
   },
   finished: { label: "Finished", chip: "bg-toast text-toast-fg", dot: "bg-toast-icon" },
-  failed: { label: "Couldn't run", chip: "bg-error/12 text-error-text", dot: "bg-error" },
+  failed: { label: "Couldn't run", chip: "bg-error/10 text-error-text", dot: "bg-error" },
 };
 
 interface ResolvedSetup {
@@ -273,11 +273,11 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
   const elapsed = Math.min(metrics?.endS ?? 0, lengthS);
 
   // The progress bar follows the run's clock every frame while it runs, so it glides instead of stepping with the
-  // four copies a second; React never sets its transform, so the two don't fight.
+  // four copies a second; React never sets its scale, so the two don't fight.
   const fillRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (phase !== "running" && fillRef.current)
-      fillRef.current.style.transform = `scaleX(${elapsed / lengthS})`;
+      fillRef.current.style.scale = `${elapsed / lengthS} 1`;
   });
   useEffect(() => {
     if (phase !== "running" || !run) return;
@@ -285,7 +285,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
     const draw = () => {
       const s = (performance.timeOrigin + performance.now() - run.startedAt) / 1000;
       if (fillRef.current)
-        fillRef.current.style.transform = `scaleX(${Math.min(Math.max(s, 0), lengthS) / lengthS})`;
+        fillRef.current.style.scale = `${Math.min(Math.max(s, 0), lengthS) / lengthS} 1`;
       frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);
@@ -307,7 +307,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         aria-label="Run status"
         className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-[18px] py-3.5"
       >
-        <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
+        <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-2">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             <h1 className="text-[17px] font-semibold">
               {setup.streamName} · {setup.networkName} · hls.js{" "}
@@ -315,11 +315,11 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
             </h1>
             <p
               role="status"
-              className={`inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2.5 pl-2 text-[13px] font-medium transition-colors duration-[180ms] motion-reduce:transition-none ${chip.chip}`}
+              className={`inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2.5 pl-2 text-[13px] font-medium transition-colors duration-200 motion-reduce:transition-none ${chip.chip}`}
             >
               <span
                 aria-hidden="true"
-                className={`size-[7px] rounded-full transition-colors duration-[180ms] motion-reduce:transition-none ${chip.dot}`}
+                className={`size-[7px] rounded-full transition-colors duration-200 motion-reduce:transition-none ${chip.dot}`}
               />
               {chip.label}
             </p>
@@ -402,7 +402,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
           {result && <Outcome result={result} savedId={savedId} />}
           <section
             aria-labelledby="log-h"
-            className="flex max-h-96 min-h-32 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-[1_1_0]"
+            className="flex max-h-96 min-h-24 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-1"
           >
             <h2 id="log-h" className="px-3.5 pt-3 pb-2 text-sm font-semibold">
               Event log <span className="font-normal text-fg-3">· newest first</span>
@@ -425,9 +425,9 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
                 className="min-h-0 flex-auto overflow-auto px-3.5 pb-2.5 text-sm tabular-nums"
               >
                 {lines.map((line, i) => (
-                  <li key={`${line.t}-${i}`} className="flex gap-3 border-t border-fg/6 py-[7px]">
+                  <li key={`${line.t}-${i}`} className="flex gap-3 border-t border-fg/6 py-2">
                     <span
-                      className={`w-[52px] flex-none pt-px font-mono text-xs ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
+                      className={`w-14 flex-none font-mono text-xs ${line.kind === "stall" || line.kind === "error" ? "text-error-text" : "text-fg-3"}`}
                     >
                       {line.time}
                     </span>
@@ -461,7 +461,7 @@ function Tile({
       className={`rounded-[10px] border bg-surface px-3 py-2.5 ${alert ? "border-error/50" : "border-line"}`}
     >
       <p className="text-xs text-fg-2">{label}</p>
-      <p className="mt-0.5 text-[22px] font-semibold tracking-[-0.01em] tabular-nums">
+      <p className="mt-0.5 text-[22px] font-semibold tracking-tight tabular-nums">
         {value}
         {detail && <span className="text-[13px] font-normal text-fg-2"> · {detail}</span>}
       </p>
@@ -507,7 +507,7 @@ function Outcome({ result, savedId }: { result: RunResult; savedId: string | fal
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs text-fg-2">QoE score</p>
-          <p className="mt-1 text-[40px] leading-none font-semibold tabular-nums">
+          <p className="mt-1 text-5xl leading-none font-semibold tabular-nums">
             {Math.round(score.score)}
             <span className="text-lg font-medium text-fg-3"> / 100</span>
           </p>

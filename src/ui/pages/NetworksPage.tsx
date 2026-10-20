@@ -144,7 +144,7 @@ export function NetworksPage({ search }: { search: NetworksSearch }) {
     <div className="mx-auto flex max-w-[1360px] flex-wrap items-start gap-5 px-4 pt-5 pb-10 sm:px-8">
       {/* On wide screens the list stays in view and scrolls on its own beside the editor. */}
       <div className="flex max-w-full min-w-0 flex-[1_1_260px] flex-col gap-2 rounded-xl border border-line bg-surface p-3 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:max-w-[300px] lg:overflow-auto">
-        <div className="mx-1.5 mt-0.5 mb-1">
+        <div className="mx-2 mt-0.5 mb-1">
           <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
             Networks
           </h1>

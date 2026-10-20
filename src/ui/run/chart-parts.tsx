@@ -37,7 +37,7 @@ export function ShowAs({
           onClick={() => {
             onChange(asTable);
           }}
-          className="rounded-md px-2.5 py-[3px] text-fg-2 transition-colors duration-150 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)] motion-reduce:transition-none"
+          className="rounded-md px-2.5 py-1 text-fg-2 transition-colors duration-200 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)] motion-reduce:transition-none"
         >
           {asTable ? "Table" : "Chart"}
         </button>
@@ -66,11 +66,11 @@ export function ChartOrTable({
 }) {
   return (
     <div
-      className="relative transition-[min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="relative transition-[min-height] duration-200 motion-reduce:transition-none"
       style={{ minHeight: table ? minHeight : 0 }}
     >
       <div
-        className={`transition-[opacity,visibility] duration-[180ms] motion-reduce:transition-none ${table ? "invisible opacity-0" : ""}`}
+        className={`transition-[opacity,visibility] duration-200 motion-reduce:transition-none ${table ? "invisible opacity-0" : ""}`}
       >
         {children}
       </div>

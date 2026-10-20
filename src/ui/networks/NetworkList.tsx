@@ -45,7 +45,7 @@ function NetworkLink({
         to="/networks"
         search={search}
         aria-current={current ? "true" : undefined}
-        className="group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 rounded-[9px] px-2 py-[7px] text-fg hover:bg-fg/4 aria-[current]:bg-accent/10"
+        className="group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-2.5 rounded-lg px-2 py-2 text-fg hover:bg-fg/4 aria-[current]:bg-accent/10"
       >
         <CurveThumb curve={curve} className="h-5 w-16" />
         <span className="min-w-0">
@@ -116,7 +116,7 @@ export function NetworkList({
             />
           ))}
         </ul>
-        <p className="mx-2 mt-1 text-[11px] leading-snug text-fg-3">
+        <p className="mx-2 mt-1 text-[11px] text-fg-3">
           Real 4G recordings: {TRACE_CREDIT.citation},{" "}
           <a
             href={TRACE_CREDIT.licenceUrl}
@@ -158,7 +158,7 @@ export function NetworkList({
           to="/networks"
           search={{ new: "blank" }}
           aria-current={current.new === "blank" ? "true" : undefined}
-          className="mx-1 mt-1 inline-flex min-h-[38px] items-center justify-center rounded-[9px] border border-dashed border-line-strong text-sm text-fg-2 hover:border-fg-3 hover:text-fg aria-[current]:border-accent aria-[current]:text-fg"
+          className="mx-2 mt-1 inline-flex min-h-10 items-center justify-center rounded-lg border border-dashed border-line-strong text-sm text-fg-2 hover:border-fg-3 hover:text-fg aria-[current]:border-accent aria-[current]:text-fg"
         >
           + New network
         </Link>

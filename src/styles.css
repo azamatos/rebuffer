@@ -131,14 +131,18 @@
   .flash {
     animation: flash 1.2s ease-out;
   }
+  /* Things that appear fade in, rising from where `--rise` says: a table in place, a popover from its button, a
+     toast from the bottom. */
   .fade-in {
-    animation: fade-in 180ms ease-out;
+    animation: rise 180ms ease-out;
   }
   .pop-in {
-    animation: pop-in 150ms ease-out;
+    --rise: -4px;
+    animation: rise 150ms ease-out;
   }
   .toast-in {
-    animation: toast-in 220ms ease-out;
+    --rise: 16px;
+    animation: rise 220ms ease-out;
   }
 }
 
@@ -150,21 +154,10 @@
     box-shadow: 0 0 0 3px transparent;
   }
 }
-@keyframes fade-in {
+@keyframes rise {
   from {
     opacity: 0;
-  }
-}
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-}
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
+    translate: 0 var(--rise, 0);
   }
 }
 
