@@ -4,12 +4,11 @@ import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
 import { describeHonesty, formatMbps } from "@/core/run/describe";
-import { eventsOfType } from "@/core/run/events";
 import { whatHappened } from "@/core/run/notes";
 import { tryNext } from "@/core/run/ideas";
 import { describeSettings, ideaSearch, playerChanges, savedRunSearch } from "@/core/run/report";
 import { playerTitle } from "@/core/player/settings";
-import { buildTimeline } from "@/core/run/timeline";
+import { buildTimeline, type Timeline } from "@/core/run/timeline";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { useNow } from "@/ui/runs/useNow";
 
@@ -203,7 +202,7 @@ function Report({ run }: { run: SavedRun }) {
             </a>
           </p>
         </div>
-        <Tiles metrics={metrics} events={run.events} />
+        <Tiles metrics={metrics} timeline={timeline} />
       </section>
 
       <section aria-labelledby="timeline-h" className="flex flex-col gap-3">
@@ -386,9 +385,10 @@ function Tile({
   );
 }
 
-function Tiles({ metrics, events }: { metrics: RunMetrics; events: SavedRun["events"] }) {
+function Tiles({ metrics, timeline }: { metrics: RunMetrics; timeline: Timeline }) {
   const top = topLevel(metrics.levels);
-  const abandoned = eventsOfType(events, "segment-abandoned").length;
+  // Counted as the downloads chart and the notes count them, so a download the player dropped for the next one counts.
+  const abandoned = timeline.downloads.filter((download) => download.state === "abandoned").length;
   return (
     <div className="grid min-w-0 flex-[999_1_640px] grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
       <Tile
