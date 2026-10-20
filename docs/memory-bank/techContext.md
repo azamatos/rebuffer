@@ -208,6 +208,12 @@ A run, step by step:
   first paint (locally they arrive at once), it counted them, and FCP stayed at 2.0 s (1.2 s with no scripts). Now
   1.7 s, LCP 2.0–2.1 s, performance 0.98–0.99 locally. Replacing the markup instead of hydrating it made the browser
   record a second largest paint, so the app hydrates.
+- **Fonts don't shift the page (2026-10-20, after CI failed):** our own `@font-face` rules for Geist and Space Mono
+  (Latin and Latin Extended from Fontsource's files) with `font-display: optional`, and `scripts/prerender.mjs`
+  preloads the two Latin files. With Fontsource's `swap`, Linux's fallback fonts (far from Geist) made the hero text
+  reflow: Lighthouse on GitHub's runners measured CLS 0.33 (0.115 in a Linux container; 0.024 on a Mac), which cost
+  the performance score most of its points (0.75–0.84 on CI). Now CLS 0; Lighthouse 1.0 in Linux Chromium
+  (`mcr.microsoft.com/playwright` in Docker), 0.99 on the Mac.
 - **Zod parses without compiling** (`src/core/zod.ts`, `jitless`): its probe for `new Function` made Firefox log a
   CSP error.
 

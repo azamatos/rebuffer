@@ -2,7 +2,7 @@
 // (Lighthouse on GitHub's runners measured 0.82 for performance without it); src/app.tsx hydrates it.
 // Every other path is served the same file: the script in index.html marks those, and the CSS hides the markup there
 // until the app has rendered its own screen.
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "vite";
 
 const page = new URL("../dist/index.html", import.meta.url);
@@ -26,7 +26,25 @@ try {
   // expects its own SSR set-up, whose inline scripts our CSP doesn't allow): add the markers of a finished boundary,
   // so React hydrates instead of throwing the markup away. tests/e2e/home.spec.ts fails if they stop matching.
   const markup = `<!--$-->${html}<!--/$-->`;
-  writeFileSync(page, built.replace(empty, `<div id="root" data-prerendered>${markup}</div>`));
+  // The Latin fonts start loading with the page rather than after the CSS, so they're there for the first paint
+  // (src/styles.css: `font-display: optional` doesn't swap a late font in).
+  const fonts = readdirSync(new URL("../dist/assets/", import.meta.url)).filter((file) =>
+    /^(geist-latin-wght|space-mono-latin-400)-normal-[\w-]+\.woff2$/.test(file),
+  );
+  if (fonts.length !== 2)
+    throw new Error(`Expected the two Latin fonts in dist/assets, found ${fonts.length}.`);
+  const preloads = fonts
+    .map(
+      (file) =>
+        `<link rel="preload" href="/assets/${file}" as="font" type="font/woff2" crossorigin />`,
+    )
+    .join("");
+  writeFileSync(
+    page,
+    built
+      .replace(empty, `<div id="root" data-prerendered>${markup}</div>`)
+      .replace("</title>", `</title>${preloads}`),
+  );
   console.log(
     `Prerendered Home into dist/index.html (${(html.length / 1024).toFixed(1)} KB of HTML).`,
   );

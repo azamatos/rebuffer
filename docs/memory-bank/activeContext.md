@@ -10,10 +10,11 @@
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `dc3fd6f`.** This session's commits (from `718b568` on: two docs commits from the fourth
-  session, then the light theme, About, the live region, the first-run hint, build-time Home, the repeatability job,
-  Compare, README and docs) are **local, not pushed**. **Every push to `main` deploys on its own** (Cloudflare builds
-  it in about a minute). Pushing is outward-facing: ask the owner before each push.
+- **Live site = `main` at `98b6327`** (pushed 2026-10-20 with the owner's "lets now push the changes"; Cloudflare
+  deployed it in about 45 s; checked live in three engines and both themes). CI's e2e passed there; its Lighthouse
+  step failed (performance 0.75–0.84, from font-swap layout shift on Linux). The fix (`font-display: optional` and
+  preloads) is committed locally and waits for the owner's OK to push. **Every push to `main` deploys on its own.**
+  Pushing is outward-facing: ask the owner before each push.
 - **What works today (locally; live is the fourth session's state):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
@@ -41,8 +42,7 @@
 
 ## Next step (in this order)
 
-1. **Show the owner, then push** (ask first): the light theme, About, Compare, build-time Home. After the push, check
-   CI (Lighthouse now fails under 95 on GitHub's runners: watch the first run) and the live site.
+1. **Push the font fix** (ask first), then check that CI's Lighthouse step passes on GitHub's runners.
 2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
 4. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
@@ -162,6 +162,10 @@ that needs their eye under "Waiting for the owner".
 
 ## Lessons worth keeping
 
+- **Lighthouse on GitHub's runners loses its points to layout shift, not paint time:** Linux's fallback fonts are far
+  from Geist, so a swapped-in web font moves the text (CLS 0.33 on CI, 0.024 on the Mac). Reproduce in Docker with
+  `mcr.microsoft.com/playwright:v1.64.1-noble` and `@lhci/cli` (`CHROME_PATH` = its Chromium). Fixed with
+  `font-display: optional` and preloads.
 - **Lighthouse CI with `staticDistDir` opens `/index.html` unless `url` says otherwise,** and our router shows the
   not-found screen there: CI scored the wrong page until 2026-10-20 (`lighthouserc.json` now lists `/`).
 - **Lighthouse simulates from what it observed:** scripts that ran before the observed first paint count toward FCP,
