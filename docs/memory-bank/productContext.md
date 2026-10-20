@@ -111,8 +111,13 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   chart: the first frame, each stretch with no signal (how far the buffer ran down, whether playback carried on or
   stalled), groups of quality switches (with the network's low point, or the player's estimate when the network
   carried enough), abandoned downloads, and other stalls. A note names a cause only when the numbers show one; a
-  stall the simulated network doesn't explain points to the simulation check. _Planned:_ "try next" ideas, zoom,
-  Change network (needs the network editor), Compare (M5).
+  stall the simulated network doesn't explain points to the simulation check.
+- **"Try next" (built 2026-10-20):** up to three ideas, each this setup again with one change, started at once:
+  stalls suggest more headroom (`abrBandWidthFactor` → 0.8), a longer buffer when it had filled (`maxBufferLength` ×2)
+  or faster reactions (`abrEwmaFastVoD` → 1.5); six or more switches, a slower climb (`abrBandWidthUpFactor` → 0.5);
+  a first frame after 2 s, the lowest quality first; a smooth run, the Low-memory TV preset or the tunnel. Changed
+  settings travel in the run link as `set=` and show in headings ("hls.js defaults · abrBandWidthFactor 0.8").
+  _Planned:_ zoom, Change network (needs the network editor), Compare (M5).
 
 ### Compare (after the MVP)
 

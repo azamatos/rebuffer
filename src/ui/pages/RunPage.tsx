@@ -17,6 +17,7 @@ import type { NetworkCurve } from "@/core/netsim/curve";
 import { presetById } from "@/core/netsim/presets";
 import { curveFromParam } from "@/core/netsim/url";
 import { PLAYER_PRESETS, PlayerUnsupportedError, type PlayerPreset } from "@/core/player";
+import { playerTitle, settingsFromParam, type PlayerSettings } from "@/core/player/settings";
 import { startRun, type Run, type RunResult } from "@/core/run/controller";
 import {
   describeEvents,
@@ -34,6 +35,8 @@ export interface RunSearch {
   network?: string;
   curve?: string;
   player?: string;
+  /** Player settings changed from the preset's, as `abrEwmaFastVoD:1.5` (the Report's "try next" ideas). */
+  set?: string;
   /** Start as soon as the screen opens (Home's Run button); dropped from the URL once the run starts. */
   start?: string;
 }
@@ -48,6 +51,8 @@ interface ResolvedSetup {
   networkId: string | undefined;
   networkName: string;
   player: PlayerPreset;
+  /** Settings the link changes from the preset's. */
+  changes: PlayerSettings;
 }
 
 /** Turns the URL's search params into a run setup, or explains what's wrong with them. */
@@ -80,6 +85,9 @@ function resolveSetup(
   );
   if (!player)
     return { ok: false, error: `There's no player setup called “${search.player ?? ""}”.` };
+  const changes = settingsFromParam(search.set ?? "");
+  if (!changes.ok)
+    return { ok: false, error: `The player settings in this link are broken: ${changes.error}` };
 
   return {
     ok: true,
@@ -90,9 +98,15 @@ function resolveSetup(
       networkId,
       networkName,
       player,
+      changes: changes.settings,
     },
   };
 }
+
+const settingsOf = (setup: ResolvedSetup): PlayerSettings => ({
+  ...setup.player.settings,
+  ...setup.changes,
+});
 
 /** A finished run as the browser keeps it. */
 function toSavedRun(setup: ResolvedSetup, result: RunResult, video: HTMLVideoElement): SavedRun {
@@ -109,7 +123,7 @@ function toSavedRun(setup: ResolvedSetup, result: RunResult, video: HTMLVideoEle
       player: {
         presetId: setup.player.id,
         name: setup.player.name,
-        settings: setup.player.settings,
+        settings: settingsOf(setup),
       },
     },
     player: result.player,
@@ -187,7 +201,7 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
     setEvents([]);
     try {
       const run = await startRun(
-        { streamUrl: setup.streamUrl, curve: setup.curve, settings: setup.player.settings },
+        { streamUrl: setup.streamUrl, curve: setup.curve, settings: settingsOf(setup) },
         video,
       );
       runRef.current = run;
@@ -243,7 +257,8 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
       >
         <div className="min-w-0 flex-[1_1_360px]">
           <h1 className="text-lg font-semibold">
-            {setup.streamName} · {setup.networkName} · hls.js {setup.player.name.toLowerCase()}
+            {setup.streamName} · {setup.networkName} · hls.js{" "}
+            {playerTitle(setup.player.name, setup.changes)}
           </h1>
           <div className="mt-1.5 flex items-center gap-3">
             <div

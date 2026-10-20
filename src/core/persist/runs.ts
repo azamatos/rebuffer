@@ -45,6 +45,8 @@ export interface RunSummary {
   streamName: string;
   networkName: string;
   playerName: string;
+  /** "defaults · abrEwmaFastVoD 1.5"; older summaries only have `playerName`. */
+  playerTitle?: string;
   score: number;
   stalls: { count: number; totalS: number };
   averageBitrate: number | undefined;

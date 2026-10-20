@@ -45,6 +45,11 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(page.getByRole("img", { name: /^\d+ video segments? downloaded/ })).toBeVisible();
   const notes = page.getByRole("region", { name: "What happened" });
   await expect(notes.getByRole("listitem").first()).toContainText(/The first frame appeared at /);
+  // Each idea reruns the setup with one change and starts at once.
+  const idea = page.getByRole("region", { name: "Try next" }).getByRole("link").first();
+  const ideaUrl = new URL((await idea.getAttribute("href")) ?? "", "http://localhost");
+  expect(ideaUrl.pathname).toBe("/run");
+  expect(ideaUrl.searchParams.get("start")).toBe("now");
   const setup = page.getByRole("region", { name: "Setup" });
   await expect(setup).toContainText("hls.js 1.7.3 · Defaults");
   await expect(setup).toContainText("maxBufferLength 30");

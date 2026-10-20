@@ -64,7 +64,9 @@ export function RunsTable({
                   </Link>
                 </td>
                 <td className="px-3 py-3.5">{run.networkName}</td>
-                <td className="px-3 py-3.5 text-fg-2">hls.js {run.playerName.toLowerCase()}</td>
+                <td className="px-3 py-3.5 text-fg-2">
+                  hls.js {run.playerTitle ?? run.playerName.toLowerCase()}
+                </td>
                 <td className="px-3 py-3.5">
                   {run.stalls.count === 0
                     ? "0"

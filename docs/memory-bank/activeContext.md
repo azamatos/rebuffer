@@ -29,8 +29,8 @@
 - **Home setup (built 2026-10-20):** our two films, the public test streams or your own HLS link; the network presets
   with a thumbnail each; the player presets; Run opens `/run` with the setup in the URL and starts it. The logo
   cursor keeps blinking, as on pass.azamatos.com (owner's request; solid with reduced motion).
-- **Quality bar today:** 384 unit tests, 79 Playwright checks (axe on every screen; 2 keyboard checks skipped in
-  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 90.4 KB brotli (now counting every script Home
+- **Quality bar today:** 402 unit tests, 79 Playwright checks (axe on every screen; 2 keyboard checks skipped in
+  WebKit as before) in Chromium, Firefox and WebKit, home JavaScript 90.9 KB brotli (now counting every script Home
   loads).
 - **M2 is done** (target was Nov 8). **M3 started:** the Report's first slice and saved runs (2026-10-20, not
   pushed yet): score with breakdown, tiles, charts from the saved log, setup, simulation check; Run again, Export
@@ -40,9 +40,9 @@
 
 ## Next step (in this order)
 
-1. **M3, the Report's next slices:** "try next" ideas that rerun the setup with one setting changed (needs player
-   settings in the run link); zoom on the report's charts. Then the network editor and the inspector. ("What
-   happened" notes with chart markers are built: `src/core/run/notes.ts`.)
+1. **M3:** zoom on the report's charts (the last Report slice), then the network editor and the inspector screen.
+   Built on 2026-10-20: "what happened" notes with chart markers (`src/core/run/notes.ts`) and "try next" ideas
+   (`src/core/run/ideas.ts`) with player settings in run links (`set=`).
 2. The owner collects fixes and reviews them when everything is ready (said 2026-10-20).
 
 Pushes to `main` deploy to rebuffer.azamatos.com on their own (checked 2026-10-20). Pushing is still outward-facing:

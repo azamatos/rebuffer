@@ -16,6 +16,8 @@ export interface RunLinkSearch {
   stream?: string;
   network?: string;
   player?: string;
+  /** Player settings changed from the preset's, as `abrEwmaFastVoD:1.5`. */
+  set?: string;
   /**
    * "now": start the run as soon as the screen opens; the screen drops it from the URL once it has. A word, not
    * "1": the router quotes values that read as numbers.

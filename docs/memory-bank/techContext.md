@@ -130,8 +130,9 @@ on 2026-10-18 (`npm view`, package sources, a scratch Playwright test).
 
 ## Routes (code-based TanStack Router, real paths; Pages serves `index.html` for unknown paths)
 
-`/` home and setup · `/run` live run (`?stream=&network=|curve=&player=`; `start=now` from Home's buttons starts it
-and is then dropped from the URL) · `/runs` saved runs · `/runs/$runId` a report (both lazy) · `/networks` network editor · `/inspect`
+`/` home and setup · `/run` live run (`?stream=&network=|curve=&player=&set=`; `set` changes player settings from the
+preset's, as `abrEwmaFastVoD:1.5`, within limits in `src/core/player/settings.ts`; `start=now` from Home's buttons
+and the Report's starts it and is then dropped from the URL) · `/runs` saved runs · `/runs/$runId` a report (both lazy) · `/networks` network editor · `/inspect`
 stream inspector · `/about`. Each route sets its own `<title>`. Headers and CSP live in `public/_headers`
 (`connect-src` and `media-src` stay open because the lab plays any link).
 

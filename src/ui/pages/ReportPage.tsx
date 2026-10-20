@@ -6,7 +6,9 @@ import { savedRuns, type SavedRun } from "@/core/persist/runs";
 import { describeHonesty, formatMbps } from "@/core/run/describe";
 import { eventsOfType } from "@/core/run/events";
 import { whatHappened } from "@/core/run/notes";
-import { describeSettings, savedRunSearch } from "@/core/run/report";
+import { tryNext } from "@/core/run/ideas";
+import { describeSettings, ideaSearch, playerChanges, savedRunSearch } from "@/core/run/report";
+import { playerTitle } from "@/core/player/settings";
 import { buildTimeline } from "@/core/run/timeline";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { useNow } from "@/ui/runs/useNow";
@@ -75,9 +77,19 @@ function Report({ run }: { run: SavedRun }) {
   const [notice, setNotice] = useState<string>();
   const now = useNow();
   const metrics = useMemo(() => computeMetrics(run.events), [run]);
-  const notes = useMemo(
-    () => whatHappened(buildTimeline(run.events), run.setup.network.curve),
-    [run],
+  const timeline = useMemo(() => buildTimeline(run.events), [run]);
+  const notes = useMemo(() => whatHappened(timeline, run.setup.network.curve), [timeline, run]);
+  const ideas = useMemo(
+    () =>
+      tryNext({
+        metrics,
+        timeline,
+        curve: run.setup.network.curve,
+        settings: run.setup.player.settings,
+        presetId: run.setup.player.presetId,
+        networkId: run.setup.network.id,
+      }),
+    [metrics, timeline, run],
   );
   const markers = useMemo(
     () => notes.map((note, i) => ({ t: note.start, label: String(i + 1) })),
@@ -126,7 +138,7 @@ function Report({ run }: { run: SavedRun }) {
         <div className="min-w-0">
           <p className="mb-1 font-mono text-[13px] tracking-[0.06em] text-accent">REPORT</p>
           <h1 className="text-[28px] font-semibold tracking-tight sm:text-[32px]">
-            {network.name} · hls.js {player.name.toLowerCase()}
+            {network.name} · hls.js {playerTitle(player.name, playerChanges(run))}
           </h1>
           <p className="mt-1 text-fg-2">
             {streamName} · {formatWhen(run.startedAt, now)} · {formatClock(metrics.endS)} run,{" "}
@@ -207,33 +219,64 @@ function Report({ run }: { run: SavedRun }) {
         />
       </section>
 
-      <section aria-labelledby="what-h" className={`${card} p-5`}>
-        <h2 id="what-h" className="mb-1 text-lg font-semibold">
-          What happened
-        </h2>
-        <p className="mb-3.5 text-sm text-fg-3">
-          The numbers match the markers on the bandwidth chart.
-        </p>
-        <ol className="flex flex-col gap-3.5">
-          {notes.map((note, i) => (
-            <li key={`${note.start}-${i}`} className="flex gap-3.5">
-              <span
-                aria-hidden="true"
-                className="inline-flex size-6.5 flex-none items-center justify-center rounded-full bg-fg text-sm font-semibold text-ground"
+      <div className="flex flex-wrap items-start gap-4">
+        <section aria-labelledby="what-h" className={`${card} min-w-0 flex-[999_1_560px] p-5`}>
+          <h2 id="what-h" className="mb-1 text-lg font-semibold">
+            What happened
+          </h2>
+          <p className="mb-3.5 text-sm text-fg-3">
+            The numbers match the markers on the bandwidth chart.
+          </p>
+          <ol className="flex flex-col gap-3.5">
+            {notes.map((note, i) => (
+              <li key={`${note.start}-${i}`} className="flex gap-3.5">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-6.5 flex-none items-center justify-center rounded-full bg-fg text-sm font-semibold text-ground"
+                >
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="font-mono text-[13px] text-fg-3 tabular-nums">
+                    {formatClock(note.start)}
+                    {note.end - note.start >= 1 && `–${formatClock(note.end)}`}
+                  </p>
+                  <p className="mt-0.5">{note.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section aria-labelledby="try-h" className={`${card} min-w-0 flex-[1_1_380px] p-5`}>
+          <h2 id="try-h" className="mb-1 text-lg font-semibold">
+            Try next
+          </h2>
+          <p className="mb-3.5 text-sm text-fg-3">
+            Ideas, not promises. Each one runs this setup again with one change.
+          </p>
+          <ul className="flex flex-col gap-2.5">
+            {ideas.map((idea) => (
+              <li
+                key={idea.title}
+                className="flex flex-wrap items-center justify-between gap-2.5 border-t border-white/6 pt-2.5"
               >
-                {i + 1}
-              </span>
-              <div>
-                <p className="font-mono text-[13px] text-fg-3 tabular-nums">
-                  {formatClock(note.start)}
-                  {note.end - note.start >= 1 && `–${formatClock(note.end)}`}
-                </p>
-                <p className="mt-0.5">{note.text}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+                <div className="min-w-0 flex-[1_1_200px]">
+                  <p className="font-medium">{idea.title}</p>
+                  <p className="font-mono text-[13px] text-fg-3">{idea.change}</p>
+                </div>
+                <Link
+                  to="/run"
+                  search={ideaSearch(run, idea)}
+                  className="inline-flex min-h-9 items-center rounded-lg border border-line-strong px-3 text-sm text-fg hover:border-fg-3"
+                >
+                  Run<span className="sr-only">: {idea.title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       <div className="flex flex-wrap items-start gap-4">
         <section aria-labelledby="setup-h" className={`${card} min-w-0 flex-[999_1_560px] p-5`}>

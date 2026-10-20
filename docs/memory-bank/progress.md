@@ -74,7 +74,8 @@ building and every milestone is shippable on its own.
 - [x] Stalls that start during hls.js's own gap-jumping seeks are counted (2026-10-20; a run had shown an empty
       buffer for 1.5 s and no stall)
 - [x] Report: "what happened" notes with numbered markers on the bandwidth chart (2026-10-20)
-- [ ] Report: "try next" ideas (rerun with one setting changed), zoom
+- [x] Report: "try next" ideas, each the setup with one change; player settings in run links (`set=`) (2026-10-20)
+- [ ] Report: zoom on the charts
 - [ ] Network editor: presets, recorded traces, keyboard editing, import and export
 - [ ] Irish 4G trace converter (CC BY 4.0) and recorded-trace presets with attribution
 - [ ] Inspector screen on top of `src/core/hls`: ladder, tracks, segments, measured bitrate, findings
@@ -133,4 +134,5 @@ building and every milestone is shippable on its own.
   Run) opens the Run screen and starts it; M2 done. 372 unit tests, 73 Playwright checks, home JavaScript 89.5 KB.
 - 2026-10-20 (later): M3 started. The Report's first slice and saved runs. A stall that began during hls.js's own
   seek wasn't counted: fixed, with a backstop on the samples and a test that forces a stall. The bundle budget only
-  counted `index-*.js`; it now counts every script Home loads. 384 unit tests, 79 Playwright checks.
+  counted `index-*.js`; it now counts every script Home loads. Then "what happened" notes with chart markers, and
+  "try next" ideas with player settings in run links. 402 unit tests, 79 Playwright checks.
