@@ -98,7 +98,7 @@ building and every milestone is shippable on its own.
 - [ ] Real Safari check by hand (shaped responses, redirects, aborts): needs the owner; checklist in
       `activeContext.md`
 - [x] README: pitch, architecture, measured numbers, how to run and test (2026-10-20); the GIF is recorded by
-      `scripts/readme/record-gif.mjs` and waits for the owner's upload
+      `scripts/readme/record-gif.mjs`; the owner uploaded it to media.azamatos.com the same day
 
 ## M5: compare and launch (target Dec 6)
 

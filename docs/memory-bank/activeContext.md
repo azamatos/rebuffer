@@ -44,10 +44,8 @@
 1. **Show the owner, then push** (ask first): the light theme, About, Compare, build-time Home. After the push, check
    CI (Lighthouse now fails under 95 on GitHub's runners: watch the first run) and the live site.
 2. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
-3. **The README's GIF:** `node scripts/readme/record-gif.mjs --url <a preview>` writes `media/readme/rebuffer.gif`;
-   the owner uploads it (command in the script) before the README's image works.
-4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+4. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
@@ -96,10 +94,10 @@ that needs their eye under "Waiting for the owner".
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
   arrow and tilde darken with it. Screenshots before the push.
-- **The README's GIF** (`scripts/readme/record-gif.mjs`): media stays out of git (AGENTS.md rule 7), so the README
-  points at `https://media.azamatos.com/readme/rebuffer.gif`, which the owner uploads with wrangler (the command is
-  in the script). It shows a few seconds of the film inside the app, without sound (the film's images are CC BY 3.0;
-  the CC BY-ND soundtrack isn't in it); the owner may prefer the synthetic test stream.
+- **The README's GIF: uploaded by the owner on 2026-10-20** (`readme/rebuffer.gif` in R2, served at
+  https://media.azamatos.com/readme/rebuffer.gif, 5.6 MB, checked). `scripts/readme/record-gif.mjs` records it again;
+  the upload command is in the script. Cloudflare's cache rule doesn't cover `.gif` (`cf-cache-status: DYNAMIC`):
+  fine for a README, which GitHub fetches through its own image proxy.
 - **Real Safari check (M4's last item), about 10 minutes in Safari on the Mac, on the live site after the push:**
   1. "Try the tunnel": it plays, the charts move, the result's simulation check reads sensibly.
   2. Rural 3G with Fast start; Stop halfway (an abort mid-download), then Run again.
