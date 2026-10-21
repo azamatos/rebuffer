@@ -1,14 +1,13 @@
 import { curveOutline, type NetworkCurve } from "@/core/netsim/curve";
 import type { Level } from "@/core/run/events";
-import { formatMbps } from "@/core/run/describe";
 import { wholeRange } from "@/core/run/range";
 import type { Timeline } from "@/core/run/timeline";
 import {
   clipToPlot,
   drawGutterLabels,
+  drawLadder,
   drawTimeAxis,
   fitCanvas,
-  FONT,
   GUTTER_PX,
   hairline,
   readTheme,
@@ -16,14 +15,7 @@ import {
   type ChartTheme,
   type Painter,
 } from "./draw";
-import {
-  axisMbps,
-  bandwidthDomain,
-  bufferTop,
-  linearScale,
-  logScale,
-  type AxisLabel,
-} from "./scale";
+import { bandwidthDomain, bufferTop, linearScale, logScale } from "./scale";
 
 /**
  * Two finished runs on one time axis (the Compare screen): A as a solid line in the text colour, B dashed in the
@@ -105,21 +97,7 @@ export function drawCompareQuality(painter: Painter, theme: ChartTheme, view: Co
   const domain: [number, number] = [Math.min(lowA, lowB), Math.max(highA, highB)];
   const y = logScale(domain, [bottom, top]);
 
-  ctx.save();
-  ctx.strokeStyle = theme.line;
-  ctx.setLineDash([3, 5]);
-  for (const level of levels) hairline(ctx, y(level.bitrate), 0, plotRight);
-  ctx.restore();
-  ctx.font = FONT;
-  const fits = (text: string) => ctx.measureText(text).width <= GUTTER_PX - 10;
-  const labels: AxisLabel[] = levels.map((level) => {
-    const named = `${level.name ?? ""} ${axisMbps(level.bitrate)}`.trim();
-    return { y: y(level.bitrate), text: fits(named) ? named : axisMbps(level.bitrate) };
-  });
-  for (let bps = 1e4; bps <= domain[1]; bps *= 10) {
-    if (bps >= domain[0]) labels.push({ y: y(bps), text: formatMbps(bps) });
-  }
-  drawGutterLabels(painter, theme, labels);
+  drawLadder(painter, theme, levels, y, domain);
   ctx.strokeStyle = theme.lineStrong;
   ctx.lineWidth = 1;
   hairline(ctx, bottom, 0, plotRight);

@@ -7,6 +7,7 @@ import {
   bufferTop,
   linearScale,
   logScale,
+  ladderAxis,
   qualityShade,
   spreadLabels,
   timeTicks,
@@ -110,5 +111,42 @@ describe("axisMbps", () => {
     expect(axisMbps(6_000_000)).toBe("6.0");
     expect(axisMbps(470_000)).toBe("0.47");
     expect(axisMbps(50_000_000)).toBe("50");
+  });
+});
+
+describe("ladderAxis", () => {
+  // Apple's advanced example: 100 variants from 0.4 to 40 Mbps, many a few kbps apart.
+  const big = Array.from({ length: 100 }, (_, index) => ({
+    index,
+    bitrate: 400_000 * 100 ** (index / 99),
+    name: `${String(270 + index * 19)}p`,
+  }));
+  const y = logScale([100_000, 50_000_000], [200, 0]);
+
+  it("draws a line only for the qualities that kept their label", () => {
+    const { labels, lines } = ladderAxis(big, y, [100_000, 50_000_000], 14);
+    expect(lines.length).toBeLessThan(16);
+    expect(lines.length).toBeGreaterThan(5);
+    for (const at of lines) expect(labels.some((label) => label.y === at)).toBe(true);
+    const sorted = [...lines].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++)
+      expect((sorted[i] ?? 0) - (sorted[i - 1] ?? 0)).toBeGreaterThanOrEqual(14);
+  });
+
+  it("keeps every quality of a small ladder, with its name when it fits", () => {
+    const small = [
+      { index: 0, bitrate: 600_000, name: "240p" },
+      { index: 1, bitrate: 6_000_000, name: "1080p" },
+    ];
+    const { labels, lines } = ladderAxis(
+      small,
+      y,
+      [100_000, 50_000_000],
+      14,
+      (text) => !text.startsWith("1080p"),
+    );
+    expect(lines).toHaveLength(2);
+    expect(labels.map((label) => label.text)).toContain("240p 0.60");
+    expect(labels.map((label) => label.text)).toContain("6.0");
   });
 });

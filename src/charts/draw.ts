@@ -1,12 +1,12 @@
 import { formatClock } from "@/core/format/time";
 import { curveOutline, type CurveCorner, type NetworkCurve } from "@/core/netsim/curve";
-import { formatMbps } from "@/core/run/describe";
+import type { Level } from "@/core/run/events";
 import type { TimeRange } from "@/core/run/range";
 import type { Timeline } from "@/core/run/timeline";
 import {
-  axisMbps,
   bandwidthDomain,
   bufferTop,
+  ladderAxis,
   linearScale,
   logScale,
   qualityShade,
@@ -195,6 +195,34 @@ export function drawGutterLabels(
   ctx.restore();
 }
 
+/**
+ * The ladder in the gutter, with a dashed line for each quality that kept its label, and powers of ten for the rest
+ * of the scale. A big ladder (Apple's example has 100 variants) would otherwise draw its close rungs as one grey band.
+ */
+export function drawLadder(
+  painter: Painter,
+  theme: ChartTheme,
+  levels: readonly Level[],
+  y: (bps: number) => number,
+  domain: readonly [number, number],
+): void {
+  const { ctx, width } = painter;
+  ctx.font = FONT;
+  const { labels, lines } = ladderAxis(
+    levels,
+    y,
+    domain,
+    LABEL_GAP_PX,
+    (text) => ctx.measureText(text).width <= GUTTER_PX - 10,
+  );
+  ctx.save();
+  ctx.strokeStyle = theme.line;
+  ctx.setLineDash([3, 5]);
+  for (const at of lines) hairline(ctx, at, 0, width - GUTTER_PX);
+  ctx.restore();
+  drawGutterLabels(painter, theme, labels);
+}
+
 export function tracePath(
   ctx: CanvasRenderingContext2D,
   corners: CurveCorner[],
@@ -219,25 +247,7 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   const domain = bandwidthDomain(curve, timeline.levels);
   const y = logScale(domain, [bottom, top]);
 
-  // The ladder: a dashed line and a label per quality. Powers of ten label the rest of the scale.
-  ctx.save();
-  ctx.strokeStyle = theme.line;
-  ctx.setLineDash([3, 5]);
-  for (const level of timeline.levels) hairline(ctx, y(level.bitrate), 0, plotRight);
-  ctx.restore();
-  ctx.font = FONT;
-  const fits = (text: string) => ctx.measureText(text).width <= GUTTER_PX - 10;
-  const ladder = [...timeline.levels]
-    .sort((a, b) => b.bitrate - a.bitrate)
-    .map((level) => {
-      const named = `${level.name ?? ""} ${axisMbps(level.bitrate)}`.trim();
-      return { y: y(level.bitrate), text: fits(named) ? named : axisMbps(level.bitrate) };
-    });
-  const decades: AxisLabel[] = [];
-  for (let bps = 1e4; bps <= domain[1]; bps *= 10) {
-    if (bps >= domain[0]) decades.push({ y: y(bps), text: formatMbps(bps) });
-  }
-  drawGutterLabels(painter, theme, [...ladder, ...decades]);
+  drawLadder(painter, theme, timeline.levels, y, domain);
 
   ctx.strokeStyle = theme.lineStrong;
   ctx.lineWidth = 1;

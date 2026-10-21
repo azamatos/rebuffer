@@ -1,4 +1,5 @@
 import type { NetworkCurve } from "@/core/netsim/curve";
+import { formatMbps } from "@/core/run/describe";
 import type { Level } from "@/core/run/events";
 
 /**
@@ -95,6 +96,35 @@ export function spreadLabels(labels: readonly AxisLabel[], minGapPx: number): Ax
     if (kept.every((other) => Math.abs(other.y - label.y) >= minGapPx)) kept.push(label);
   }
   return kept;
+}
+
+/**
+ * The bandwidth axis: a label per quality ("1080p 6.0", or "6.0" when `fits` says the name won't fit), then powers of
+ * ten for the rest of the scale, spread `minGapPx` apart with the qualities first. `lines` are the heights of the
+ * qualities that kept their label: only those get a dashed line, so a big ladder's close rungs don't draw a band.
+ */
+export function ladderAxis(
+  levels: readonly Level[],
+  y: Scale,
+  domain: readonly [number, number],
+  minGapPx: number,
+  fits: (text: string) => boolean = () => true,
+): { labels: AxisLabel[]; lines: number[] } {
+  const ladder = [...levels]
+    .sort((a, b) => b.bitrate - a.bitrate)
+    .map((level): AxisLabel => {
+      const named = `${level.name ?? ""} ${axisMbps(level.bitrate)}`.trim();
+      return { y: y(level.bitrate), text: fits(named) ? named : axisMbps(level.bitrate) };
+    });
+  const decades: AxisLabel[] = [];
+  for (let bps = 1e4; bps <= domain[1]; bps *= 10) {
+    if (bps >= domain[0]) decades.push({ y: y(bps), text: formatMbps(bps) });
+  }
+  const labels = spreadLabels([...ladder, ...decades], minGapPx);
+  return {
+    labels,
+    lines: labels.filter((label) => ladder.includes(label)).map((label) => label.y),
+  };
 }
 
 /** A bitrate for the axis: "6.0", "0.47" (Mbps, two significant digits below 10). */
