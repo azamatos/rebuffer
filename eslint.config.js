@@ -14,6 +14,10 @@ export default defineConfig(
       "test-results/",
       ".lighthouseci/",
       ".claude/",
+      // The Claude Design sync (/design-sync): its staged scripts, its output, and its inputs, which it compiles itself.
+      ".ds-sync/",
+      "ds-bundle/",
+      ".design-sync/",
     ],
   },
   js.configs.recommended,

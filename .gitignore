@@ -16,3 +16,10 @@ blob-report/
 
 # The repeatability job's results (pnpm repeat)
 /repeat-results/
+
+# The Claude Design sync (/design-sync): staged scripts, output and machine state; .design-sync/ itself is committed
+/.ds-sync/
+/ds-bundle/
+/.design-sync/.cache/
+/.design-sync/learnings/
+/.design-sync/node_modules

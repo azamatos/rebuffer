@@ -1,4 +1,7 @@
 {
+  // tsc builds the referenced projects. esbuild, which reads only the nearest tsconfig.json, gets the alias and the
+  // JSX runtime here: the Claude Design sync (.design-sync/) bundles src/ with it, outside Vite.
+  "compilerOptions": { "jsx": "react-jsx", "paths": { "@/*": ["./src/*"] } },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

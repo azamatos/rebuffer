@@ -1,0 +1,65 @@
+{
+  "projectId": "c7a57a4f-af89-43e4-a225-59c326219472",
+  "pkg": "rebuffer",
+  "globalName": "Rebuffer",
+  "shape": "package",
+  "buildCmd": "pnpm build && node .design-sync/app-css.mjs",
+  "cssEntry": ".design-sync/.cache/app.css",
+  "extraFonts": [
+    "node_modules/@fontsource-variable/geist/index.css",
+    "node_modules/@fontsource/space-mono/400.css"
+  ],
+  "componentSrcMap": {
+    "ChartOrTable": "src/ui/run/chart-parts.tsx",
+    "Hint": "src/ui/hints/Hint.tsx",
+    "Key": "src/ui/run/chart-parts.tsx",
+    "MenuItem": "src/ui/menu/Popover.tsx",
+    "Popover": "src/ui/menu/Popover.tsx",
+    "SeverityIcon": "src/ui/inspect/SeverityIcon.tsx",
+    "ShowAs": "src/ui/run/chart-parts.tsx",
+    "SimulationCheck": "src/ui/run/SimulationCheck.tsx",
+    "Td": "src/ui/run/chart-parts.tsx",
+    "Th": "src/ui/run/chart-parts.tsx",
+    "ThemeSwitch": "src/ui/theme/ThemeSwitch.tsx",
+    "Toaster": "src/ui/feedback/Toaster.tsx",
+    "Wordmark": "src/ui/layout/Logo.tsx",
+    "ZoomBar": "src/ui/report/ZoomBar.tsx"
+  },
+  "overrides": {
+    "Popover": {
+      "cardMode": "column"
+    },
+    "SimulationCheck": {
+      "cardMode": "column"
+    },
+    "MenuItem": {
+      "cardMode": "column"
+    },
+    "ChartOrTable": {
+      "cardMode": "column"
+    },
+    "Th": {
+      "cardMode": "column"
+    },
+    "Td": {
+      "cardMode": "column"
+    },
+    "ZoomBar": {
+      "cardMode": "column"
+    },
+    "Hint": {
+      "cardMode": "column"
+    },
+    "ThemeSwitch": {
+      "cardMode": "column"
+    },
+    "ShowAs": {
+      "cardMode": "column"
+    },
+    "Toaster": {
+      "cardMode": "single",
+      "viewport": "640x200"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
