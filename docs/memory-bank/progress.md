@@ -230,3 +230,8 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
   opening by keyboard, a banner headline that could contradict its details, playlist chips that missed measured
   bandwidth, Inspect's tab not following a sample link. 489 unit tests, 141 Playwright checks. Not pushed: the owner
   reviews the screenshots first.
+- 2026-10-21 (seventh session): the live clean sample is fixed. Asked with an `Origin`, as browsers ask, R2 serves
+  the new `master.m3u8` (1080p declares 6,123,200, 240p 599,571), and the live inspector reports 0 errors, 0 warnings
+  and 2 notes on it. The README's GIF was recorded again from the polished build (the script now waits for the
+  "Finished" chip); it waits for the owner's upload. The owner answered "go on" to "Should I push?", and the agent's
+  permission checker refused `git push` as a production deploy, so the owner pushes the 12 commits.

@@ -1,7 +1,9 @@
 # Active context
 
-**Updated 2026-10-21 (end of the sixth session: the approved UI polish, M4.5, built and committed, not pushed; it
-waits for the owner's review).** Read this first, then `progress.md` (M4.5 records what was built).
+**Updated 2026-10-21 (seventh session: the polish, M4.5, is built and committed but not pushed. The permission
+checker stopped the agent's push, so the owner pushes. The clean sample is fixed live, and the README's GIF of the
+new screens is recorded and waits for the owner's upload).** Read this first, then `progress.md` (M4.5 records what
+was built).
 
 ## Where things stand
 
@@ -14,9 +16,12 @@ waits for the owner's review).** Read this first, then `progress.md` (M4.5 recor
   about 75 s; every screen checked live in Chromium, Firefox and WebKit, both themes). **CI green**: Lighthouse on
   GitHub's runner 100 in all four categories (CLS 0, FCP 0.9 s, LCP 1.4 s, TBT 0), e2e 135 passed. **Every push to
   `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
-- **Local `main` is 11 commits ahead of the live site** (`5a16d13`): the fifth session's docs, the polish (`ae2efa8`
-  to `8a0b4e4`), the CSS budget (`5341079`), the code review's fixes (`6c43a60`) and this memory bank. Not pushed:
-  the owner reviews the screenshots first (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n).
+- **Local `main` is 12 commits ahead of the live site** (`5a16d13`). They are the fifth session's docs, the polish
+  (`ae2efa8` to `8a0b4e4`), the CSS budget (`5341079`), the code review's fixes (`6c43a60`), the sixth session's
+  memory bank (`dbf45e3`) and the seventh session's note (the GIF script and this memory bank). Not pushed. On
+  2026-10-21 the owner answered "go on" to "Should I push?", and the agent's permission checker refused
+  `git push origin main` as a production deploy. The owner pushes with `! git push origin main` after looking at the
+  screenshots (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n).
 - **What works today (locally; live is the fifth session's state, before the polish):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
@@ -52,14 +57,15 @@ waits for the owner's review).** Read this first, then `progress.md` (M4.5 recor
 ## Next step (in this order)
 
 1. **The owner reviews the polish** on https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n (every screen in both
-   themes, the departures from the boards, the measurements). Change what they ask for, then ask to push.
-2. **Push** (ask first): 11 commits. Then check the live site in three browsers and both themes, and CI (Lighthouse
-   on GitHub's runner, e2e).
-3. **Check `/inspect` on our clean sample live:** from the evening of 2026-10-21 it should show no bandwidth warning.
-4. **Record the README's GIF again** (`scripts/readme/record-gif.mjs`): the current one shows the old screens. The
-   owner uploads it (the command is in the script).
-5. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-6. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+   themes, the departures from the boards, the measurements). Change what they ask for.
+2. **Push:** 12 commits. The owner runs `! git push origin main`, or says "push" plainly (the checker refused the
+   agent's push after "go on"). Then check the live site in three browsers and both themes, and CI (Lighthouse on
+   GitHub's runner, e2e).
+3. **Upload the README's new GIF** after the push, so the README and the live site match. It was recorded on
+   2026-10-21 from the polished build (`media/readme/rebuffer.gif`, 6.4 MB, 26 s). The owner runs the upload command
+   in `scripts/readme/record-gif.mjs`.
+4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
@@ -72,6 +78,8 @@ that needs their eye under "Waiting for the owner".
 - They check the live site after a deploy. Ask before every push; they answered "lets push" / "lets go" each time.
 - Things the agent's permission checker blocks: deploying by hand with wrangler and writing to the R2 bucket (the
   owner ran `node scripts/media/upload.mjs --playlists` themselves). Reading wrangler's login token is blocked too.
+  On 2026-10-21 it also blocked `git push origin main` (a production deploy) after the owner's "go on". The
+  owner's "lets push" got through on 2026-10-20. If a push is refused, give the owner `! git push origin main`.
 
 ## Decisions (settled 2026-10-18 to 2026-10-20)
 
@@ -126,8 +134,10 @@ that needs their eye under "Waiting for the owner".
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
   arrow and tilde darken with it. Screenshots before the push.
 - **The README's GIF: uploaded by the owner on 2026-10-20** (`readme/rebuffer.gif` in R2, served at
-  https://media.azamatos.com/readme/rebuffer.gif, 5.6 MB, checked). `scripts/readme/record-gif.mjs` records it again;
-  the upload command is in the script. Cloudflare's cache rule doesn't cover `.gif` (`cf-cache-status: DYNAMIC`):
+  https://media.azamatos.com/readme/rebuffer.gif, 5.6 MB, checked). It shows the screens before the polish. A new one
+  was recorded on 2026-10-21 (6.4 MB): Home, then "Try the tunnel" with no stalls and 3 switches down, then the
+  report's timeline. It waits in `media/readme/rebuffer.gif` for the upload after the push. The upload command is in
+  `scripts/readme/record-gif.mjs`. Cloudflare's cache rule doesn't cover `.gif` (`cf-cache-status: DYNAMIC`):
   fine for a README, which GitHub fetches through its own image proxy.
 - **Real Safari check (M4's last item), about 10 minutes in Safari on the Mac, on the live site after the push:**
   1. "Try the tunnel": it plays, the charts move, the result's simulation check reads sensibly.
@@ -136,24 +146,12 @@ that needs their eye under "Waiting for the owner".
   4. Inspect our "with problems" sample (four findings); the theme switch; Compare two runs.
   5. The polish's menus: open the Report's "⋯" with the keyboard (Tab, Enter), then click Export JSON with the mouse
      (Safari doesn't focus a clicked button, which once closed the menu first; Playwright's WebKit showed it).
-  5. Anything that looks wrong: a screenshot is enough.
+  6. Anything that looks wrong: a screenshot is enough.
 - **Compare's colours:** A is a solid line in the text colour, B a dashed line in the accent (no new colour tokens;
   the network keeps its blue). The owner may prefer two new hues.
 - **About states the score's limit** ("on a network slower than the top quality, even a run without a stall scores
   low"), which answers the slow-network observation below in words; decision 5 itself is unchanged.
 
-- **Clean film's master playlist: uploaded by the owner on 2026-10-20** (`upload.mjs --only clean --playlists`;
-  R2 serves BANDWIDTH 6,123,200 for 1080p). The dashboard's URL purge cleared only the cached copy without an
-  `Origin`; browsers still got the old one (`Vary: Origin`), cached until about a day after it was first fetched,
-  so from the evening of 2026-10-21 the live inspector should show no bandwidth warning on our clean sample. Check
-  that first in the next session. The rest of this item is how it was found: the inspector found that our clean
-  `master.m3u8` declares each variant's video alone (ffmpeg leaves out the separate audio; RFC 8216 §4.3.4.2 counts
-  it): 240p declares 469 kbps and peaks at 600 kbps with its audio. The local copy is fixed
-  (`node scripts/media/encode.mjs --only polish`, already run). The owner runs
-  `node scripts/media/upload.mjs --playlists`. Cloudflare caches playlists for a day (decision 14), so purge
-  `https://media.azamatos.com/tears-of-steel/clean/master.m3u8` in the dashboard, or wait a day; browsers that saved
-  the old one for repeat runs keep it until "Forget saved downloads". Until then the live inspector shows a warning
-  on our clean sample, which is true.
 - **Inspect, departures from the design canvas (Inspect board):**
   - "Run this stream" opens the Run screen with the stream (as "Use in a run" does), not Home's setup.
   - Measured peaks come from segment sizes (HEAD requests, or a download when a server won't answer one), so the

@@ -40,7 +40,7 @@ const page = await context.newPage();
 await page.goto(base);
 await page.waitForTimeout(3000);
 await page.getByRole("link", { name: "Try the tunnel" }).click();
-await page.getByRole("status").filter({ hasText: "Finished." }).waitFor({ timeout: 150_000 });
+await page.getByRole("status").filter({ hasText: "Finished" }).waitFor({ timeout: 150_000 });
 await page.waitForTimeout(2000);
 await page.getByRole("link", { name: "See the report" }).click();
 await page.waitForTimeout(4000);
