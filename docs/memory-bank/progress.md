@@ -15,7 +15,7 @@ building and every milestone is shippable on its own.
 | M2 Live run | Nov 8 | done 2026-10-20: honest lateness, live charts, saved downloads, Home setup |
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
-| M4.5 UI polish | before Dec 6 | **built 2026-10-21, not pushed**: every item below, with its tests; waits for the owner's review of the screenshots |
+| M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
 | M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
@@ -101,7 +101,7 @@ building and every milestone is shippable on its own.
 - [x] README: pitch, architecture, measured numbers, how to run and test (2026-10-20); the GIF is recorded by
       `scripts/readme/record-gif.mjs`; the owner uploaded it to media.azamatos.com the same day
 
-## M4.5: UI polish (approved 2026-10-20, built 2026-10-21, not pushed)
+## M4.5: UI polish (approved 2026-10-20, built and live 2026-10-21)
 
 The owner found the UI too boxy and "AI-looking" and asked for a friendlier, more compact one with smooth motion. The
 proposal (https://claude.ai/artifact/UYaEK9K9r65q42HTHYvj4K: header before/after, Run, Report, Networks, Inspect,
@@ -234,4 +234,11 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
   the new `master.m3u8` (1080p declares 6,123,200, 240p 599,571), and the live inspector reports 0 errors, 0 warnings
   and 2 notes on it. The README's GIF was recorded again from the polished build (the script now waits for the
   "Finished" chip); it waits for the owner's upload. The owner answered "go on" to "Should I push?", and the agent's
-  permission checker refused `git push` as a production deploy, so the owner pushes the 12 commits.
+  permission checker refused `git push` as a production deploy, so the owner pushed the 12 commits (`1c687b3`).
+  Cloudflare deployed it within a minute. CI failed on the CSS budget: 8.21 KB against 8. Tailwind also scanned
+  the Markdown docs, and the sixth session's memory bank named classes the app doesn't use (7 rules, about 310
+  bytes). The 7.97 KB had been measured before that memory bank was written. `src/styles.css` now scans `src/`
+  only: 7.90 KB, with the same rules for every class the app uses. The e2e job passed (135, 3 flaky, 3 skipped).
+  Checked live in Chromium, Firefox and WebKit: every screen in both themes with axe (clean everywhere), two real
+  runs each, the report and its menu, Compare. Firefox's console shows two errors during a run, both from before the
+  polish (`activeContext.md`, Next step 5).

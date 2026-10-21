@@ -1,9 +1,9 @@
 # Active context
 
-**Updated 2026-10-21 (seventh session: the polish, M4.5, is built and committed but not pushed. The permission
-checker stopped the agent's push, so the owner pushes. The clean sample is fixed live, and the README's GIF of the
-new screens is recorded and waits for the owner's upload).** Read this first, then `progress.md` (M4.5 records what
-was built).
+**Updated 2026-10-21 (seventh session).** The polish (M4.5) is live: the owner pushed it, and it was checked in
+three browsers and both themes. CI failed on the CSS budget. The fix is committed, and the owner pushes it. The
+clean sample is fixed live. The README's GIF of the new screens is recorded and waits for the owner's upload. Read
+this first, then `progress.md` (M4.5 records what was built).
 
 ## Where things stand
 
@@ -12,17 +12,16 @@ was built).
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `5a16d13`** (pushed 2026-10-20 with the owner's "Lets push"; Cloudflare deployed it in
-  about 75 s; every screen checked live in Chromium, Firefox and WebKit, both themes). **CI green**: Lighthouse on
-  GitHub's runner 100 in all four categories (CLS 0, FCP 0.9 s, LCP 1.4 s, TBT 0), e2e 135 passed. **Every push to
-  `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
-- **Local `main` is 12 commits ahead of the live site** (`5a16d13`). They are the fifth session's docs, the polish
-  (`ae2efa8` to `8a0b4e4`), the CSS budget (`5341079`), the code review's fixes (`6c43a60`), the sixth session's
-  memory bank (`dbf45e3`) and the seventh session's note (the GIF script and this memory bank). Not pushed. On
-  2026-10-21 the owner answered "go on" to "Should I push?", and the agent's permission checker refused
-  `git push origin main` as a production deploy. The owner pushes with `! git push origin main` after looking at the
-  screenshots (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n).
-- **What works today (locally; live is the fifth session's state, before the polish):**
+- **Live site = `main` at `1c687b3`.** The owner pushed it on 2026-10-21 with `! git push origin main`, after the
+  agent's permission checker refused the agent's push following "go on". Cloudflare deployed it within a minute.
+  Checked live the same day in Chromium, Firefox and WebKit: every screen in both themes, axe clean everywhere, two
+  real runs each, the report and its menu, and Compare. **CI red on `1c687b3`:** e2e passed (135, 3 flaky, 3
+  skipped), but Home's CSS measured 8.21 KB against 8, because Tailwind also scanned the Markdown docs. **Every push
+  to `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
+- **Local `main` is 1 commit ahead:** the CSS fix (Tailwind scans `src/` only, 7.90 KB) and this memory bank. The
+  owner pushes it (`! git push origin main`). Then check that CI is green, including Lighthouse on GitHub's runner,
+  which didn't run on `1c687b3` because the budget step failed first.
+- **What works today (live since 2026-10-21):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
     each; four player presets; Run), recent runs, how it works.
@@ -46,8 +45,8 @@ was built).
     the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
 - **Quality bar today (2026-10-21):** 489 unit tests; 141 Playwright checks in Chromium, Firefox and WebKit, 138 pass
   and 3 keyboard checks are skipped in WebKit (which only tabs to text fields); axe on every screen in both themes;
-  the run-based specs repeated 2–3 times in each browser. Home's JavaScript 96.3 of 100 KB and its CSS 7.97 of 8 KB
-  (brotli; the CSS has 30 bytes of room). Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the
+  the run-based specs repeated 2–3 times in each browser. Home's JavaScript 96.3 of 100 KB and its CSS 7.90 of 8 KB
+  (brotli; about 100 bytes of room). Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the
   Linux container, 1.0 in the rest, CLS 0 (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout
   shift stays under 0.03 on every screen (Home 0.0000 desktop, 0.0039 phone).
 - **Repeatability (`pnpm repeat`, measured 2026-10-20):** Each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads. The README and About quote the table.
@@ -56,16 +55,23 @@ was built).
 
 ## Next step (in this order)
 
-1. **The owner reviews the polish** on https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n (every screen in both
-   themes, the departures from the boards, the measurements). Change what they ask for.
-2. **Push:** 12 commits. The owner runs `! git push origin main`, or says "push" plainly (the checker refused the
-   agent's push after "go on"). Then check the live site in three browsers and both themes, and CI (Lighthouse on
-   GitHub's runner, e2e).
-3. **Upload the README's new GIF** after the push, so the README and the live site match. It was recorded on
-   2026-10-21 from the polished build (`media/readme/rebuffer.gif`, 6.4 MB, 26 s). The owner runs the upload command
-   in `scripts/readme/record-gif.mjs`.
+1. **Push the CSS fix** (the owner: `! git push origin main`), then check that CI is green, Lighthouse included.
+2. **Upload the README's new GIF.** The live site has the polish now. It was recorded on 2026-10-21 from the
+   polished build (`media/readme/rebuffer.gif`, 6.4 MB, 26 s). The owner runs the upload command in
+   `scripts/readme/record-gif.mjs`.
+3. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it without
+   comments; the departures from the boards are listed under "Waiting for the owner". Change what they ask for.
 4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+5. **Firefox's console during a run:**
+   - The CSP blocks hls.js's placeholder subtitle track, `data:,WEBVTT`. hls.js adds it so that Safari keeps the
+     cues. Recommended: add `data:` to `media-src` in `public/_headers` (and `tests/unit/csp.test.ts`). It needs the
+     owner's yes, because it's a security header.
+   - The worker logs "Failed to load ''. A ServiceWorker intercepted the request and encountered an unexpected error"
+     once per run. It's probably a download aborted as the run ends; find out before changing anything.
+   Both came before the polish. The beacon errors and WebKit's "Refused to apply a stylesheet" seen in the same
+   check came from the test set-up: the sandbox can't reach `static.cloudflareinsights.com`, and Playwright's
+   screenshot style breaks our `style-src`.
+6. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
@@ -127,8 +133,8 @@ that needs their eye under "Waiting for the owner".
   the charts (the log keeps 96 px and scrolls); the Networks panel keeps the Name field, so its buttons sit on a second
   row, and a saved network gets "Delete network" there; zoom's Earlier and Later are ‹ ›; the third-party samples keep
   their "no guarantees" label; a few sizes moved 1–2 px onto the spacing scale (theme buttons 32 px, undo and redo 36,
-  every transition 200 ms) to stay inside the CSS budget. **The CSS budget has 30 bytes left:** the next visual change
-  needs trimming or a bigger budget, the owner's call.
+  every transition 200 ms) to stay inside the CSS budget. **The CSS budget has about 100 bytes left** (7,902 of 8,000
+  since 2026-10-21's fix): a larger visual change needs trimming or a bigger budget, the owner's call.
 
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
@@ -203,7 +209,10 @@ that needs their eye under "Waiting for the owner".
 - **Smooth scrolling moves boxes after a jump:** a test that measures a box for the mouse waits for it to stop
   (`steady()`).
 - **CSS bytes:** each one-off Tailwind class costs (a tint brings a fallback and a `color-mix` rule), and Tailwind
-  makes a class of any word in the source: a comment or a `style.transform` produced `.transform`. Reuse classes.
+  makes a class of any word in the files it scans: a comment or a `style.transform` produced `.transform`. Reuse
+  classes. It scanned the Markdown docs too. The sixth session's memory bank named enough classes to push the CSS
+  from 7.97 to 8.21 KB, and CI failed on the push of 2026-10-21. `src/styles.css` now scans `src/` only.
+  **Run `pnpm size` after the last commit, docs included.**
 - **Vite's dev server serves stale dependencies** ("504 Outdated Optimize Dep") after a module first imports a new
   entry of a dependency (`react-dom`'s `flushSync`): restart it.
 - **zsh doesn't split `$var` into words:** pass file lists through `xargs`.

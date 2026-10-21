@@ -8,8 +8,7 @@ rebuffer.azamatos.com; sample media at media.azamatos.com. Applies to every agen
 `CLAUDE.md`.
 
 **Status (2026-10-21): M0–M4 done (live run, report, network editor, inspector, polish; a real Safari check waits
-for the owner), Compare from M5, and the approved UI polish (M4.5) built, not pushed yet; the case study and launch
-next.**
+for the owner), Compare from M5, and the approved UI polish (M4.5) live; the case study and launch next.**
 Live at https://rebuffer.azamatos.com (every push to `main` deploys; see `techContext.md`, "Deploying"). Start with
 `docs/memory-bank/activeContext.md`.
 

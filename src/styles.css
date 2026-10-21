@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("../src");
 
 @import "@fontsource-variable/geist";
 @import "@fontsource/space-mono/400.css";
