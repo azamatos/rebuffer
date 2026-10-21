@@ -55,7 +55,7 @@ async function resolve(search: NetworksSearch): Promise<Loaded> {
   if (search.new === "blank") {
     return {
       status: "ready",
-      start: { ...plain, name: "My network", curve: BLANK, runsAs: undefined },
+      start: { ...plain, name: "My network", curve: BLANK, runsAs: undefined, fresh: true },
     };
   }
   const id = search.network ?? DEFAULT_NETWORK_ID;

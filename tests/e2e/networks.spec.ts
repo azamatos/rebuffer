@@ -20,8 +20,13 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await expect(page.getByRole("heading", { level: 2, name: "Car, 4G" })).toBeVisible();
   await expect(page.getByText(/^Recorded by Darijo Raca/)).toBeVisible();
 
-  // Back to the tunnel (the list comes before the editor, so Tab would go round the page), edited on the curve.
+  // Back to the tunnel (the list comes before the editor, so Tab would go round the page), renamed in the title and
+  // edited on the curve.
   await page.goto("/networks");
+  const name = page.getByRole("textbox", { name: "Network name" });
+  await tabTo(page, browserName, name);
+  await name.fill("My tunnel");
+  await expect(page.getByRole("heading", { level: 2, name: "My tunnel" })).toBeVisible();
   await tabTo(page, browserName, page.getByRole("application", { name: "Network curve" }));
   const said = page.getByRole("status");
   for (let i = 0; i < 6; i++) await page.keyboard.press("]");
@@ -33,7 +38,9 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await expect(said).toHaveText("Point 7 of 10: 0:44, 0.6 Mbps");
   await expect(page.getByLabel("Time")).toHaveValue("0:44");
   await expect(page.getByLabel("Bandwidth, Mbps")).toHaveValue("0.6");
-  await expect(page.getByRole("heading", { level: 2, name: /edited copy$/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: "My tunnel edited copy" }),
+  ).toBeVisible();
 
   // Add a point after it and delete it; undo brings each step back.
   await page.keyboard.press("n");
@@ -57,10 +64,7 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await page.keyboard.press("Enter");
   await expect(page.getByRole("alert")).toHaveCount(0);
 
-  // The whole network: a name and a longer latency.
-  const name = page.getByLabel("Name");
-  await tabTo(page, browserName, name);
-  await name.fill("My tunnel");
+  // The whole network: a longer latency.
   const latency = page.getByLabel("Latency (RTT), ms");
   await tabTo(page, browserName, latency);
   await latency.fill("120");
@@ -120,6 +124,10 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
 }) => {
   await page.goto("/networks?new=blank");
   await expect(page.getByRole("heading", { level: 2, name: "My network" })).toBeVisible();
+  // A new network's name is selected, so typing names it.
+  await expect(page.getByRole("textbox", { name: "Network name" })).toBeFocused();
+  await page.keyboard.type("Hotel wifi");
+  await expect(page.getByRole("heading", { level: 2, name: "Hotel wifi" })).toBeVisible();
 
   await tabTo(page, browserName, page.getByRole("button", { name: "Import / Export" }));
   await page.keyboard.press("Enter");
@@ -198,7 +206,7 @@ test("the points show as a table, and ? lists the keys without leaving the curve
   await expect(shortcuts).toBeFocused();
 
   // In a field, ? is just a character.
-  const name = page.getByLabel("Name");
+  const name = page.getByRole("textbox", { name: "Network name" });
   await name.fill("Tunnel");
   await name.press("?");
   await expect(name).toHaveValue("Tunnel?");

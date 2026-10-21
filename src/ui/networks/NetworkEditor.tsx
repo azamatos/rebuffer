@@ -46,6 +46,8 @@ export interface EditorStart {
   saved: SavedNetwork | undefined;
   /** The saved run whose network is being changed (the Report's "Change network"). */
   run: SavedRun | undefined;
+  /** A new network: its name is selected, ready to type over. */
+  fresh?: boolean;
 }
 
 interface NetworkEditorProps {
@@ -94,6 +96,13 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
   const [table, setTable] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!start.fresh) return;
+    nameRef.current?.focus();
+    nameRef.current?.select();
+  }, [start.fresh]);
 
   // `?` opens and closes the list of keyboard shortcuts, except while typing in a field.
   useEffect(() => {
@@ -209,10 +218,39 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
       className="flex min-w-0 flex-[999_1_640px] flex-col gap-2.5 rounded-xl border border-line bg-surface px-[18px] pt-3.5 pb-4"
     >
       <div className="flex flex-wrap items-center gap-2.5">
-        <h2 id="editor-h" className="min-w-0 text-xl font-semibold">
-          {name || "Untitled network"}
+        {/* The title is the name's field: the heading reads as the name, the field as "Network name". */}
+        <h2
+          id="editor-h"
+          className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xl font-semibold"
+        >
+          <label className="flex min-w-0 items-center gap-1 rounded-lg border border-transparent pr-2 hover:border-line-strong">
+            <input
+              ref={nameRef}
+              type="text"
+              aria-label="Network name"
+              placeholder="Untitled network"
+              value={name}
+              size={Math.max(name.length, 12)}
+              maxLength={MAX_NETWORK_NAME}
+              onChange={(event) => {
+                setName(event.target.value);
+              }}
+              className="field-sizing-content min-w-0 rounded-lg bg-transparent py-0.5 pl-2 placeholder:text-fg-3"
+            />
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              className="flex-none stroke-fg-3"
+              fill="none"
+              strokeWidth="1.5"
+            >
+              <path d="M10.5 2.5 L13.5 5.5 L5.5 13.5 H2.5 V10.5 Z" />
+            </svg>
+          </label>
           {edited && (
-            <span className="ml-2 inline-block rounded-full bg-warning/10 px-2 py-0.5 align-middle text-xs font-normal text-warning-text">
+            <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-normal text-warning-text">
               {savedId ? "unsaved changes" : "edited copy"}
             </span>
           )}
@@ -416,18 +454,6 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
             Whole network
           </h3>
           <div className="flex flex-wrap items-start gap-2.5">
-            <label className="flex w-44 flex-col gap-1 text-xs text-fg-2">
-              Name
-              <input
-                type="text"
-                value={name}
-                maxLength={MAX_NETWORK_NAME}
-                onChange={(event) => {
-                  setName(event.target.value);
-                }}
-                className={`${field} font-sans text-sm`}
-              />
-            </label>
             <NumberField
               label="Latency (RTT), ms"
               width="w-28"
