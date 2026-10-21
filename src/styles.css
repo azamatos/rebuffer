@@ -176,7 +176,8 @@
   :focus-visible {
     @apply rounded-md outline-2 outline-offset-3 outline-accent;
   }
+  /* A tint, with the text keeping its own colour: a solid accent made selected words look like a badge. */
   ::selection {
-    @apply bg-accent text-accent-ink;
+    background-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
 }
