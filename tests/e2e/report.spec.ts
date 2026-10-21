@@ -33,6 +33,7 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   ).toBeVisible();
   const results = page.getByRole("region", { name: "Results" });
   await expect(results).toContainText("QoE score");
+  await expect(results).toContainText(/Measured against .+, the best this network could carry/);
   for (const part of [
     "Quality",
     "Switches",

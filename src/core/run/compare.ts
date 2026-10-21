@@ -23,7 +23,12 @@ export interface ComparedRun {
 
 export function compared(run: SavedRun): ComparedRun {
   const metrics = computeMetrics(run.events);
-  return { run, metrics, score: computeScore(metrics), timeline: buildTimeline(run.events) };
+  return {
+    run,
+    metrics,
+    score: computeScore(metrics, run.setup.network.curve),
+    timeline: buildTimeline(run.events),
+  };
 }
 
 /** How B did against A on one number; "same" when both read the same. */

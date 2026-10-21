@@ -230,21 +230,26 @@ export function AboutPage() {
           </dl>
           <h3 className="mt-3 text-lg font-semibold text-fg">The score</h3>
           <p>
-            Each segment played earns its bitrate in Mbps. Each quality change costs the size of the
-            jump, in Mbps. Each second of stall costs as much as a segment at the top quality, and
-            so does each second before the first frame. The total is divided by what a perfect run
-            would earn (top quality all the way, no stalls, an instant start) and shown out of 100.
+            A run is measured against the best quality its network could carry: the highest one at
+            or under the network&apos;s mean bandwidth over the run. Each segment played earns its
+            bitrate in Mbps. Each quality change costs the size of the jump, in Mbps. Each second of
+            stall costs as much as a segment at that quality, and so does each second before the
+            first frame. The total is divided by what a perfect run would earn (that quality all the
+            way, no stalls, an instant start) and shown out of 100.
           </p>
           <p className="overflow-x-auto rounded-lg border border-line bg-surface px-4 py-3 font-mono text-[13px] whitespace-nowrap text-fg">
             QoE = Σ q(R<sub>k</sub>) − λ Σ |q(R<sub>k+1</sub>) − q(R<sub>k</sub>)| − μ · stall s − μ
             <sub>s</sub> · startup s
           </p>
           <p>
-            q(R) is the bitrate in Mbps, λ = 1, and μ = μ<sub>s</sub> = the top bitrate. This is the
-            linear model from Yin et al., “A Control-Theoretic Approach for Dynamic Adaptive Video
-            Streaming over HTTP”, SIGCOMM 2015. It measures against the stream&apos;s top quality,
-            not against what the network allows: on a network slower than the top quality, even a
-            run without a stall scores low.
+            q(R) is the bitrate in Mbps, λ = 1, and μ = μ<sub>s</sub> = the bitrate the run is
+            measured against. This is the linear model from Yin et al., “A Control-Theoretic
+            Approach for Dynamic Adaptive Video Streaming over HTTP”, SIGCOMM 2015, with one change:
+            the paper measures against the stream&apos;s top quality. On a network slower than that,
+            even a perfect player would score near 0 (Apple&apos;s example stream tops at 40 Mbps),
+            so a run here is measured against what its network allowed. The mean is generous to a
+            network that comes and goes: a player can&apos;t bank bandwidth it hasn&apos;t buffered
+            yet.
           </p>
         </Section>
 

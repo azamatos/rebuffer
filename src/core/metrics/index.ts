@@ -8,4 +8,4 @@ export {
   type RunMetrics,
   type ShownChange,
 } from "./metrics";
-export { computeScore, type Score } from "./score";
+export { computeScore, scoreTarget, type Score } from "./score";

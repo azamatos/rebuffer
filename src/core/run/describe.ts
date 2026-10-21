@@ -1,6 +1,6 @@
 import { formatMbps } from "@/core/format/bitrate";
 import { formatClock, formatDuration } from "@/core/format/time";
-import { LATE_FIRST_BYTE_MS, type Honesty } from "@/core/metrics";
+import { LATE_FIRST_BYTE_MS, type Honesty, type Score } from "@/core/metrics";
 import type { NetworkCurve } from "@/core/netsim/curve";
 import type { Level, RunEvent } from "./events";
 
@@ -173,6 +173,24 @@ export function describeHonesty(honesty: Honesty, curve: NetworkCurve): string[]
     );
   }
   return sentences;
+}
+
+/**
+ * What a score is measured against, in a sentence: the best quality the run's network could carry, or, without the
+ * network, the stream's top.
+ */
+export function describeScoreTarget(
+  score: Pick<Score, "against" | "networkBps">,
+): string | undefined {
+  const { against, networkBps } = score;
+  if (!against) return undefined;
+  const named = against.name
+    ? `${against.name} (${formatMbps(against.bitrate)})`
+    : formatMbps(against.bitrate);
+  if (networkBps === undefined) return `Measured against ${named}, the stream's top quality.`;
+  return against.bitrate > networkBps
+    ? `Measured against ${named}, the lowest quality: this network's bandwidth averaged ${formatMbps(networkBps)}, under every quality.`
+    : `Measured against ${named}, the best this network could carry: its bandwidth averaged ${formatMbps(networkBps)}.`;
 }
 
 /**

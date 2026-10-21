@@ -6,6 +6,7 @@ import {
   describeEvents,
   describeHonesty,
   describeNetworkCheck,
+  describeScoreTarget,
   formatMbps,
   honestyWarning,
   levelLabel,
@@ -271,5 +272,21 @@ describe("describeHonesty", () => {
         "The tab was in the background for 20 s, where browsers slow down timers.",
       );
     });
+  });
+});
+
+describe("describeScoreTarget", () => {
+  const [low, high] = levels;
+  it("names the quality a score is measured against, and why", () => {
+    expect(describeScoreTarget({ against: high, networkBps: 3_900_000 })).toBe(
+      "Measured against 720p (2.8 Mbps), the best this network could carry: its bandwidth averaged 3.9 Mbps.",
+    );
+    expect(describeScoreTarget({ against: low, networkBps: 200_000 })).toBe(
+      "Measured against 240p (400 kbps), the lowest quality: this network's bandwidth averaged 200 kbps, under every quality.",
+    );
+    expect(describeScoreTarget({ against: high, networkBps: undefined })).toBe(
+      "Measured against 720p (2.8 Mbps), the stream's top quality.",
+    );
+    expect(describeScoreTarget({ against: undefined, networkBps: undefined })).toBeUndefined();
   });
 });

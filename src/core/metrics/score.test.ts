@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunMetrics } from "./metrics";
-import { computeScore } from "./score";
+import type { NetworkCurve } from "@/core/netsim/curve";
+import { computeScore, scoreTarget } from "./score";
 
 const ladder = [
   { index: 0, bitrate: 400_000 },
@@ -36,7 +37,69 @@ function metrics(overrides: Partial<RunMetrics>): RunMetrics {
   };
 }
 
+const flat = (mbps: number, lengthS = 80): NetworkCurve => ({
+  shape: "steps",
+  rttMs: 0,
+  lengthS,
+  points: [{ t: 0, mbps }],
+});
+
+describe("scoreTarget", () => {
+  it("is the ladder's top without a network", () => {
+    expect(scoreTarget(metrics({})).level?.bitrate).toBe(5_000_000);
+  });
+
+  it("is the best rendition at or under the network's mean bandwidth", () => {
+    // 6 Mbps for 40 s, then 0 for 40 s: a mean of 3 Mbps, so 2.8 Mbps is the best it could carry.
+    const tunnel: NetworkCurve = {
+      shape: "steps",
+      rttMs: 0,
+      lengthS: 80,
+      points: [
+        { t: 0, mbps: 6 },
+        { t: 40, mbps: 0 },
+      ],
+    };
+    expect(scoreTarget(metrics({}), tunnel)).toEqual({
+      level: { index: 3, bitrate: 2_800_000 },
+      networkBps: 3_000_000,
+    });
+  });
+
+  it("is the lowest rendition when the network can't carry any", () => {
+    expect(scoreTarget(metrics({}), flat(0.2)).level?.bitrate).toBe(400_000);
+  });
+
+  it("averages over the part of the network the run lasted", () => {
+    const later: NetworkCurve = {
+      shape: "steps",
+      rttMs: 0,
+      lengthS: 160,
+      points: [
+        { t: 0, mbps: 2 },
+        { t: 80, mbps: 50 },
+      ],
+    };
+    expect(scoreTarget(metrics({ endS: 80 }), later).level?.bitrate).toBe(1_600_000);
+  });
+});
+
 describe("computeScore", () => {
+  it("measures a run against what its network could carry", () => {
+    // On a 3 Mbps network, playing 2.8 Mbps throughout with no stall is as good as it gets.
+    const score = computeScore(
+      metrics({ averageBitrate: 2_800_000, shown: [{ t: 0, level: 3 }] }),
+      flat(3),
+    );
+    expect(score.score).toBe(100);
+    expect(score.against?.bitrate).toBe(2_800_000);
+    expect(score.networkBps).toBe(3_000_000);
+    // Against the ladder's top it would be 56.
+    expect(
+      computeScore(metrics({ averageBitrate: 2_800_000, shown: [{ t: 0, level: 3 }] })).score,
+    ).toBeCloseTo(56, 10);
+  });
+
   it("gives a perfect run 100", () => {
     expect(computeScore(metrics({})).score).toBe(100);
   });
@@ -103,6 +166,8 @@ describe("computeScore", () => {
       switching: 0,
       stalls: 0,
       startup: 0,
+      against: { index: 4, bitrate: 5_000_000 },
+      networkBps: undefined,
     });
   });
 

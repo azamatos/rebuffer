@@ -38,8 +38,16 @@ export interface SavedRun {
   events: RunEvent[];
 }
 
+/**
+ * How summaries are made: 2 since the score is measured against what the run's network could carry (2026-10-21). A
+ * summary made otherwise is made again from its run when the list is read.
+ */
+export const SUMMARY_VERSION = 2;
+
 /** What the lists show about a run, without loading its log. */
 export interface RunSummary {
+  /** `SUMMARY_VERSION` when it was made; older summaries have none. */
+  version?: number;
   id: string;
   savedAt: number;
   streamName: string;
@@ -90,13 +98,27 @@ export interface RunStore {
   remove(id: string): Promise<void>;
 }
 
-export function createRunStore(store: KeyValueStore = indexedDbStore()): RunStore {
+/** `remake` makes a summary afresh from its run (src/core/persist/summary.ts): old summaries are replaced. */
+export function createRunStore(
+  store: KeyValueStore = indexedDbStore(),
+  remake?: (run: SavedRun) => RunSummary | Promise<RunSummary>,
+): RunStore {
   async function list(): Promise<RunSummary[]> {
     const ids = (await store.keys()).filter((key) => key.startsWith("summary/"));
     const summaries = (await store.getMany(ids)).filter(
       (value): value is RunSummary => typeof value === "object" && value !== null,
     );
-    return summaries.sort((a, b) => b.savedAt - a.savedAt);
+    const current = await Promise.all(
+      summaries.map(async (summary) => {
+        if (!remake || summary.version === SUMMARY_VERSION) return summary;
+        const run = await store.get(runKey(summary.id));
+        if (!isSavedRun(run)) return summary;
+        const fresh = await remake(run);
+        await store.set(summaryKey(run.id), fresh);
+        return fresh;
+      }),
+    );
+    return current.sort((a, b) => b.savedAt - a.savedAt);
   }
 
   async function remove(id: string): Promise<void> {
@@ -135,7 +157,10 @@ let shared: RunStore | undefined;
 
 /** This browser's runs. The database opens on first use, so pages that don't need it never touch it. */
 export function savedRuns(): RunStore {
-  shared ??= createRunStore();
+  // The metrics code loads only for summaries made before SUMMARY_VERSION, so Home's lists don't carry it.
+  shared ??= createRunStore(indexedDbStore(), async (run) =>
+    (await import("./summary")).summarize(run),
+  );
   return shared;
 }
 

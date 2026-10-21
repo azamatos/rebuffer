@@ -6,6 +6,7 @@ import {
   MAX_SAVED_RUNS,
   RUN_FORMAT,
   RUN_VERSION,
+  type RunSummary,
   type SavedRun,
 } from "./runs";
 import { summarize } from "./summary";
@@ -98,6 +99,18 @@ describe("the run store", () => {
     expect(list).toHaveLength(MAX_SAVED_RUNS);
     expect(list.at(-1)?.id).toBe("r1");
     expect(await runs.get("r0")).toBeUndefined();
+  });
+
+  it("makes an old summary again from its run when it lists it", async () => {
+    const store = memoryStore();
+    const old = run("a", 1000);
+    const before: Partial<RunSummary> = { ...summarize(old), score: 3 };
+    delete before.version;
+    await store.set("run/a", old);
+    await store.set("summary/a", before);
+    const [listed] = await createRunStore(store, summarize).list();
+    expect(listed).toEqual(summarize(old));
+    expect(await store.get("summary/a")).toEqual(summarize(old));
   });
 
   it("ignores something that isn't a run", async () => {

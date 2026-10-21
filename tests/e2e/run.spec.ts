@@ -68,6 +68,8 @@ test("a run plays the stream through the simulated network and reports it", asyn
 
   const result = page.getByRole("region", { name: "Result" });
   await expect(result).toContainText("QoE score");
+  // Measured against what the network could carry: its 2.8 Mbps mean carries even the stream's top.
+  await expect(result).toContainText(/Measured against .+, the best this network could carry/);
   // With the result in the column, the log still shows a few lines.
   expect((await log.boundingBox())?.height).toBeGreaterThanOrEqual(239);
   // On a slow machine a few local downloads can start late; the result then says so, which is right too.

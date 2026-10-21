@@ -41,7 +41,7 @@ for (const preset of presets.filter((network) => !ONLY || ONLY.includes(network.
 
       const metrics = computeMetrics(saved.events);
       runs.push({
-        score: computeScore(metrics).score,
+        score: computeScore(metrics, saved.setup.network.curve).score,
         firstFrameS: metrics.firstFrameS,
         stalls: metrics.stalls.count,
         stallS: metrics.stalls.totalS,

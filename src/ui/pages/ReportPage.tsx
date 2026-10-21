@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
-import { formatMbps } from "@/core/run/describe";
+import { describeScoreTarget, formatMbps } from "@/core/run/describe";
 import { whatHappened, type Note } from "@/core/run/notes";
 import { noteRange, wholeRange, type TimeRange } from "@/core/run/range";
 import { tryNext } from "@/core/run/ideas";
@@ -114,8 +114,8 @@ function Report({ run }: { run: SavedRun }) {
     () => notes.map((note, i) => ({ t: note.start, label: String(i + 1) })),
     [notes],
   );
-  const score = computeScore(metrics);
   const { network, player, streamName, streamUrl } = run.setup;
+  const score = computeScore(metrics, network.curve);
   const settings = describeSettings(player.settings);
 
   const exportJson = () => {
@@ -274,6 +274,7 @@ function Report({ run }: { run: SavedRun }) {
             <ScorePart label="Stalls" points={-score.stalls} bar="bg-error" />
             <ScorePart label="Startup" points={-score.startup} bar="bg-fg-3" />
           </dl>
+          <p className="text-[13px] text-fg-2">{describeScoreTarget(score)}</p>
           <a
             href="#score"
             onClick={(event) => {
@@ -440,12 +441,15 @@ function Report({ run }: { run: SavedRun }) {
       >
         <summary className="w-fit cursor-pointer font-semibold">How the score is computed</summary>
         <p className="mt-2 max-w-[880px] text-fg-2">
-          Each segment played earns its bitrate in Mbps. Each quality change costs the size of the
-          jump, in Mbps. Each second of stall costs as much as a segment at the top quality, and so
-          does each second before the first frame. The total is divided by what a perfect run would
-          earn (top quality all the way, no stalls, an instant start) and shown out of 100, so 100
-          is top quality all the way with no stalls. Model: Yin et al., “A Control-Theoretic
-          Approach for Dynamic Adaptive Video Streaming over HTTP”, SIGCOMM 2015.
+          A run is measured against the best quality its network could carry: the highest one at or
+          under the network&apos;s mean bandwidth over the run. Each segment played earns its
+          bitrate in Mbps. Each quality change costs the size of the jump, in Mbps. Each second of
+          stall costs as much as a segment at that quality, and so does each second before the first
+          frame. The total is divided by what a perfect run would earn (that quality all the way, no
+          stalls, an instant start) and shown out of 100. Model: Yin et al., “A Control-Theoretic
+          Approach for Dynamic Adaptive Video Streaming over HTTP”, SIGCOMM 2015, which measures
+          against the stream&apos;s top quality; on a network slower than that, even a perfect
+          player would score near 0.
         </p>
       </details>
     </div>

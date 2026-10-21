@@ -19,7 +19,12 @@ import { curveFromParam } from "@/core/netsim/url";
 import { PLAYER_PRESETS, PlayerUnsupportedError, type PlayerPreset } from "@/core/player";
 import { playerTitle, settingsFromParam, type PlayerSettings } from "@/core/player/settings";
 import { startRun, type Run, type RunResult } from "@/core/run/controller";
-import { describeEvents, describeNetworkCheck, formatMbps } from "@/core/run/describe";
+import {
+  describeEvents,
+  describeNetworkCheck,
+  describeScoreTarget,
+  formatMbps,
+} from "@/core/run/describe";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
@@ -510,7 +515,7 @@ function Tiles({ metrics }: { metrics: RunMetrics }) {
 
 function Outcome({ result, savedId }: { result: RunResult; savedId: string | false | undefined }) {
   const metrics = computeMetrics(result.events);
-  const score = computeScore(metrics);
+  const score = computeScore(metrics, result.setup.curve);
   return (
     <section
       aria-label="Result"
@@ -534,6 +539,7 @@ function Outcome({ result, savedId }: { result: RunResult; savedId: string | fal
           </Link>
         )}
       </div>
+      <p className="text-xs text-fg-3">{describeScoreTarget(score)}</p>
       <SimulationCheck honesty={metrics.honesty} curve={result.setup.curve} />
       {savedId === false && (
         <p className="text-sm text-warning-text">
