@@ -157,26 +157,26 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
 
 **A. Fixes that follow patterns already approved (no new board):**
 
-- [ ] **Run: the video keeps its last frame.** At the end, `controller.ts` destroys hls.js, which empties the video,
+- [x] **Run: the video keeps its last frame.** At the end, `controller.ts` destroys hls.js, which empties the video,
       so a finished run shows a dark box. Before `destroy()`, draw the frame to a canvas and set it as the video's
       `poster`; the video is MSE, so the canvas isn't tainted. Before the first frame, the box says what it waits for
       ("Waiting for the first frame…"). Tests: Playwright checks the poster after a run.
-- [ ] **Run: the result card is short and the log stays readable.** The honesty paragraph, nine lines on a slow link,
+- [x] **Run: the result card is short and the log stays readable.** The honesty paragraph, nine lines on a slow link,
       becomes the Report's simulation-check banner: one headline and Details. The event log keeps at least 240 px, and
       the left column may end below the charts. Tests: the columns test, the banner's text.
-- [ ] **Networks: the name in the header**, as the board drew it (one of M4.5's departures; the owner didn't find
+- [x] **Networks: the name in the header**, as the board drew it (one of M4.5's departures; the owner didn't find
       the Name field at the bottom). The heading becomes an input styled as a title, with a pencil, and a new
       network starts with its name selected. Tests: keyboard rename, Save keeps the name, axe.
-- [ ] **A softer text selection.** The `::selection` colour is the solid accent with white text, so selected words
+- [x] **A softer text selection.** The `::selection` colour is the solid accent with white text, so selected words
       look like a badge (the owner's "12 s"). Use an accent tint with the normal text colour.
-- [ ] **Inspect, pasted text with relative links:** one sentence instead of one line per playlist ("123 media
+- [x] **Inspect, pasted text with relative links:** one sentence instead of one line per playlist ("123 media
       playlists couldn't be read: …"), with the list behind a disclosure. The counts say "not checked" instead of
       "0 errors". A "Where it came from (optional)" address field resolves the links, so the whole stream can be
       checked. Tests: unit (load with a base address), e2e (the message, then the field).
-- [ ] **Inspect, findings name playlists by label:** "13 subtitle playlists (English (Forced), Italiano (SDH), …)",
+- [x] **Inspect, findings name playlists by label:** "13 subtitle playlists (English (Forced), Italiano (SDH), …)",
       with the file paths behind a disclosure. Subtitle playlists show "WebVTT", not "unknown".
-- [ ] **Charts with big ladders:** one dotted line per labelled quality. Apple's 100 variants drew dozens.
-- [ ] **CSP:** `media-src` gets `data:` for hls.js's placeholder subtitle track (D2).
+- [x] **Charts with big ladders:** one dotted line per labelled quality. Apple's 100 variants drew dozens.
+- [x] **CSP:** `media-src` gets `data:` for hls.js's placeholder subtitle track (D2).
 
 **B. Needs boards first** (`design-review-before-ui-code`):
 
@@ -192,7 +192,7 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
   - A verdict headline, then metric cards with icons and A/B bars, grouped as Start, Smoothness, Picture and Data.
   - Each chart gets a line on what to look for and a takeaway written from the data ("B stayed at 576p; A dropped
     to 342p at 0:12"). "No stalls in either run" replaces two empty lanes.
-- [ ] **Run screen end state** (from A), shown on the same boards.
+- [ ] **Run screen end state** (from A): the last frame, the waiting message and the short result are built; any further design comes from Claude Design.
 
 **C. Features:**
 
@@ -203,7 +203,7 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
       browser and only the curve is kept; HAR files can hold cookies. Core parser with unit tests; e2e import.
 - [ ] **HAR export (D4):** a run's downloads as a HAR file (More actions), to open in DevTools' Network panel
       ("Import HAR file") as a waterfall.
-- [ ] **SEO and sharing:**
+- [x] **SEO and sharing:**
   - Open Graph and Twitter tags, a canonical link, `apple-touch-icon`, JSON-LD (`WebApplication`).
   - A 1200×630 preview image, made by a script from an HTML template (D3: where it lives).
   - Titles and descriptions per route.
@@ -211,7 +211,7 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
     JavaScript.
   - `sitemap.xml`, and the sitemap line in `robots.txt`.
   - After the deploy, the owner checks LinkedIn's Post Inspector.
-- [ ] **Score (D1, reopens decision 5):** Apple's ladder tops at 39 Mbps, so a 6 Mbps network scores 0 even without a
+- [x] **Score (D1, reopens decision 5):** Apple's ladder tops at 39 Mbps, so a 6 Mbps network scores 0 even without a
       stall (6.12 s to the first frame costs 6 × 39 points). Proposed: score against the best the simulated network
       could carry at each moment, keeping Yin et al.'s formula.
 

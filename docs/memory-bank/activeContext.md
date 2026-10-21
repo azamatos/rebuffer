@@ -67,7 +67,9 @@ https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472 (`.design-sync/`
    2. Re-run `pnpm repeat` (about an hour; it serves `dist/`, so no builds meanwhile) and update the score tables in
       the README and About: their numbers are from the old formula.
    3. Group B (Inspect for big streams, Compare with "Change one thing", the Run end state) is designed in Claude
-      Design now, by the owner (decision 25). Build from what comes back.
+      Design now, by the owner (decision 25). The agent offered a brief to paste there (the screens, the real data:
+      Apple's adv_dv_atmos stream, the owner's two tunnel runs, 0 and 49; the limits: both themes, contrast,
+      keyboard, the 8 KB CSS budget); write it if the owner wants it. Build from the designs that come back.
    4. Push (ask first): 12 local commits, from `7b5385e` to this memory bank, plus whatever M4.6 adds. Then check the live site,
       LinkedIn's Post Inspector for the preview (owner), and CI.
 2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it, then
