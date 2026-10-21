@@ -16,7 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | before Dec 6 | **planned 2026-10-21**: Run end state, the name in the header, Inspect and Compare for big ladders and useful comparisons, HAR, SEO; waits for decisions D1–D6 |
+| M4.6 Fixes from the owner's test | before Dec 6 | **in progress, paused 2026-10-21**: group A, the score (D1) and SEO built, not pushed; HAR import uncommitted; group B designed in Claude Design |
 | M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
@@ -142,7 +142,13 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
       specs repeated three times. A code review of the range found 10 issues: 8 fixed in `6c43a60`, the memory bank written
       at the end, and the progress bar's step back of about a frame at Stop left as it is.
 
-## M4.6: fixes from the owner's test (planned 2026-10-21, waiting for the owner's decisions)
+## M4.6: fixes from the owner's test (planned 2026-10-21, decisions approved the same day, in progress)
+
+Status on 2026-10-21, evening (nothing pushed): every group A item is built, in `9185b6c`, `3b5a3e4`, `8f73b4b`,
+`5f5546c`, `a3b75f6` and `214d582`. The score (D1) is `84d99d3` and SEO is `3853f75`. HAR import is written and its
+unit tests pass, but it's uncommitted, with 2 lint errors in its test. HAR export isn't started. Group B is designed
+in Claude Design (decision 25), not on the agent's boards. The repeatability tables need a new `pnpm repeat`: their
+scores are from the old formula.
 
 The owner tried the live site on 2026-10-21. They inspected and ran Apple's advanced example (`adv_dv_atmos`: 100
 variants, 10 audio and 13 subtitle playlists, a ladder up to 2160p at 39 Mbps), pasted its text, compared runs, and

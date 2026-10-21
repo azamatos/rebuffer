@@ -1,9 +1,11 @@
 # Active context
 
-**Updated 2026-10-21 (seventh session).** The polish (M4.5) is live: the owner pushed it, and it was checked in
-three browsers and both themes. CI failed on the CSS budget; the owner pushed the fix, and CI is green. The
-clean sample is fixed live. The README's GIF of the new screens is live too (the owner uploaded it). Read
-this first, then `progress.md` (M4.5 records what was built).
+**Updated 2026-10-21 (seventh session, evening).** The polish (M4.5) is live, and CI is green on it. M4.6 is under
+way: the owner approved D1–D6 ("Go with recommendations"). Built and committed locally, not pushed: group A, the
+score against the network (D1) and SEO. HAR import is written but uncommitted, and its test file has 2 lint errors;
+the owner paused the work there. Design moved to Claude Design: the app's look and 14 parts are synced to
+https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472 (`.design-sync/`). Read this first, then
+`progress.md` (M4.6).
 
 ## Where things stand
 
@@ -59,13 +61,15 @@ this first, then `progress.md` (M4.5 records what was built).
 
 ## Next step (in this order)
 
-1. **M4.6, the fixes from the owner's test** (`progress.md`, M4.6; planned 2026-10-21). First the owner answers
-   D1–D6 below. Then:
-   1. Build group A (fixes on approved patterns), one commit with its tests per item, with screenshots.
-   2. Draw the boards for group B (Inspect for big ladders, Compare reworked, the Run end state), and wait for the
-      review.
-   3. Build group C (HAR, SEO, the score if D1 says so).
-   The test fix `7b5385e` waits unpushed, and goes out with the first push of M4.6 (ask first).
+1. **M4.6, when the owner resumes** (paused 2026-10-21; `progress.md`, M4.6):
+   1. Finish HAR import: fix the 2 lint errors in `src/core/netsim/har.test.ts` (`expect.any` inside
+      `toMatchObject`), run the networks e2e in three browsers, commit. Then HAR export (More actions → Export HAR).
+   2. Re-run `pnpm repeat` (about an hour; it serves `dist/`, so no builds meanwhile) and update the score tables in
+      the README and About: their numbers are from the old formula.
+   3. Group B (Inspect for big streams, Compare with "Change one thing", the Run end state) is designed in Claude
+      Design now, by the owner (decision 25). Build from what comes back.
+   4. Push (ask first): 12 local commits, from `7b5385e` to this memory bank, plus whatever M4.6 adds. Then check the live site,
+      LinkedIn's Post Inspector for the preview (owner), and CI.
 2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it, then
    tested the live site and sent the findings that became M4.6.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
@@ -116,8 +120,20 @@ that needs their eye under "Waiting for the owner".
 | 16 | Themes | A light theme next to the dark one, with a System / Light / Dark switch; System is the default. The owner asked for it on 2026-10-20 ("not everyone will like" dark only); the light palette is the agent's, for the owner's eye |
 | 18 | UI polish | The proposal (header, Run, Report, Networks, Inspect, motion) approved as drawn on 2026-10-20, with the eighth Report tile (the real network's speed) and the simulation check as a banner; built 2026-10-21, waiting for the owner's review |
 | 17 | First paint | Home rendered at build time and hydrated, the app's code after the first paint: the agent's call on 2026-10-20 (`techContext.md`, "Themes and the first paint") |
+| 19 | Score target (D1, reopens 5) | A run is measured against the best rendition at or under its network's mean bandwidth over the run, not the ladder's top; Yin et al.'s formula otherwise. Approved 2026-10-21 ("Go with recommendations"), built (`84d99d3`) |
+| 20 | CSP (D2) | `media-src` allows `data:` for hls.js's empty subtitle track. Approved and built 2026-10-21 (`214d582`) |
+| 21 | Preview image (D3) | `public/og.png` is committed, made by `scripts/og/render.mjs`. Approved and built 2026-10-21 (`3853f75`) |
+| 22 | HAR (D4) | Import (a curve from DevTools' Export HAR, with a note on what it can't tell) and export (a run's downloads). Approved 2026-10-21; import in progress |
+| 23 | Compare (D5) | "Change one thing": from a report, run B with one setting changed, then compare. Approved 2026-10-21; designed in Claude Design |
+| 24 | Analytics (D6) | Cloudflare injects its beacon; a blocked beacon costs only the count. Approved 2026-10-21 |
+| 25 | Design tool | Visual design happens in Claude Design (claude.ai/design), with the app's real parts synced there; the agent briefs and builds. The owner's call on 2026-10-21 ("U r not good on design stuff at all. Can we move to claude design?") |
 
 ## Design and plan artifacts
+
+- **Claude Design project "Rebuffer" (2026-10-21):** https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472.
+  The app's tokens (both themes), fonts, compiled stylesheet and 14 parts with graded previews, synced by
+  `/design-sync`; `.design-sync/NOTES.md` says how to re-sync. The agent's own M4.6 boards
+  (https://claude.ai/artifact/VBhPRjdiXQoQDBzWtyc9vQ) are dropped.
 
 - **Design canvas** (Home, Run, Report, Network editor, Inspector, visual system):
   https://claude.ai/artifact/BgVz6NLex5nHa9G5hGKej6. Private to the owner. The screens follow it.
@@ -132,20 +148,6 @@ that needs their eye under "Waiting for the owner".
   and deploy decisions); this memory bank is the source of truth when they differ.
 
 ## Waiting for the owner (raised 2026-10-20 and 2026-10-21)
-
-- **M4.6's decisions (2026-10-21), each with the agent's recommendation:**
-  - **D1, the score (reopens decision 5):** score quality against the best the simulated network could carry at each
-    moment, instead of against the ladder's top. Recommended: yes. With Apple's 39 Mbps top, every run on a 6 Mbps
-    network scores 0.
-  - **D2, the CSP:** add `data:` to `media-src` for hls.js's placeholder subtitle track. Recommended: yes.
-  - **D3, the preview image:** commit `public/og.png` (1200×630, about 60 KB, made by a script), or host it on
-    media.azamatos.com (the owner uploads). Recommended: commit it. It's a page asset like the favicon, not media in
-    rule 7's sense.
-  - **D4, HAR:** import only, or import and export. Recommended: both. Export is small and opens a run in DevTools.
-  - **D5, Compare:** add "Change one thing", which runs B for you. Recommended: yes. It's what makes a comparison
-    useful.
-  - **D6, analytics:** leave the beacon as Cloudflare injects it. Recommended: yes. A blocked beacon costs nothing
-    but the count.
 
 - **The polish (2026-10-21): review it, then say when to push.** The review page lists where the build departs from
   the boards: the score's bars are green (quality) and red (stalls) with grey for switches and startup, out of 100
