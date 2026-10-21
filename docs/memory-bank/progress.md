@@ -242,4 +242,6 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
   only: 7.90 KB, with the same rules for every class the app uses. The e2e job passed (135, 3 flaky, 3 skipped).
   Checked live in Chromium, Firefox and WebKit: every screen in both themes with axe (clean everywhere), two real
   runs each, the report and its menu, Compare. Firefox's console shows two errors during a run, both from before the
-  polish (`activeContext.md`, Next step 4).
+  polish (`activeContext.md`, Next step 4). The owner pushed the fix (`66c638a`): CI green, Lighthouse's assertions
+  passed. WebKit's CSV import test had failed on its first try in both CI runs (axe read the import's toast mid-fade);
+  the test now waits for the toast to leave.

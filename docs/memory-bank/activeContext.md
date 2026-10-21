@@ -1,7 +1,7 @@
 # Active context
 
 **Updated 2026-10-21 (seventh session).** The polish (M4.5) is live: the owner pushed it, and it was checked in
-three browsers and both themes. CI failed on the CSS budget. The fix is committed, and the owner pushes it. The
+three browsers and both themes. CI failed on the CSS budget; the owner pushed the fix, and CI is green. The
 clean sample is fixed live. The README's GIF of the new screens is live too (the owner uploaded it). Read
 this first, then `progress.md` (M4.5 records what was built).
 
@@ -12,15 +12,19 @@ this first, then `progress.md` (M4.5 records what was built).
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `1c687b3`.** The owner pushed it on 2026-10-21 with `! git push origin main`, after the
-  agent's permission checker refused the agent's push following "go on". Cloudflare deployed it within a minute.
+- **Live site = `main` at `66c638a`** (the CSS fix, pushed by the owner on 2026-10-21; Cloudflare served it within
+  35 s). **CI green** on it: budgets (JavaScript 96.25 of 100 KB, CSS 7.90 of 8), Lighthouse's assertions on
+  GitHub's runner, e2e 137 passed (3 skipped). The polish went out the push before, `1c687b3`. The owner pushed it
+  with `! git push origin main`, after the agent's permission checker refused the agent's push following "go on".
+  Cloudflare deployed it within a minute.
   Checked live the same day in Chromium, Firefox and WebKit: every screen in both themes, axe clean everywhere, two
   real runs each, the report and its menu, and Compare. **CI red on `1c687b3`:** e2e passed (135, 3 flaky, 3
   skipped), but Home's CSS measured 8.21 KB against 8, because Tailwind also scanned the Markdown docs. **Every push
   to `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
-- **Local `main` is 1 commit ahead:** the CSS fix (Tailwind scans `src/` only, 7.90 KB) and this memory bank. The
-  owner pushes it (`! git push origin main`). Then check that CI is green, including Lighthouse on GitHub's runner,
-  which didn't run on `1c687b3` because the budget step failed first.
+- **Local `main` is 1 commit ahead.** One e2e test, WebKit's CSV import, failed on its first try in both of
+  2026-10-21's CI runs and passed on retry: axe read the import's toast while it faded out. The test now waits for
+  the toast to leave (15 of 15 locally). The commit holds that fix and this memory bank. Ask the owner before
+  pushing.
 - **What works today (live since 2026-10-21):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
@@ -55,7 +59,7 @@ this first, then `progress.md` (M4.5 records what was built).
 
 ## Next step (in this order)
 
-1. **Push the CSS fix** (the owner: `! git push origin main`), then check that CI is green, Lighthouse included.
+1. **Push the test fix** (ask first; the owner may push it themselves), then check CI.
 2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it without
    comments; the departures from the boards are listed under "Waiting for the owner". Change what they ask for.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").

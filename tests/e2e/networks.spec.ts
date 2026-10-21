@@ -149,6 +149,8 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
     page.getByText("broken.json isn't a network the lab can read. This isn't valid JSON."),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Point 1 of 3" })).toBeVisible();
+  // The import's toast fades out 3.2 s after it came; on a slow runner axe would read it mid-fade.
+  await expect(page.locator("#toasts p")).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
