@@ -9,6 +9,7 @@ export type MediaRule = (playlist: MediaPlaylist) => Finding[];
 const CONTAINER_NAMES: Record<SegmentContainer, string> = {
   ts: "MPEG-TS",
   fmp4: "fMP4",
+  webvtt: "WebVTT",
   other: "other",
 };
 

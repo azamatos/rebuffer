@@ -5,7 +5,9 @@ import { describeReadError, fetchReader } from "@/core/inspect/read";
 
 /** What to inspect: a link, or text pasted or read from a file. */
 export type InspectSource =
-  { kind: "url"; url: string } | { kind: "text"; text: string; name: string | undefined };
+  | { kind: "url"; url: string }
+  /** `base`: the address pasted text came from, to follow its relative links. */
+  | { kind: "text"; text: string; name: string | undefined; base?: string | undefined };
 
 export type InspectState =
   | { status: "idle" }
@@ -42,7 +44,9 @@ export function useInspection(source: InspectSource | undefined): InspectState {
         return;
       }
       const result = await loadInspection(
-        source.kind === "url" ? { url: source.url, text } : { text, name: source.name },
+        source.kind === "url"
+          ? { url: source.url, text }
+          : { text, name: source.name, base: source.base },
         reader,
       );
       if (!result.ok) {

@@ -1,14 +1,15 @@
 import type { Container, Segment } from "./types";
 
-export type SegmentContainer = "ts" | "fmp4" | "other";
+export type SegmentContainer = "ts" | "fmp4" | "webvtt" | "other";
 
 /**
- * How one segment is packaged: MPEG-TS when its URI ends in .ts, fMP4 when an EXT-X-MAP applies
- * (fMP4 segments need one, RFC 8216 §3.3), otherwise something else (packed audio, WebVTT…).
+ * How one segment is packaged: MPEG-TS when its URI ends in .ts, WebVTT when it ends in .vtt or .webvtt, fMP4 when an
+ * EXT-X-MAP applies (fMP4 segments need one, RFC 8216 §3.3), otherwise something else (packed audio…).
  */
 export function segmentContainer(segment: Pick<Segment, "uri" | "map">): SegmentContainer {
   const path = (segment.uri.split(/[?#]/, 1)[0] ?? "").toLowerCase();
   if (path.endsWith(".ts")) return "ts";
+  if (path.endsWith(".vtt") || path.endsWith(".webvtt")) return "webvtt";
   if (segment.map !== undefined) return "fmp4";
   return "other";
 }

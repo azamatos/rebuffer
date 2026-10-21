@@ -17,7 +17,7 @@ import {
 } from "@/core/hls";
 import { networkSearch, type NetworkSearch } from "@/core/run/links";
 import { DEFAULT_STREAM } from "@/core/samples";
-import type { Inspection, Measured } from "./load";
+import type { Inspection, Measured, MediaLoad } from "./load";
 
 /**
  * What the Inspect screen shows, from an Inspection and its measurements: pure functions, so the screen only lays
@@ -32,7 +32,8 @@ const plural = (count: number, one: string, many = `${one}s`) =>
 const containerName: Record<Container, string> = {
   fmp4: "fMP4",
   ts: "MPEG-TS",
-  mixed: "mixed fMP4 and MPEG-TS",
+  webvtt: "WebVTT",
+  mixed: "mixed containers",
   unknown: "unknown",
 };
 
@@ -192,6 +193,9 @@ export function ladderRows(inspection: Inspection, measured: Measurements): Ladd
 export interface FindingSource {
   file: string;
   line: number | undefined;
+  /** For a media playlist: what it's for and its name ("subtitles", "Italiano (SDH)"); the top playlist has none. */
+  kind?: MediaLoad["kind"];
+  name?: string;
 }
 
 /** A finding with every file it was found in: one rule broken the same way in five renditions is one finding. */
@@ -241,7 +245,7 @@ export function inspectionFindings(
   measured: Measurements,
 ): SourcedFinding[] {
   const { top } = inspection;
-  const found: (Finding & { file: string; declaredBps?: number })[] = [];
+  const found: (Finding & Omit<FindingSource, "line"> & { declaredBps?: number })[] = [];
   if (top.kind === "multivariant") {
     for (const finding of lintMultivariant(top)) found.push({ ...finding, file: inspection.file });
     for (const { variant, finding } of bandwidthFindings(inspection, measured)) {
@@ -254,18 +258,20 @@ export function inspectionFindings(
     for (const media of inspection.media) {
       if (!media.playlist) continue;
       const file = relativeName(media.url, inspection.url);
-      for (const finding of lintMedia(media.playlist)) found.push({ ...finding, file });
+      for (const finding of lintMedia(media.playlist))
+        found.push({ ...finding, file, kind: media.kind, name: media.name });
     }
   } else {
     for (const finding of lintMedia(top)) found.push({ ...finding, file: inspection.file });
   }
 
   const grouped = new Map<string, SourcedFinding>();
-  for (const { file, line, declaredBps, ...finding } of found) {
+  for (const { file, line, kind, name, declaredBps, ...finding } of found) {
     const key = `${finding.id}\n${finding.message}\n${finding.detail}`;
+    const source: FindingSource = { file, line, ...(kind && name ? { kind, name } : {}) };
     const existing = grouped.get(key);
     if (existing) {
-      existing.sources.push({ file, line });
+      existing.sources.push(source);
       continue;
     }
     grouped.set(key, {
@@ -274,7 +280,7 @@ export function inspectionFindings(
       message: finding.message,
       detail: finding.detail,
       ref: finding.ref,
-      sources: [{ file, line }],
+      sources: [source],
       ...(declaredBps === undefined ? {} : { declaredBps }),
     });
   }

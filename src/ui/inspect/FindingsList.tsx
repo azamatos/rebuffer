@@ -22,6 +22,48 @@ function describeSources(finding: SourcedFinding): string {
   );
 }
 
+const KINDS = {
+  variant: ["quality", "qualities"],
+  video: ["video rendition", "video renditions"],
+  audio: ["audio playlist", "audio playlists"],
+  subtitles: ["subtitle playlist", "subtitle playlists"],
+} as const;
+
+/** A few names, then how many more: "English, Italiano (SDH), Français and 10 more". */
+function shortList(names: readonly string[]): string {
+  const counted = new Map<string, number>();
+  for (const name of names) counted.set(name, (counted.get(name) ?? 0) + 1);
+  const unique = [...counted].map(([name, n]) => (n === 1 ? name : `${name} (${String(n)})`));
+  if (unique.length <= 4) return unique.join(", ");
+  return `${unique.slice(0, 3).join(", ")} and ${String(unique.length - 3)} more`;
+}
+
+/**
+ * Many sources named by what they are: "13 subtitle playlists: English (Forced), Italiano (SDH), … and 10 more,
+ * line 2". The file names, long and alike on big streams, go behind a disclosure.
+ */
+function describeKinds(finding: SourcedFinding): string {
+  const byKind = new Map<keyof typeof KINDS, string[]>();
+  const files: string[] = [];
+  for (const source of finding.sources) {
+    if (source.kind && source.name)
+      byKind.set(source.kind, [...(byKind.get(source.kind) ?? []), source.name]);
+    else files.push(source.file);
+  }
+  const parts = [
+    ...files,
+    ...[...byKind].map(([kind, names]) => {
+      const [one, many] = KINDS[kind];
+      return `${String(names.length)} ${names.length === 1 ? one : many}: ${shortList(names)}`;
+    }),
+  ];
+  const lines = new Set(finding.sources.map((source) => source.line));
+  const [line] = lines;
+  return lines.size === 1 && line !== undefined
+    ? `${parts.join("; ")}, line ${String(line)}`
+    : parts.join("; ");
+}
+
 /** The findings, errors first, each with where it comes from and the rule it breaks. */
 export function FindingsList({
   findings,
@@ -57,7 +99,7 @@ export function FindingsList({
             </p>
             <p className="mt-1 text-fg-2">{finding.detail}</p>
             <p className="mt-1.5 font-mono text-xs break-words text-fg-3">
-              {describeSources(finding)} ·{" "}
+              {finding.sources.length > 3 ? describeKinds(finding) : describeSources(finding)} ·{" "}
               <a
                 href={finding.ref.url}
                 className="text-fg-2 underline underline-offset-2 hover:text-fg"
@@ -78,6 +120,12 @@ export function FindingsList({
                 </>
               )}
             </p>
+            {finding.sources.length > 3 && (
+              <details className="mt-1 font-mono text-xs text-fg-3">
+                <summary className="cursor-pointer">The {finding.sources.length} files</summary>
+                <p className="mt-1 break-words">{describeSources(finding)}</p>
+              </details>
+            )}
           </div>
         </li>
       ))}

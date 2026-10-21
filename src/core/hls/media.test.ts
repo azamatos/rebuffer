@@ -445,12 +445,13 @@ describe("parseMedia: segment tags", () => {
 describe("containers", () => {
   const map = { line: 1, uri: "init.mp4", attributes: {} };
 
-  it("tells MPEG-TS, fMP4 and other segments apart", () => {
+  it("tells MPEG-TS, fMP4, WebVTT and other segments apart", () => {
     expect(segmentContainer({ uri: "seg.ts?token=1" })).toBe("ts");
     expect(segmentContainer({ uri: "SEG.TS" })).toBe("ts");
     expect(segmentContainer({ uri: "seg.m4s", map })).toBe("fmp4");
     expect(segmentContainer({ uri: "seg.aac" })).toBe("other");
-    expect(segmentContainer({ uri: "seg.vtt" })).toBe("other");
+    expect(segmentContainer({ uri: "seg.vtt" })).toBe("webvtt");
+    expect(segmentContainer({ uri: "fileSequence0.webvtt?v=2" })).toBe("webvtt");
   });
 
   it("names one container for the playlist", () => {
@@ -458,6 +459,7 @@ describe("containers", () => {
     expect(playlistContainer([{ uri: "a.ts" }, { uri: "b.ts" }])).toBe("ts");
     expect(playlistContainer([{ uri: "a.m4s", map }])).toBe("fmp4");
     expect(playlistContainer([{ uri: "a.ts" }, { uri: "b.m4s", map }])).toBe("mixed");
-    expect(playlistContainer([{ uri: "a.vtt" }])).toBe("unknown");
+    expect(playlistContainer([{ uri: "a.vtt" }])).toBe("webvtt");
+    expect(playlistContainer([{ uri: "a.aac" }])).toBe("unknown");
   });
 });

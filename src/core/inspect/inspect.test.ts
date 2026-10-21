@@ -32,14 +32,18 @@ function reader(files: Record<string, string>, sizes: Record<string, number> = {
   };
 }
 
-/** The problems sample: every rung shares the media playlist with a 6.6 s segment; 960 can't be read. */
-async function problems(): Promise<Inspection> {
+/** The problems sample's files: every rung shares the media playlist with a 6.6 s segment; 960 is missing. */
+function problemFiles(): Record<string, string> {
   const files: Record<string, string> = { [`${BASE}master.m3u8`]: problemsMaster };
   for (const rung of ["426", "640", "1280", "1920"])
     files[`${BASE}${rung}/index.m3u8`] = problemsMedia;
+  return files;
+}
+
+async function problems(): Promise<Inspection> {
   const result = await loadInspection(
     { url: `${BASE}master.m3u8`, text: problemsMaster },
-    reader(files),
+    reader(problemFiles()),
   );
   if (!result.ok) throw new Error("not ok");
   return result.inspection;
@@ -77,6 +81,25 @@ describe("loadInspection", () => {
       /^Not read: a pasted playlist/,
     );
     expect(await loadInspection({ text: "hello" }, reader({}))).toMatchObject({ ok: false });
+  });
+
+  it("follows a pasted playlist's relative links from the address it came from", async () => {
+    const inspection = await loadInspection(
+      { text: problemsMaster, base: `${BASE}master.m3u8` },
+      reader(problemFiles()),
+    );
+    expect(inspection.ok && inspection.inspection.file).toBe("the pasted playlist");
+    expect(inspection.ok && inspection.inspection.url).toBeUndefined();
+    expect(
+      inspection.ok &&
+        inspection.inspection.media.map((media) => [media.label, media.playlist !== undefined]),
+    ).toEqual([
+      ["240p", true],
+      ["360p", true],
+      ["540p", false],
+      ["720p", true],
+      ["1080p", true],
+    ]);
   });
 });
 
@@ -173,6 +196,13 @@ describe("the screen's model", () => {
       "640/index.m3u8",
       "1280/index.m3u8",
       "1920/index.m3u8",
+    ]);
+    // Each says what it's for, so a long list can be named by quality rather than by file.
+    expect(overTarget?.sources.map((source) => [source.kind, source.name])).toEqual([
+      ["variant", "240p"],
+      ["variant", "360p"],
+      ["variant", "720p"],
+      ["variant", "1080p"],
     ]);
     const bandwidth = rest.find((finding) => finding.id === "bandwidth-under-declared");
     expect(bandwidth).toMatchObject({

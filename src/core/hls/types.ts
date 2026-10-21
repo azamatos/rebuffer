@@ -165,7 +165,7 @@ export interface Skip {
 }
 
 /** What the media segments are packaged in. */
-export type Container = "fmp4" | "ts" | "mixed" | "unknown";
+export type Container = "fmp4" | "ts" | "webvtt" | "mixed" | "unknown";
 
 interface PlaylistBase {
   version?: number | undefined;

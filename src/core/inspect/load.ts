@@ -13,6 +13,8 @@ export interface MediaLoad {
   url: string | undefined;
   /** What it's for: "720p", "audio “English”", "subtitles “English”". */
   label: string;
+  /** A rendition's NAME ("English"); a variant's is its label. */
+  name: string;
   kind: "variant" | "audio" | "subtitles" | "video";
   playlist?: MediaPlaylist;
   problem?: string;
@@ -29,6 +31,10 @@ export interface Inspection {
 }
 
 export type LoadResult = { ok: true; inspection: Inspection } | { ok: false; issues: ParseIssue[] };
+
+/** Why a pasted playlist's media playlists weren't read, when it names them by relative links. */
+export const UNRESOLVED =
+  "Not read: a pasted playlist has no address to resolve its links against.";
 
 /** A link made absolute, if it can be: relative links need the playlist's own address. */
 function absolute(uri: string, base: string | undefined): string | undefined {
@@ -51,12 +57,19 @@ export function fileName(url: string): string {
 /**
  * Parses the playlist and, for a multivariant one, reads every media playlist it names (variants, then audio, video
  * and subtitle renditions; I-frame playlists aren't read). Media playlists that can't be read carry the reason.
+ * Pasted text may come with `base`, the address it came from, to resolve its relative links against.
  */
 export async function loadInspection(
-  source: { url?: string | undefined; text: string; name?: string | undefined },
+  source: {
+    url?: string | undefined;
+    text: string;
+    name?: string | undefined;
+    base?: string | undefined;
+  },
   reader: Reader,
 ): Promise<LoadResult> {
-  const top = parsePlaylist(source.text, source.url ? { baseUrl: source.url } : {});
+  const base = source.url ?? source.base;
+  const top = parsePlaylist(source.text, base ? { baseUrl: base } : {});
   if (top.kind === "invalid") return { ok: false, issues: top.issues };
   const file = source.url ? fileName(source.url) : (source.name ?? "the pasted playlist");
   if (top.kind === "media")
@@ -64,27 +77,24 @@ export async function loadInspection(
 
   const wanted: Omit<MediaLoad, "playlist" | "problem">[] = [];
   const seen = new Set<string>();
-  const want = (uri: string, label: string, kind: MediaLoad["kind"]) => {
-    const url = absolute(uri, source.url);
+  const want = (uri: string, label: string, kind: MediaLoad["kind"], name = label) => {
+    const url = absolute(uri, base);
     if (url !== undefined && seen.has(url)) return;
     if (url !== undefined) seen.add(url);
-    wanted.push({ url, label, kind });
+    wanted.push({ url, label, kind, name });
   };
   for (const variant of top.variants) want(variant.uri, variantName(variant), "variant");
   for (const rendition of top.renditions) {
     if (rendition.uri === undefined || rendition.type === "CLOSED-CAPTIONS") continue;
     const kind =
       rendition.type === "AUDIO" ? "audio" : rendition.type === "VIDEO" ? "video" : "subtitles";
-    want(rendition.uri, `${kind} “${rendition.name}”`, kind);
+    want(rendition.uri, `${kind} “${rendition.name}”`, kind, rendition.name);
   }
 
   const media = await Promise.all(
     wanted.map(async (entry): Promise<MediaLoad> => {
       if (entry.url === undefined) {
-        return {
-          ...entry,
-          problem: "Not read: a pasted playlist has no address to resolve its links against.",
-        };
+        return { ...entry, problem: UNRESOLVED };
       }
       try {
         const parsed = parsePlaylist(await reader.text(entry.url), { baseUrl: entry.url });

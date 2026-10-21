@@ -8,7 +8,7 @@ import {
   type SubmitEvent,
 } from "react";
 import { flushSync } from "react-dom";
-import { MEASURED_SEGMENTS } from "@/core/inspect/load";
+import { MEASURED_SEGMENTS, UNRESOLVED, type MediaLoad } from "@/core/inspect/load";
 import {
   countFindings,
   describeSummary,
@@ -33,6 +33,8 @@ export interface InspectSearch {
 }
 
 const card = "rounded-xl border border-line bg-surface px-[18px] py-4";
+const field =
+  "min-h-10 rounded-[10px] border border-line-strong bg-ground px-3 font-mono text-sm text-fg placeholder:text-fg-3 aria-invalid:border-error";
 const primary =
   "inline-flex min-h-10 items-center rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover";
 const chip =
@@ -91,6 +93,9 @@ export function InspectPage({ search }: { search: InspectSearch }) {
     }
   }
   const [pasted, setPasted] = useState("");
+  // The address pasted text came from (optional), so its relative links can be followed.
+  const [pastedFrom, setPastedFrom] = useState("");
+  const [pastedFromError, setPastedFromError] = useState<string>();
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string>();
   const [textSource, setTextSource] = useState<InspectSource>();
@@ -118,8 +123,8 @@ export function InspectPage({ search }: { search: InspectSearch }) {
     void navigate({ to: "/inspect", search: { url: result.url } });
   };
 
-  const inspectText = (text: string, name: string | undefined) => {
-    setTextSource({ kind: "text", text, name });
+  const inspectText = (text: string, name: string | undefined, base?: string) => {
+    setTextSource({ kind: "text", text, name, base });
     if (search.url) void navigate({ to: "/inspect", search: {} });
   };
 
@@ -264,7 +269,7 @@ export function InspectPage({ search }: { search: InspectSearch }) {
                     }}
                     aria-invalid={linkError !== undefined}
                     aria-describedby={linkError ? "inspect-link-error" : "inspect-link-help"}
-                    className="min-h-10 rounded-[10px] border border-line-strong bg-ground px-3 font-mono text-sm text-fg placeholder:text-fg-3 aria-invalid:border-error"
+                    className={field}
                   />
                 </label>
                 <button type="submit" className={primary}>
@@ -287,7 +292,17 @@ export function InspectPage({ search }: { search: InspectSearch }) {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                inspectText(pasted, undefined);
+                let base: string | undefined;
+                if (pastedFrom.trim() !== "") {
+                  const result = readStreamLink(pastedFrom, window.location.protocol);
+                  if (!result.ok) {
+                    setPastedFromError(result.error);
+                    return;
+                  }
+                  base = result.url;
+                }
+                setPastedFromError(undefined);
+                inspectText(pasted, undefined, base);
               }}
               className="flex flex-col gap-2"
             >
@@ -308,15 +323,34 @@ export function InspectPage({ search }: { search: InspectSearch }) {
                   className="rounded-[10px] border border-line-strong bg-ground px-3 py-2.5 font-mono text-[13px] text-fg placeholder:text-fg-3"
                 />
               </label>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="flex flex-wrap items-end gap-2.5">
+                <label className="flex min-w-0 flex-[1_1_480px] flex-col gap-1 text-[13px] text-fg-2">
+                  Where it came from (optional): its address, so relative links can be followed
+                  <input
+                    type="url"
+                    inputMode="url"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="https://example.com/video/master.m3u8"
+                    value={pastedFrom}
+                    onChange={(event) => {
+                      setPastedFrom(event.target.value);
+                      setPastedFromError(undefined);
+                    }}
+                    aria-invalid={pastedFromError !== undefined}
+                    aria-describedby={pastedFromError ? "inspect-from-error" : undefined}
+                    className={field}
+                  />
+                </label>
                 <button type="submit" className={primary}>
                   Inspect this text
                 </button>
-                <span className="text-[13px] text-fg-3">
-                  Relative links in pasted text can&apos;t be followed: it has no address to resolve
-                  them against.
-                </span>
               </div>
+              {pastedFromError && (
+                <p id="inspect-from-error" role="alert" className="text-sm text-error-text">
+                  {pastedFromError}
+                </p>
+              )}
             </form>
           )}
           {tab === "file" && (
@@ -401,6 +435,62 @@ export function InspectPage({ search }: { search: InspectSearch }) {
   );
 }
 
+/** "1080p (6), 720p (2), audio “English”": each label once, with how many playlists carry it. */
+function labelList(list: readonly MediaLoad[]): string {
+  const counts = new Map<string, number>();
+  for (const media of list) counts.set(media.label, (counts.get(media.label) ?? 0) + 1);
+  return [...counts].map(([label, n]) => (n === 1 ? label : `${label} (${String(n)})`)).join(", ");
+}
+
+/**
+ * The media playlists that weren't read, one sentence per reason, their names behind a disclosure: a pasted
+ * multivariant playlist with relative links would otherwise list each of its playlists with the same reason.
+ */
+function Unread({ unread }: { unread: readonly MediaLoad[] }) {
+  const reasons = new Map<string, MediaLoad[]>();
+  for (const media of unread) {
+    const problem = media.problem ?? "";
+    reasons.set(problem, [...(reasons.get(problem) ?? []), media]);
+  }
+  return (
+    <section aria-label="Playlists not read" className={`${card} flex flex-col gap-2.5 text-sm`}>
+      {[...reasons].map(([problem, list]) => (
+        <div key={problem}>
+          {problem === UNRESOLVED ? (
+            <p>
+              <strong className="font-semibold">
+                {list.length === 1
+                  ? "Its media playlist wasn't"
+                  : `Its ${String(list.length)} media playlists weren't`}{" "}
+                read or checked:
+              </strong>{" "}
+              pasted text has no address to resolve their relative links against. Add the address it
+              came from under Paste text, or inspect the link itself.
+            </p>
+          ) : (
+            <p>
+              <strong className="font-semibold">
+                {list.length === 1 && list[0]
+                  ? list[0].label
+                  : `${String(list.length)} media playlists`}{" "}
+                couldn&apos;t be read, so {list.length === 1 ? "it isn't" : "they aren't"} checked
+                or measured:
+              </strong>{" "}
+              {problem}
+            </p>
+          )}
+          {list.length > 1 && (
+            <details className="mt-1 text-fg-2">
+              <summary className="cursor-pointer">Which ones</summary>
+              <p className="mt-1">{labelList(list)}</p>
+            </details>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function statusText(state: InspectState): string {
   if (state.status === "reading") return state.message;
   if (state.status !== "ready") return "";
@@ -462,6 +552,11 @@ function Results({ state }: { state: Extract<InspectState, { status: "ready" }> 
               {counts[severity] === 1 ? "" : "s"}
             </li>
           ))}
+          {unread.length > 0 && (
+            <li className="inline-flex items-center rounded-full bg-fg/6 px-2.5 py-1 text-[13px] text-fg-2">
+              {unread.length} not read
+            </li>
+          )}
         </ul>
         {inspection.url && (
           <Link to="/run" search={streamRunSearch(inspection.url)} className={`${primary} gap-2`}>
@@ -473,24 +568,7 @@ function Results({ state }: { state: Extract<InspectState, { status: "ready" }> 
         )}
       </section>
 
-      {unread.length > 0 && (
-        <section aria-label="Playlists not read" className={`${card} text-sm`}>
-          <p className="mb-1.5 font-semibold">
-            {unread.length === 1
-              ? "One media playlist"
-              : `${String(unread.length)} media playlists`}{" "}
-            couldn't be read, so {unread.length === 1 ? "it isn't" : "they aren't"} checked or
-            measured:
-          </p>
-          <ul className="list-disc pl-5 text-fg-2">
-            {unread.map((media) => (
-              <li key={media.url ?? media.label}>
-                {media.label}: {media.problem}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {unread.length > 0 && <Unread unread={unread} />}
 
       {inspection.top.kind === "multivariant" && (
         <section aria-labelledby="ladder-h" className={card}>

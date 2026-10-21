@@ -118,10 +118,20 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
   await expect(page.getByRole("region", { name: "Summary" })).toContainText(
     "Multivariant playlist · HLS v7 · 3 qualities · 1 audio track",
   );
+  // One sentence for the four playlists it couldn't follow, and the count says they weren't checked.
   await expect(page.getByRole("region", { name: "Playlists not read" })).toContainText(
-    "4 media playlists couldn't be read",
+    "Its 4 media playlists weren't read or checked: pasted text has no address",
   );
+  await expect(page.getByRole("list", { name: "Findings" })).toContainText("4 not read");
   await expect(page.getByRole("link", { name: "Run this stream" })).toHaveCount(0);
+  // With the address it came from, its links are followed.
+  const from = page.getByLabel(/^Where it came from/);
+  await from.fill(STREAM);
+  await from.press("Enter");
+  await expect(page.getByRole("group", { name: "Playlist" }).getByRole("radio")).toHaveCount(4);
+  await expect(page.getByRole("region", { name: "Playlists not read" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Run this stream" })).toHaveCount(0);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   // A server that doesn't let browsers read it.
   await page.goto(
