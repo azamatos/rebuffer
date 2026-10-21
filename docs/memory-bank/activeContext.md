@@ -2,7 +2,7 @@
 
 **Updated 2026-10-21 (seventh session).** The polish (M4.5) is live: the owner pushed it, and it was checked in
 three browsers and both themes. CI failed on the CSS budget. The fix is committed, and the owner pushes it. The
-clean sample is fixed live. The README's GIF of the new screens is recorded and waits for the owner's upload. Read
+clean sample is fixed live. The README's GIF of the new screens is live too (the owner uploaded it). Read
 this first, then `progress.md` (M4.5 records what was built).
 
 ## Where things stand
@@ -56,13 +56,10 @@ this first, then `progress.md` (M4.5 records what was built).
 ## Next step (in this order)
 
 1. **Push the CSS fix** (the owner: `! git push origin main`), then check that CI is green, Lighthouse included.
-2. **Upload the README's new GIF.** The live site has the polish now. It was recorded on 2026-10-21 from the
-   polished build (`media/readme/rebuffer.gif`, 6.4 MB, 26 s). The owner runs the upload command in
-   `scripts/readme/record-gif.mjs`.
-3. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it without
+2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it without
    comments; the departures from the boards are listed under "Waiting for the owner". Change what they ask for.
-4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-5. **Firefox's console during a run:**
+3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+4. **Firefox's console during a run:**
    - The CSP blocks hls.js's placeholder subtitle track, `data:,WEBVTT`. hls.js adds it so that Safari keeps the
      cues. Recommended: add `data:` to `media-src` in `public/_headers` (and `tests/unit/csp.test.ts`). It needs the
      owner's yes, because it's a security header.
@@ -71,7 +68,7 @@ this first, then `progress.md` (M4.5 records what was built).
    Both came before the polish. The beacon errors and WebKit's "Refused to apply a stylesheet" seen in the same
    check came from the test set-up: the sandbox can't reach `static.cloudflareinsights.com`, and Playwright's
    screenshot style breaks our `style-src`.
-6. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
+5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
    the GIF.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
@@ -139,11 +136,10 @@ that needs their eye under "Waiting for the owner".
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
   arrow and tilde darken with it. Screenshots before the push.
-- **The README's GIF: uploaded by the owner on 2026-10-20** (`readme/rebuffer.gif` in R2, served at
-  https://media.azamatos.com/readme/rebuffer.gif, 5.6 MB, checked). It shows the screens before the polish. A new one
-  was recorded on 2026-10-21 (6.4 MB): Home, then "Try the tunnel" with no stalls and 3 switches down, then the
-  report's timeline. It waits in `media/readme/rebuffer.gif` for the upload after the push. The upload command is in
-  `scripts/readme/record-gif.mjs`. Cloudflare's cache rule doesn't cover `.gif` (`cf-cache-status: DYNAMIC`):
+- **The README's GIF: recorded again from the polished build and uploaded by the owner on 2026-10-21**
+  (`readme/rebuffer.gif` in R2, served at https://media.azamatos.com/readme/rebuffer.gif, 6,353,125 bytes, checked):
+  Home, then "Try the tunnel" with no stalls and 3 switches down, then the report's timeline.
+  `scripts/readme/record-gif.mjs` records it again; the upload command is in the script. Cloudflare's cache rule doesn't cover `.gif` (`cf-cache-status: DYNAMIC`):
   fine for a README, which GitHub fetches through its own image proxy.
 - **Real Safari check (M4's last item), about 10 minutes in Safari on the Mac, on the live site after the push:**
   1. "Try the tunnel": it plays, the charts move, the result's simulation check reads sensibly.

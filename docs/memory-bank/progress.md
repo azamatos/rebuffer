@@ -233,12 +233,13 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
 - 2026-10-21 (seventh session): the live clean sample is fixed. Asked with an `Origin`, as browsers ask, R2 serves
   the new `master.m3u8` (1080p declares 6,123,200, 240p 599,571), and the live inspector reports 0 errors, 0 warnings
   and 2 notes on it. The README's GIF was recorded again from the polished build (the script now waits for the
-  "Finished" chip); it waits for the owner's upload. The owner answered "go on" to "Should I push?", and the agent's
-  permission checker refused `git push` as a production deploy, so the owner pushed the 12 commits (`1c687b3`).
+  "Finished" chip); the owner uploaded it after the push. The owner answered "go on" to "Should I push?", and the
+  agent's permission checker refused `git push` as a production deploy, so the owner pushed the 12 commits
+  (`1c687b3`).
   Cloudflare deployed it within a minute. CI failed on the CSS budget: 8.21 KB against 8. Tailwind also scanned
   the Markdown docs, and the sixth session's memory bank named classes the app doesn't use (7 rules, about 310
   bytes). The 7.97 KB had been measured before that memory bank was written. `src/styles.css` now scans `src/`
   only: 7.90 KB, with the same rules for every class the app uses. The e2e job passed (135, 3 flaky, 3 skipped).
   Checked live in Chromium, Firefox and WebKit: every screen in both themes with axe (clean everywhere), two real
   runs each, the report and its menu, Compare. Firefox's console shows two errors during a run, both from before the
-  polish (`activeContext.md`, Next step 5).
+  polish (`activeContext.md`, Next step 4).
