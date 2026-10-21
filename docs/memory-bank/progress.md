@@ -16,6 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
+| M4.6 Fixes from the owner's test | before Dec 6 | **planned 2026-10-21**: Run end state, the name in the header, Inspect and Compare for big ladders and useful comparisons, HAR, SEO; waits for decisions D1–D6 |
 | M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
 
 ## M0: decisions and setup — done
@@ -140,6 +141,77 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
       (`5341079`); 141 Playwright checks pass in three browsers (3 keyboard checks skipped in WebKit), the run-based
       specs repeated three times. A code review of the range found 10 issues: 8 fixed in `6c43a60`, the memory bank written
       at the end, and the progress bar's step back of about a frame at Stop left as it is.
+
+## M4.6: fixes from the owner's test (planned 2026-10-21, waiting for the owner's decisions)
+
+The owner tried the live site on 2026-10-21. They inspected and ran Apple's advanced example (`adv_dv_atmos`: 100
+variants, 10 audio and 13 subtitle playlists, a ladder up to 2160p at 39 Mbps), pasted its text, compared runs, and
+edited a network. What they found, and the plan. Nothing here is built. The decisions D1–D6 are in
+`activeContext.md`, "Waiting for the owner".
+
+**A. Fixes that follow patterns already approved (no new board):**
+
+- [ ] **Run: the video keeps its last frame.** At the end, `controller.ts` destroys hls.js, which empties the video,
+      so a finished run shows a dark box. Before `destroy()`, draw the frame to a canvas and set it as the video's
+      `poster`; the video is MSE, so the canvas isn't tainted. Before the first frame, the box says what it waits for
+      ("Waiting for the first frame…"). Tests: Playwright checks the poster after a run.
+- [ ] **Run: the result card is short and the log stays readable.** The honesty paragraph, nine lines on a slow link,
+      becomes the Report's simulation-check banner: one headline and Details. The event log keeps at least 240 px, and
+      the left column may end below the charts. Tests: the columns test, the banner's text.
+- [ ] **Networks: the name in the header**, as the board drew it (one of M4.5's departures; the owner didn't find
+      the Name field at the bottom). The heading becomes an input styled as a title, with a pencil, and a new
+      network starts with its name selected. Tests: keyboard rename, Save keeps the name, axe.
+- [ ] **A softer text selection.** The `::selection` colour is the solid accent with white text, so selected words
+      look like a badge (the owner's "12 s"). Use an accent tint with the normal text colour.
+- [ ] **Inspect, pasted text with relative links:** one sentence instead of one line per playlist ("123 media
+      playlists couldn't be read: …"), with the list behind a disclosure. The counts say "not checked" instead of
+      "0 errors". A "Where it came from (optional)" address field resolves the links, so the whole stream can be
+      checked. Tests: unit (load with a base address), e2e (the message, then the field).
+- [ ] **Inspect, findings name playlists by label:** "13 subtitle playlists (English (Forced), Italiano (SDH), …)",
+      with the file paths behind a disclosure. Subtitle playlists show "WebVTT", not "unknown".
+- [ ] **Charts with big ladders:** one dotted line per labelled quality. Apple's 100 variants drew dozens.
+- [ ] **CSP:** `media-src` gets `data:` for hls.js's placeholder subtitle track (D2).
+
+**B. Needs boards first** (`design-review-before-ui-code`):
+
+- [ ] **Inspect for big ladders.** The playlist chooser groups and shrinks when there are many: Video by codec and
+      range (H.264, HEVC, Dolby Vision, HDR10+), Audio, Subtitles; a select with groups above about 12. Variants that
+      share one video playlist are listed once (Apple's 1080p hls290 has three audio pairings). The ladder table
+      groups the same way. The layout doesn't leave the Findings column empty beside a long Segments column.
+- [ ] **Compare, reworked to answer a question.** The owner: "we need real comparison which will be useful".
+  - "Change one thing" from a report: pick another player preset or network, and the lab runs B with only that
+    change, then opens Compare.
+  - A warning when two runs differ in more than one setting or in the stream. Two ladders can't share one quality
+    axis, so such charts show Mbps only.
+  - A verdict headline, then metric cards with icons and A/B bars, grouped as Start, Smoothness, Picture and Data.
+  - Each chart gets a line on what to look for and a takeaway written from the data ("B stayed at 576p; A dropped
+    to 342p at 0:12"). "No stalls in either run" replaces two empty lanes.
+- [ ] **Run screen end state** (from A), shown on the same boards.
+
+**C. Features:**
+
+- [ ] **HAR import (D4):** a network curve from DevTools' "Export HAR". It reads the throughput of each response
+      while it downloaded (`timings.receive`, body size), sums it per second, and takes the latency from the median
+      `wait`. Seconds with no download hold the value before them, and the import says how many there were. It's the
+      throughput the page got, not the line's capacity, and the import says so (rule 2). The file is read in the
+      browser and only the curve is kept; HAR files can hold cookies. Core parser with unit tests; e2e import.
+- [ ] **HAR export (D4):** a run's downloads as a HAR file (More actions), to open in DevTools' Network panel
+      ("Import HAR file") as a waterfall.
+- [ ] **SEO and sharing:**
+  - Open Graph and Twitter tags, a canonical link, `apple-touch-icon`, JSON-LD (`WebApplication`).
+  - A 1200×630 preview image, made by a script from an HTML template (D3: where it lives).
+  - Titles and descriptions per route.
+  - Build-time heads for the static routes (About, Networks, Inspect, Runs), because link scrapers don't run
+    JavaScript.
+  - `sitemap.xml`, and the sitemap line in `robots.txt`.
+  - After the deploy, the owner checks LinkedIn's Post Inspector.
+- [ ] **Score (D1, reopens decision 5):** Apple's ladder tops at 39 Mbps, so a 6 Mbps network scores 0 even without a
+      stall (6.12 s to the first frame costs 6 × 39 points). Proposed: score against the best the simulated network
+      could carry at each moment, keeping Yin et al.'s formula.
+
+Not a bug: the console's `ERR_CONNECTION_REFUSED` for `static.cloudflareinsights.com/beacon.min.js` is Cloudflare
+Web Analytics. Cloudflare injects the script at the edge (`(index):37`; our `index.html` doesn't have it). A tracker
+blocker or a filtering DNS refused it; the agent's sandbox can't reach it either. Nothing in the app needs it (D6).
 
 ## M5: compare and launch (target Dec 6)
 

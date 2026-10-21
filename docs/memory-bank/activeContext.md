@@ -59,9 +59,15 @@ this first, then `progress.md` (M4.5 records what was built).
 
 ## Next step (in this order)
 
-1. **Push the test fix** (ask first; the owner may push it themselves), then check CI.
-2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it without
-   comments; the departures from the boards are listed under "Waiting for the owner". Change what they ask for.
+1. **M4.6, the fixes from the owner's test** (`progress.md`, M4.6; planned 2026-10-21). First the owner answers
+   D1–D6 below. Then:
+   1. Build group A (fixes on approved patterns), one commit with its tests per item, with screenshots.
+   2. Draw the boards for group B (Inspect for big ladders, Compare reworked, the Run end state), and wait for the
+      review.
+   3. Build group C (HAR, SEO, the score if D1 says so).
+   The test fix `7b5385e` waits unpushed, and goes out with the first push of M4.6 (ask first).
+2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it, then
+   tested the live site and sent the findings that became M4.6.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
 4. **Firefox's console during a run:**
    - The CSP blocks hls.js's placeholder subtitle track, `data:,WEBVTT`. hls.js adds it so that Safari keeps the
@@ -126,6 +132,20 @@ that needs their eye under "Waiting for the owner".
   and deploy decisions); this memory bank is the source of truth when they differ.
 
 ## Waiting for the owner (raised 2026-10-20 and 2026-10-21)
+
+- **M4.6's decisions (2026-10-21), each with the agent's recommendation:**
+  - **D1, the score (reopens decision 5):** score quality against the best the simulated network could carry at each
+    moment, instead of against the ladder's top. Recommended: yes. With Apple's 39 Mbps top, every run on a 6 Mbps
+    network scores 0.
+  - **D2, the CSP:** add `data:` to `media-src` for hls.js's placeholder subtitle track. Recommended: yes.
+  - **D3, the preview image:** commit `public/og.png` (1200×630, about 60 KB, made by a script), or host it on
+    media.azamatos.com (the owner uploads). Recommended: commit it. It's a page asset like the favicon, not media in
+    rule 7's sense.
+  - **D4, HAR:** import only, or import and export. Recommended: both. Export is small and opens a run in DevTools.
+  - **D5, Compare:** add "Change one thing", which runs B for you. Recommended: yes. It's what makes a comparison
+    useful.
+  - **D6, analytics:** leave the beacon as Cloudflare injects it. Recommended: yes. A blocked beacon costs nothing
+    but the count.
 
 - **The polish (2026-10-21): review it, then say when to push.** The review page lists where the build departs from
   the boards: the score's bars are green (quality) and red (stalls) with grey for switches and startup, out of 100
