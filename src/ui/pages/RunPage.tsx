@@ -19,18 +19,14 @@ import { curveFromParam } from "@/core/netsim/url";
 import { PLAYER_PRESETS, PlayerUnsupportedError, type PlayerPreset } from "@/core/player";
 import { playerTitle, settingsFromParam, type PlayerSettings } from "@/core/player/settings";
 import { startRun, type Run, type RunResult } from "@/core/run/controller";
-import {
-  describeEvents,
-  describeHonesty,
-  describeNetworkCheck,
-  formatMbps,
-} from "@/core/run/describe";
+import { describeEvents, describeNetworkCheck, formatMbps } from "@/core/run/describe";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 import { Hint } from "@/ui/hints/Hint";
 import { RunCharts } from "@/ui/run/RunCharts";
+import { SimulationCheck } from "@/ui/run/SimulationCheck";
 
 export interface RunSearch {
   stream?: string;
@@ -300,6 +296,13 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
   const headsUp = describeNetworkCheck(eventsOfType(events, "network-check")[0], setup.curve.rttMs);
 
   const chip = PHASE_CHIPS[phase];
+  // The video box is dark until a frame arrives (a finished run keeps its last one as the poster).
+  const waiting =
+    phase === "ready"
+      ? "The video plays here."
+      : phase === "starting" || (phase === "running" && metrics?.firstFrameS === undefined)
+        ? "Waiting for the first frame…"
+        : undefined;
 
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-4 px-4 py-5 sm:px-8">
@@ -397,12 +400,22 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
               aria-label={`Video: ${setup.streamName}`}
               className="h-full w-full"
             />
+            {waiting && (
+              <p
+                aria-hidden="true"
+                className="absolute inset-0 flex items-center justify-center text-sm text-toast-fg"
+              >
+                {waiting}
+              </p>
+            )}
           </div>
           {metrics && <Tiles metrics={metrics} />}
           {result && <Outcome result={result} savedId={savedId} />}
           <section
             aria-labelledby="log-h"
-            className="flex max-h-96 min-h-24 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-[1_1_0px]"
+            // While the run goes, the log fills what's left beside the charts; once the result joins the column, it
+            // keeps room for a few lines and the column may end below the charts.
+            className={`flex max-h-96 flex-col overflow-hidden rounded-xl border border-line bg-surface lg:max-h-none lg:flex-[1_1_0px] ${result ? "min-h-60" : "min-h-24"}`}
           >
             <h2 id="log-h" className="px-3.5 pt-3 pb-2 text-sm font-semibold">
               Event log <span className="font-normal text-fg-3">· newest first</span>
@@ -498,7 +511,6 @@ function Tiles({ metrics }: { metrics: RunMetrics }) {
 function Outcome({ result, savedId }: { result: RunResult; savedId: string | false | undefined }) {
   const metrics = computeMetrics(result.events);
   const score = computeScore(metrics);
-  const honesty = describeHonesty(metrics.honesty, result.setup.curve);
   return (
     <section
       aria-label="Result"
@@ -522,7 +534,7 @@ function Outcome({ result, savedId }: { result: RunResult; savedId: string | fal
           </Link>
         )}
       </div>
-      {honesty.length > 0 && <p className="text-sm text-fg-2">{honesty.join(" ")}</p>}
+      <SimulationCheck honesty={metrics.honesty} curve={result.setup.curve} />
       {savedId === false && (
         <p className="text-sm text-warning-text">
           This browser didn't let the lab save the run, so it has no report page.

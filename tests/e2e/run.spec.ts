@@ -20,12 +20,14 @@ test("a run plays the stream through the simulated network and reports it", asyn
       name: "The simulated network over 0:12: between 400 kbps and 4 Mbps, with 50 ms latency.",
     }),
   ).toBeVisible();
+  await expect(page.getByText("The video plays here.")).toBeVisible();
   // Keyboard only, from here to the data table.
   await tabTo(page, browserName, page.getByRole("button", { name: "Start run" }));
   await page.keyboard.press("Enter");
 
   await expect(page.getByRole("status")).toHaveText("Running", { timeout: 15_000 });
   await expect(page.getByText("First frame on screen.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Waiting for the first frame…")).toBeHidden();
   // The progress bar follows the run's clock every frame, rather than stepping four times a second.
   const fill = page.getByRole("progressbar", { name: "Run progress" }).locator("div");
   const frames = await fill.evaluate(async (element) => {
@@ -59,9 +61,15 @@ test("a run plays the stream through the simulated network and reports it", asyn
   await expect(page.getByRole("log", { name: "Switches and stalls" })).toContainText(/Playing /);
   await expect(page.getByRole("status")).toHaveText("Finished", { timeout: 30_000 });
   await expect(page.getByText("Run finished.")).toBeVisible();
+  // The player is gone, and the video keeps its last frame.
+  await expect
+    .poll(() => page.locator("video").evaluate((video) => (video as HTMLVideoElement).poster))
+    .toMatch(/^data:image\/jpeg;base64,/);
 
   const result = page.getByRole("region", { name: "Result" });
   await expect(result).toContainText("QoE score");
+  // With the result in the column, the log still shows a few lines.
+  expect((await log.boundingBox())?.height).toBeGreaterThanOrEqual(239);
   // On a slow machine a few local downloads can start late; the result then says so, which is right too.
   await expect(result).toContainText(/[Yy]our connection kept up|started late|arrived late/);
   await expect(result).toContainText("hls.js 1.7.3");

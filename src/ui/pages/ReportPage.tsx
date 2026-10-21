@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
-import { describeHonesty, formatMbps, honestyWarning } from "@/core/run/describe";
+import { formatMbps } from "@/core/run/describe";
 import { whatHappened, type Note } from "@/core/run/notes";
 import { noteRange, wholeRange, type TimeRange } from "@/core/run/range";
 import { tryNext } from "@/core/run/ideas";
@@ -16,6 +16,7 @@ import { toast } from "@/ui/feedback/toast";
 import { MenuItem, Popover } from "@/ui/menu/Popover";
 import { ZoomBar } from "@/ui/report/ZoomBar";
 import { RunCharts } from "@/ui/run/RunCharts";
+import { SimulationCheck } from "@/ui/run/SimulationCheck";
 import { useNow } from "@/ui/runs/useNow";
 
 type Loaded = { status: "loading" } | { status: "missing" } | { status: "ready"; run: SavedRun };
@@ -115,8 +116,6 @@ function Report({ run }: { run: SavedRun }) {
   );
   const score = computeScore(metrics);
   const { network, player, streamName, streamUrl } = run.setup;
-  const honesty = describeHonesty(metrics.honesty, network.curve);
-  const warning = honestyWarning(metrics.honesty);
   const settings = describeSettings(player.settings);
 
   const exportJson = () => {
@@ -258,74 +257,7 @@ function Report({ run }: { run: SavedRun }) {
         )}
       </section>
 
-      <section aria-label="Simulation check">
-        {warning ? (
-          <details className="group rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5">
-            <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 12 12"
-                aria-hidden="true"
-                className="mt-1 flex-none"
-              >
-                <path d="M6 0.8 L11.5 11 H0.5 Z" className="fill-warning" />
-              </svg>
-              <span className="min-w-0 flex-auto">
-                <strong className="font-semibold">Simulation check:</strong> {warning}
-              </span>
-              <span className="inline-flex flex-none items-center gap-1 pt-0.5 text-sm text-warning-text">
-                Details
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  aria-hidden="true"
-                  className="transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
-                >
-                  <path
-                    d="M2 3.5 L5 6.5 L8 3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                </svg>
-              </span>
-            </summary>
-            <ul className="mt-2 flex list-disc flex-col gap-1 pl-11 text-sm text-fg-2">
-              {honesty.map((sentence) => (
-                <li key={sentence}>{sentence}</li>
-              ))}
-            </ul>
-          </details>
-        ) : (
-          <p className="flex items-start gap-2 text-sm text-fg-2">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 18 18"
-              aria-hidden="true"
-              className="flex-none"
-            >
-              <circle cx="9" cy="9" r="8" fill="none" strokeWidth="1.6" className="stroke-accent" />
-              <path
-                d="M5.5 9.2 L8 11.5 L12.5 6.5"
-                fill="none"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="stroke-accent"
-              />
-            </svg>
-            <span>
-              <span className="font-medium text-fg">Simulation check:</span>{" "}
-              {honesty.length === 0
-                ? "No downloads went through the simulated network."
-                : honesty.join(" ")}
-            </span>
-          </p>
-        )}
-      </section>
+      <SimulationCheck honesty={metrics.honesty} curve={network.curve} />
 
       <section aria-label="Results" className="flex flex-wrap items-stretch gap-3">
         <div

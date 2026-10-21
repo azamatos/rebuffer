@@ -36,6 +36,25 @@ function isMainPlaylist(type: string): boolean {
   return type === "main";
 }
 
+/**
+ * Leaves the frame on screen as the video's poster: destroying hls.js empties the video, and a finished run would
+ * show a dark box. The frames come through Media Source Extensions, so the canvas isn't tainted; if a browser
+ * thinks otherwise, the box stays dark.
+ */
+function keepLastFrame(video: HTMLVideoElement): void {
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0) return;
+  const scale = Math.min(1, 1280 / video.videoWidth);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  try {
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    video.poster = canvas.toDataURL("image/jpeg", 0.85);
+  } catch {
+    // A tainted canvas: no poster.
+  }
+}
+
 export class PlayerUnsupportedError extends Error {
   constructor() {
     super(
@@ -62,6 +81,7 @@ export async function startHlsJs({
   if (!Hls.isSupported()) throw new PlayerUnsupportedError();
 
   const hls = new Hls({ ...settings, lowLatencyMode: false });
+  video.removeAttribute("poster");
   const STALLED: ErrorData["details"] = Hls.ErrorDetails.BUFFER_STALLED_ERROR;
   const cleanups: (() => void)[] = [];
   const listen = (type: keyof HTMLVideoElementEventMap, handler: () => void) => {
@@ -199,6 +219,7 @@ export async function startHlsJs({
     version: Hls.version,
     destroy() {
       for (const cleanup of cleanups) cleanup();
+      keepLastFrame(video);
       hls.destroy();
     },
   };
