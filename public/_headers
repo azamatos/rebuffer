@@ -1,8 +1,9 @@
 # Cloudflare Pages headers. connect-src and media-src stay open because the lab plays any stream link the
 # visitor enters; everything else is same-origin. The one inline script (index.html: the theme and the path before the first paint)
-# is allowed by its hash; tests/unit/csp.test.ts checks that it matches.
+# is allowed by its hash; tests/unit/csp.test.ts checks that it matches. media-src takes data: for the empty subtitle
+# track hls.js adds (data:,WEBVTT), which keeps Safari from dropping its cues.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-WQTdRKn4K7tm4bNJhRIVHR4Yv3A2CED3tZZEs72xfMk=' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; media-src * blob:; connect-src *; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-WQTdRKn4K7tm4bNJhRIVHR4Yv3A2CED3tZZEs72xfMk=' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; media-src * blob: data:; connect-src *; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   Permissions-Policy: camera=(), microphone=(), geolocation=()

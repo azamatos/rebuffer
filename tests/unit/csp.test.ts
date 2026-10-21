@@ -25,3 +25,11 @@ describe("the theme script in index.html", () => {
     expect(scripts[0]).toContain(`"${THEME_KEY}"`);
   });
 });
+
+describe("the CSP's media-src", () => {
+  it("lets media come from anywhere, including hls.js's empty data: subtitle track", () => {
+    const csp = /Content-Security-Policy: (.*)/.exec(read("public/_headers"))?.[1] ?? "";
+    const mediaSrc = csp.split(";").find((part) => part.trim().startsWith("media-src")) ?? "";
+    expect(mediaSrc.trim().split(/\s+/)).toEqual(["media-src", "*", "blob:", "data:"]);
+  });
+});
