@@ -5,6 +5,7 @@ import {
   lazyRouteComponent,
   type RouterHistory,
 } from "@tanstack/react-router";
+import { PAGES } from "@/seo";
 import { AppShell } from "@/ui/layout/AppShell";
 import { HomePage } from "@/ui/pages/HomePage";
 import { NotFoundPage } from "@/ui/pages/NotFoundPage";
@@ -32,7 +33,7 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: HomePage,
-  head: () => ({ meta: [{ title: "Rebuffer: see how a video player survives a bad network" }] }),
+  head: () => ({ meta: [{ title: PAGES.home.title }] }),
 });
 
 /** Keeps the string params the Run screen knows; anything else in the URL is ignored. */
@@ -57,7 +58,7 @@ const runRoute = createRoute({
 const runsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/runs",
-  head: () => title("Runs"),
+  head: () => ({ meta: [{ title: PAGES.runs.title }] }),
   component: lazyRouteComponent(() => import("@/ui/pages/RunsPage"), "RunsPage"),
   pendingComponent: pending,
 });
@@ -103,7 +104,7 @@ function networksSearch(search: Record<string, unknown>): NetworksSearch {
 const networksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/networks",
-  head: () => title("Networks"),
+  head: () => ({ meta: [{ title: PAGES.networks.title }] }),
   validateSearch: networksSearch,
   component: lazyRouteComponent(() => import("@/ui/pages/NetworksPage"), "NetworksRoute"),
   pendingComponent: pending,
@@ -112,7 +113,7 @@ const networksRoute = createRoute({
 const inspectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/inspect",
-  head: () => title("Inspect a stream"),
+  head: () => ({ meta: [{ title: PAGES.inspect.title }] }),
   validateSearch: (search: Record<string, unknown>): InspectSearch =>
     typeof search.url === "string" && search.url !== "" ? { url: search.url } : {},
   component: lazyRouteComponent(() => import("@/ui/pages/InspectPage"), "InspectRoute"),
@@ -122,7 +123,7 @@ const inspectRoute = createRoute({
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/about",
-  head: () => title("About"),
+  head: () => ({ meta: [{ title: PAGES.about.title }] }),
   component: lazyRouteComponent(() => import("@/ui/pages/AboutPage"), "AboutPage"),
   pendingComponent: pending,
 });

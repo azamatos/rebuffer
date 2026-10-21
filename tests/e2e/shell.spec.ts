@@ -89,3 +89,36 @@ test("unknown paths show a not-found page", async ({ page }) => {
   await page.goto("/no-such-page");
   await expect(page.getByRole("heading", { level: 1, name: "Nothing here" })).toBeVisible();
 });
+
+test("each page's HTML carries its own title, description and link preview", async ({
+  request,
+}) => {
+  const head = async (path: string) => {
+    const response = await request.get(path);
+    expect(response.ok()).toBe(true);
+    return response.text();
+  };
+  const home = await head("/");
+  expect(home).toContain("<title>Rebuffer: see how a video player survives a bad network</title>");
+  expect(home).toContain(
+    '<meta property="og:image" content="https://rebuffer.azamatos.com/og.png" />',
+  );
+  expect(home).toContain('<meta name="twitter:card" content="summary_large_image" />');
+  expect(home).toContain('<link rel="canonical" href="https://rebuffer.azamatos.com/" />');
+  expect(home).toContain('"@type":"WebApplication"');
+  const inspect = await head("/inspect");
+  expect(inspect).toContain("<title>Inspect a stream · Rebuffer</title>");
+  expect(inspect).toContain(
+    '<meta property="og:url" content="https://rebuffer.azamatos.com/inspect" />',
+  );
+  expect(inspect).not.toContain("application/ld+json");
+
+  // The preview image is the size the tags say: a PNG's width and height sit at bytes 16 to 24.
+  const image = await request.get("/og.png");
+  expect(image.headers()["content-type"]).toBe("image/png");
+  const bytes = await image.body();
+  expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
+  expect(await (await request.get("/sitemap.xml")).text()).toContain(
+    "<loc>https://rebuffer.azamatos.com/networks</loc>",
+  );
+});

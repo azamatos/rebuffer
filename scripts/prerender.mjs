@@ -1,7 +1,8 @@
 // Renders Home into dist/index.html after `vite build`, so its first paint doesn't wait for the JavaScript
 // (Lighthouse on GitHub's runners measured 0.82 for performance without it); src/app.tsx hydrates it.
 // Every other path is served the same file: the script in index.html marks those, and the CSS hides the markup there
-// until the app has rendered its own screen.
+// until the app has rendered its own screen. The pages in src/seo.ts get a copy each with their own head (title,
+// description, Open Graph), for link previews and search, which read the HTML before any JavaScript; and a sitemap.
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "vite";
 
@@ -16,6 +17,8 @@ const server = await createServer({
 try {
   /** @type {{ render: (path: string) => Promise<string> }} */
   const { render } = await server.ssrLoadModule("/src/prerender.tsx");
+  /** @type {typeof import("../src/seo")} */
+  const seo = await server.ssrLoadModule("/src/seo.ts");
   // The route's <title> comes first; index.html's <head> has the same one already.
   const html = (await render("/")).replace(/^<title>[^<]*<\/title>/, "");
   if (html.includes("<title>"))
@@ -39,14 +42,19 @@ try {
         `<link rel="preload" href="/assets/${file}" as="font" type="font/woff2" crossorigin />`,
     )
     .join("");
-  writeFileSync(
-    page,
-    built
-      .replace(empty, `<div id="root" data-prerendered>${markup}</div>`)
-      .replace("</title>", `</title>${preloads}`),
-  );
+  const head = /<title>[^<]*<\/title>\s*<meta\s+name="description"\s+content="[^"]*"\s*\/?>/;
+  if (!head.test(built))
+    throw new Error("dist/index.html has no <title> and description to replace.");
+  const body = built.replace(empty, `<div id="root" data-prerendered>${markup}</div>`);
+  for (const meta of Object.values(seo.PAGES)) {
+    writeFileSync(
+      new URL(`../dist/${meta.file}`, import.meta.url),
+      body.replace(head, seo.headTags(meta)).replace("</title>", `</title>${preloads}`),
+    );
+  }
+  writeFileSync(new URL("../dist/sitemap.xml", import.meta.url), seo.sitemap());
   console.log(
-    `Prerendered Home into dist/index.html (${(html.length / 1024).toFixed(1)} KB of HTML).`,
+    `Prerendered Home into dist/index.html (${(html.length / 1024).toFixed(1)} KB of HTML), with a head for ${String(Object.keys(seo.PAGES).length)} pages.`,
   );
 } finally {
   await server.close();

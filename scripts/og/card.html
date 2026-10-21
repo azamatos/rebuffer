@@ -1,0 +1,110 @@
+<!doctype html>
+<!-- The link preview (public/og.png, 1200×630): scripts/og/render.mjs opens this page and takes a picture of it. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2")
+          format("woff2");
+        font-weight: 100 900;
+      }
+      @font-face {
+        font-family: "Space Mono";
+        src: url("../../node_modules/@fontsource/space-mono/files/space-mono-latin-400-normal.woff2")
+          format("woff2");
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        background: #050607;
+        color: #f2f4f5;
+        font-family: "Geist", sans-serif;
+        overflow: hidden;
+      }
+      .card {
+        position: relative;
+        box-sizing: border-box;
+        width: 1200px;
+        height: 630px;
+        padding: 64px 72px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      .mark {
+        font-family: "Space Mono", monospace;
+        font-size: 30px;
+      }
+      .mark .arrow {
+        color: #68edc0;
+      }
+      .mark .tilde {
+        color: #5bc8c0;
+      }
+      h1 {
+        margin: 12px 0 0;
+        max-width: 760px;
+        font-size: 68px;
+        line-height: 1.04;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0;
+        max-width: 620px;
+        font-size: 26px;
+        line-height: 1.35;
+        color: #a6adb3;
+      }
+      svg {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="mark">
+        <span class="arrow">➜</span> <span class="tilde">~</span> rebuffer.azamatos▊
+      </div>
+      <h1>See how a video player survives a bad network.</h1>
+      <p>
+        A real hls.js player through a simulated network, in your browser. Live charts, then a
+        scored report.
+      </p>
+      <svg width="560" height="300" viewBox="0 0 560 300" aria-hidden="true">
+        <!-- The network: 6 Mbps, weaker in the tunnel, nothing, and the climb back. -->
+        <path
+          d="M0 70 H160 V118 H230 V150 H300 V300 H370 L420 70 H560 V300 H0 Z"
+          fill="#3d85d1"
+          fill-opacity="0.22"
+        />
+        <path
+          d="M0 70 H160 V118 H230 V150 H300 V300 H370 L420 70 H560"
+          fill="none"
+          stroke="#3d85d1"
+          stroke-width="3"
+        />
+        <!-- The quality on screen: down a step at a time, held through the silence from the buffer, then up. -->
+        <path
+          d="M0 96 H190 V140 H262 V176 H440 V122 H500 V96 H560"
+          fill="none"
+          stroke="#1fae84"
+          stroke-width="5"
+        />
+        <path
+          d="M0 84 H120 L150 108 H250"
+          fill="none"
+          stroke="#c8559a"
+          stroke-width="3"
+          stroke-dasharray="9 7"
+        />
+      </svg>
+    </div>
+  </body>
+</html>
