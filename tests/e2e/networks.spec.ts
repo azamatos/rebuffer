@@ -70,25 +70,18 @@ test("a network is picked, edited, saved, exported and run with the keyboard alo
   await latency.fill("120");
   await page.keyboard.press("Enter");
 
-  // Export JSON, from the Import / Export menu.
+  // Export CSV, from the Import / Export menu: the settings in its first line, then a row per point.
   await tabTo(page, browserName, page.getByRole("button", { name: "Import / Export" }));
   await page.keyboard.press("Enter");
   const download = page.waitForEvent("download");
-  await tabTo(page, browserName, page.getByRole("button", { name: "Export JSON" }));
+  await tabTo(page, browserName, page.getByRole("button", { name: "Export CSV" }));
   await page.keyboard.press("Enter");
   const file = await download;
-  expect(file.suggestedFilename()).toBe("rebuffer-network-my-tunnel.json");
-  const exported = JSON.parse(await readFile(await file.path(), "utf8")) as {
-    format: string;
-    rttMs: number;
-    points: { t: number; mbps: number }[];
-  };
-  expect(exported.format).toBe("rebuffer-network");
-  expect(exported.rttMs).toBe(120);
-  expect(exported.points.slice(6, 8)).toEqual([
-    { t: 44, mbps: 0.6 },
-    { t: 56, mbps: 0 },
-  ]);
+  expect(file.suggestedFilename()).toBe("rebuffer-network-my-tunnel.csv");
+  const lines = (await readFile(await file.path(), "utf8")).split("\n");
+  expect(lines[0]).toMatch(/^# rebuffer-network shape=\w+ rtt_ms=120 /);
+  expect(lines[1]).toBe("time_s,mbps");
+  expect(lines.slice(8, 10)).toEqual(["44,0.6", "56,0"]);
 
   // Saved in this browser (Save is at the top, which Tab reached on the way to the curve); the address names it, a
   // toast says so, and focus stays put.

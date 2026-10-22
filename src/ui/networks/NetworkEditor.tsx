@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { formatClock, parseClock } from "@/core/format/time";
-import { curveToJson } from "@/core/netsim/curve";
 import type { NetworkCurve } from "@/core/netsim/curve-math";
 import { curveFromFile, curveToCsv } from "@/core/netsim/csv";
 import {
@@ -28,6 +27,7 @@ import type { SavedRun } from "@/core/persist/runs";
 import { MAX_NETWORK_NAME, networkSearch } from "@/core/run/links";
 import { runSearchWithNetwork } from "@/core/run/report";
 import { DEFAULT_LADDER, DEFAULT_STREAM } from "@/core/samples";
+import { download } from "@/ui/feedback/download";
 import { toast } from "@/ui/feedback/toast";
 import { MenuItem, Popover } from "@/ui/menu/Popover";
 import { ChartOrTable, ShowAs, Td, Th } from "@/ui/run/chart-parts";
@@ -64,24 +64,13 @@ const field =
 
 const clock = (t: number) => formatClock(t, t % 1 === 0 ? 0 : 1);
 
-/** A file name from a network's name: "rebuffer-network-train-through-a-tunnel.json". */
+/** A file name from a network's name: "rebuffer-network-train-through-a-tunnel.csv". */
 function fileName(name: string, extension: string): string {
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   return `rebuffer-network-${slug || "network"}.${extension}`;
-}
-
-function download(text: string, type: string, name: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
 }
 
 /** The Networks screen's editor: the curve, the selected point, the whole network, and what to do with it. */
@@ -195,10 +184,9 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
     );
   };
 
-  const exportAs = (kind: "json" | "csv") => {
-    const named = fileName(name, kind);
-    if (kind === "json") download(curveToJson(curve), "application/json", named);
-    else download(curveToCsv(curve), "text/csv", named);
+  const exportCsv = () => {
+    const named = fileName(name, "csv");
+    download(curveToCsv(curve), "text/csv", named);
     toast(`Downloaded ${named}.`);
   };
 
@@ -510,15 +498,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
                     </MenuItem>
                     <MenuItem
                       onSelect={() => {
-                        exportAs("json");
-                        close();
-                      }}
-                    >
-                      Export JSON
-                    </MenuItem>
-                    <MenuItem
-                      onSelect={() => {
-                        exportAs("csv");
+                        exportCsv();
                         close();
                       }}
                     >
