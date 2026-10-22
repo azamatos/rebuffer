@@ -1,10 +1,9 @@
 # Active context
 
-**Updated 2026-10-21 (seventh session, evening).** The polish (M4.5) is live, and CI is green on it. M4.6 is under
-way: the owner approved D1–D6 ("Go with recommendations"). Built and committed locally, not pushed: group A, the
-score against the network (D1) and SEO. HAR import is written but uncommitted, and its test file has 2 lint errors;
-the owner paused the work there. Design moved to Claude Design: the app's look and 14 parts are synced to
-https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472 (`.design-sync/`). Read this first, then
+**Updated 2026-10-23 (eighth session, after midnight).** The owner set a new goal on 2026-10-22: **finish this week**
+(by Sunday 2026-10-25), the LinkedIn post after they've tested the site, the case study dropped. M4.6 is built except
+group B, which the owner is designing in Claude Design now (the agent's brief: `.design-sync/briefs/m4.6-group-b.md`).
+Nothing is pushed: local `main` is 19 commits ahead of the live site plus this memory bank. Read this first, then
 `progress.md` (M4.6).
 
 ## Where things stand
@@ -14,20 +13,18 @@ https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472 (`.design-sync/`
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `66c638a`** (the CSS fix, pushed by the owner on 2026-10-21; Cloudflare served it within
-  35 s). **CI green** on it: budgets (JavaScript 96.25 of 100 KB, CSS 7.90 of 8), Lighthouse's assertions on
-  GitHub's runner, e2e 137 passed (3 skipped). The polish went out the push before, `1c687b3`. The owner pushed it
-  with `! git push origin main`, after the agent's permission checker refused the agent's push following "go on".
-  Cloudflare deployed it within a minute.
-  Checked live the same day in Chromium, Firefox and WebKit: every screen in both themes, axe clean everywhere, two
-  real runs each, the report and its menu, and Compare. **CI red on `1c687b3`:** e2e passed (135, 3 flaky, 3
-  skipped), but Home's CSS measured 8.21 KB against 8, because Tailwind also scanned the Markdown docs. **Every push
-  to `main` deploys on its own.** Pushing is outward-facing: ask the owner before each push.
-- **Local `main` is 1 commit ahead.** One e2e test, WebKit's CSV import, failed on its first try in both of
-  2026-10-21's CI runs and passed on retry: axe read the import's toast while it faded out. The test now waits for
-  the toast to leave (15 of 15 locally). The commit holds that fix and this memory bank. Ask the owner before
-  pushing.
-- **What works today (live since 2026-10-21):**
+- **Live site = `main` at `66c638a`** (2026-10-21, CI green). **Every push to `main` deploys on its own.** Pushing
+  is outward-facing: ask the owner before each push.
+- **Local `main`: 19 commits ahead** (`7b5385e` … `41121b0`, then this memory bank), all M4.6 except group B:
+  - the CSV import test's toast wait (WebKit's flaky CI retry);
+  - group A (the Run screen keeps its last frame and a short result, the network's name in the editor's header, a
+    softer text selection, Inspect for pasted and big streams, fewer quality lines on charts), the CSP's `data:` (D2);
+  - the score against the network (D1), SEO and link previews (D3: Open Graph and Twitter tags, `public/og.png`,
+    per-page titles and heads written at build time, `sitemap.xml`); the live site has none of it yet;
+  - HAR import (D4, `6907809`), HAR export (D4, `4325691`: the worker now reports each response's status), networks
+    export CSV only (`0760ba7`), Home's CSS budget 9 KB (`14f59d4`), the repeatability tables re-measured
+    (`2e90093`), the Claude Design brief (`41121b0`).
+- **What works (live since 2026-10-21, plus the local commits above):**
   - **Home:** rendered at build time, so it paints before the JavaScript runs; hero ("Try the tunnel" starts it), a
     setup (our two films, three public test streams or your own HLS link; seven network presets with a thumbnail
     each; four player presets; Run), recent runs, how it works.
@@ -38,59 +35,54 @@ https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472 (`.design-sync/`
   - **Report (`/runs/<id>`):** the simulation check as a line or a banner under the title, the score with its
     breakdown as bars, eight tiles (the eighth: the real network's speed while downloading), zoomable charts with
     numbered markers, "What happened" rows, "Try next" cards, setup, how the score is computed; Run again, Change
-    network, Compare with…, Copy link, and a "More actions" menu (Export JSON, Delete); toasts confirm.
+    network, Compare with…, Copy link, and a "More actions" menu (Export JSON, Export HAR, Delete); toasts confirm.
   - **Runs (`/runs`)** and **Compare (`/runs/compare`, built 2026-10-20):** two saved runs side by side: what changed,
     every number with B against A in words and a verdict, the charts overlaid (A solid, B dashed).
   - **Networks (`/networks`):** a sidebar of compact rows; the editor with Save and Run with this network in its
-    header, a `?` list of the keys, one panel for the point and the whole network, Import / Export in one menu.
+    header, a `?` list of the keys, one panel for the point and the whole network, Import (JSON, CSV, HAR) / Export
+    (CSV) in one menu.
   - **Inspect (`/inspect`):** Link | Paste text | File as tabs, chips for samples, counts and playlists (each with its
     worst finding).
   - **About (`/about`, built 2026-10-20):** how a run works, where the simulation stops, how repeatable it is, the
     numbers and the score, privacy, credits (film, 4G dataset, test streams, libraries with licences).
   - **Light theme (built 2026-10-20, the owner asked for it):** System (default), Light or Dark from three radios in
     the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
-- **Quality bar today (2026-10-21):** 489 unit tests; 141 Playwright checks in Chromium, Firefox and WebKit, 138 pass
-  and 3 keyboard checks are skipped in WebKit (which only tabs to text fields); axe on every screen in both themes;
-  the run-based specs repeated 2–3 times in each browser. Home's JavaScript 96.3 of 100 KB and its CSS 7.90 of 8 KB
-  (brotli; about 100 bytes of room). Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the
-  Linux container, 1.0 in the rest, CLS 0 (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout
-  shift stays under 0.03 on every screen (Home 0.0000 desktop, 0.0039 phone).
-- **Repeatability (`pnpm repeat`, measured 2026-10-20):** Each preset 5× in Chromium on a 2:00 synthetic stream from a local server: scores within 1 point per network, the same stalls and switches, first frames within 0.12 s (the first run in a fresh browser is about 0.2 s slower), no late downloads. The README and About quote the table.
+- **Quality bar today (2026-10-23, local):** 513 unit tests; 144 Playwright checks in Chromium, Firefox and WebKit,
+  141 pass and 3 keyboard checks are skipped in WebKit (which only tabs to text fields); axe on every screen in both
+  themes. Home's JavaScript 96.66 of 100 KB and its CSS 7.94 of 9 KB (brotli; the budget was 8 until 2026-10-22).
+  Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the Linux container, 1.0 in the rest, CLS 0
+  (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout shift stays under 0.03 on every screen.
+- **Repeatability (`pnpm repeat`, measured again 2026-10-22 with the new score):** each preset 5× in Chromium on the
+  2:00 synthetic stream: scores within 2 points per network (the 2 is Home fibre's first run in a fresh browser; the
+  rest within 1), the same stalls and switches, first frames otherwise within 0.1 s. New scores: Home fibre 89–91,
+  café 86, 4G 100, tunnel 37–38, Rural 3G 0, Lift 41–42, evening 88–89. One Rural 3G run had 4 of 68 downloads
+  late from the local server (flagged by its result); Rural 3G alone again had none. Our film on the tunnel over the
+  internet, 4 runs (`REPEAT_STREAM`): 60, 59, 59, 59, no stalls. The README and About quote these.
 - **Schedule:** M0–M4 done (M4's target was Nov 22; done 2026-10-20 except the real Safari check, which needs the
-  owner). M5: Compare is built; the case study, pinning and the LinkedIn post remain (launch Dec 6).
+  owner). The owner's goal since 2026-10-22: finish this week. The case study is dropped ("leave it. Do ur
+  rebuffer"); pinning the repo and the LinkedIn post come after the owner has tested the site.
 
 ## Next step (in this order)
 
-1. **M4.6, when the owner resumes** (paused 2026-10-21; `progress.md`, M4.6):
-   1. Finish HAR import: fix the 2 lint errors in `src/core/netsim/har.test.ts` (`expect.any` inside
-      `toMatchObject`), run the networks e2e in three browsers, commit. Then HAR export (More actions → Export HAR).
-   2. Re-run `pnpm repeat` (about an hour; it serves `dist/`, so no builds meanwhile) and update the score tables in
-      the README and About: their numbers are from the old formula.
-   3. Group B (Inspect for big streams, Compare with "Change one thing", the Run end state) is designed in Claude
-      Design now, by the owner (decision 25). The agent offered a brief to paste there (the screens, the real data:
-      Apple's adv_dv_atmos stream, the owner's two tunnel runs, 0 and 49; the limits: both themes, contrast,
-      keyboard, the 8 KB CSS budget); write it if the owner wants it. Build from the designs that come back.
-   4. Push (ask first): 12 local commits, from `7b5385e` to this memory bank, plus whatever M4.6 adds. Then check the live site,
-      LinkedIn's Post Inspector for the preview (owner), and CI.
-2. **The owner's review of the polish** (https://claude.ai/artifact/28kKPyVTMefi76jKa17E8n). They pushed it, then
-   tested the live site and sent the findings that became M4.6.
-3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-4. **Firefox's console during a run:**
-   - The CSP blocks hls.js's placeholder subtitle track, `data:,WEBVTT`. hls.js adds it so that Safari keeps the
-     cues. Recommended: add `data:` to `media-src` in `public/_headers` (and `tests/unit/csp.test.ts`). It needs the
-     owner's yes, because it's a security header.
-   - The worker logs "Failed to load ''. A ServiceWorker intercepted the request and encountered an unexpected error"
-     once per run. It's probably a download aborted as the run ends; find out before changing anything.
-   Both came before the polish. The beacon errors and WebKit's "Refused to apply a stylesheet" seen in the same
-   check came from the test set-up: the sandbox can't reach `static.cloudflareinsights.com`, and Playwright's
-   screenshot style breaks our `style-src`.
-5. **M5:** the case study on azamatos.com (the owner's portfolio repo; ask first), pin the repo, LinkedIn post with
-   the GIF.
+1. **Ask the owner to push** the 19 commits and this memory bank (`! git push origin main` if the agent's push is
+   refused). Then check the live site in three browsers (the SEO heads with `curl`, a run, Export HAR), CI, and ask
+   the owner to try LinkedIn's Post Inspector.
+2. **Group B when the owner's Claude Design screens arrive** (the owner: "u will be noticed when it finishes"):
+   Compare reworked with "Change one thing", then Inspect for big streams. The agent sent Claude Design a follow-up
+   prompt on 2026-10-22 (via the owner): the 9 KB budget, the multi-setting warning, chart takeaways, the states,
+   scope "Change one thing" to a player preset or a network, and Inspect, which its plan had left out. Build from
+   its designs with keyboard tests and axe; check `pnpm size` (about 1 KB of CSS room).
+3. **The owner's decisions** under "Waiting for the owner": Rural 3G's 0 (recommended: keep the formula).
+4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
+5. **At the next `/design-sync`:** Claude Design's check lists 4 `--tw-*` variables set inside component classes and
+   13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and Lightning CSS's). They
+   don't change the designs. A `/* @kind other */` comment in `src/styles.css` wouldn't survive the build, so filter
+   them in `.design-sync/app-css.mjs`.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
 
-## Working with the owner (how this went on 2026-10-19 to 2026-10-21)
+## Working with the owner (how this went on 2026-10-19 to 2026-10-22)
 
 - Give a recommendation with each choice; the owner answers "go with recommendations" or picks, after seeing results
   (live numbers, screenshots).
@@ -99,8 +91,11 @@ that needs their eye under "Waiting for the owner".
   owner ran `node scripts/media/upload.mjs --playlists` themselves). Reading wrangler's login token is blocked too.
   On 2026-10-21 it also blocked `git push origin main` (a production deploy) after the owner's "go on". The
   owner's "lets push" got through on 2026-10-20. If a push is refused, give the owner `! git push origin main`.
+- They want short status lines while the agent works, and plain answers to "what are you waiting for". On
+  2026-10-22 they asked why networks export JSON and CSV ("are they used somewhere else?"); the honest answer
+  (nothing else reads them) led to dropping JSON export. Questions like that deserve a check of the code first.
 
-## Decisions (settled 2026-10-18 to 2026-10-20)
+## Decisions (settled 2026-10-18 to 2026-10-22)
 
 | # | Decision | Outcome |
 |---|---|---|
@@ -113,7 +108,7 @@ that needs their eye under "Waiting for the owner".
 | 7 | TypeScript | 6.0 with typescript-eslint; 7 when lint supports it |
 | 8 | Stream links | The lab accepts **any HLS link**, with a clear message when a server blocks browser access |
 | 9 | Samples | Our *Tears of Steel* (clean, and a version with planted mistakes) first; public test streams from Unified Streaming, Apple and Mux after it |
-| 10 | Scope by Dec 6 | Compare two runs and the case study; Shaka Player after launch |
+| 10 | Scope by Dec 6 | Compare two runs and the case study; Shaka Player after launch. Changed 2026-10-22: finish this week, the case study dropped |
 | 11 | Repo | github.com/azamatos/rebuffer, public (owner created it 2026-10-19), pushed over SSH |
 | 12 | Deploys | Cloudflare builds every push to `main` (working as of 2026-10-20; by hand before) |
 | 13 | Repeat runs | The browser keeps what runs download (300 MB) so repeats match; approved 2026-10-20 ("go with recommendations") |
@@ -125,16 +120,20 @@ that needs their eye under "Waiting for the owner".
 | 19 | Score target (D1, reopens 5) | A run is measured against the best rendition at or under its network's mean bandwidth over the run, not the ladder's top; Yin et al.'s formula otherwise. Approved 2026-10-21 ("Go with recommendations"), built (`84d99d3`) |
 | 20 | CSP (D2) | `media-src` allows `data:` for hls.js's empty subtitle track. Approved and built 2026-10-21 (`214d582`) |
 | 21 | Preview image (D3) | `public/og.png` is committed, made by `scripts/og/render.mjs`. Approved and built 2026-10-21 (`3853f75`) |
-| 22 | HAR (D4) | Import (a curve from DevTools' Export HAR, with a note on what it can't tell) and export (a run's downloads). Approved 2026-10-21; import in progress |
+| 22 | HAR (D4) | Import (a curve from DevTools' Export HAR, with a note on what it can't tell) and export (a run's downloads). Approved 2026-10-21; built 2026-10-22 (`6907809`, `4325691`) |
 | 23 | Compare (D5) | "Change one thing": from a report, run B with one setting changed, then compare. Approved 2026-10-21; designed in Claude Design |
 | 24 | Analytics (D6) | Cloudflare injects its beacon; a blocked beacon costs only the count. Approved 2026-10-21 |
 | 25 | Design tool | Visual design happens in Claude Design (claude.ai/design), with the app's real parts synced there; the agent briefs and builds. The owner's call on 2026-10-21 ("U r not good on design stuff at all. Can we move to claude design?") |
+| 26 | Network export | CSV only; JSON export dropped (it did what the CSV does, and nothing else reads it). Import keeps JSON, CSV and HAR. The owner's "Okay" to the recommendation, 2026-10-22 (`0760ba7`) |
+| 27 | CSS budget | Home's CSS budget 9 KB (was 8), room for group B. The owner's "Do recommended", 2026-10-22 (`14f59d4`) |
+| 28 | Schedule | Finish this week (by 2026-10-25); the case study on azamatos.com dropped ("leave it. Do ur rebuffer"); the LinkedIn post after the owner has tested the site. The owner, 2026-10-22 |
 
 ## Design and plan artifacts
 
 - **Claude Design project "Rebuffer" (2026-10-21):** https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472.
   The app's tokens (both themes), fonts, compiled stylesheet and 14 parts with graded previews, synced by
-  `/design-sync`; `.design-sync/NOTES.md` says how to re-sync. The agent's own M4.6 boards
+  `/design-sync`; `.design-sync/NOTES.md` says how to re-sync. The brief for group B (2026-10-22):
+  `.design-sync/briefs/m4.6-group-b.md`, pasted there by the owner. The agent's own M4.6 boards
   (https://claude.ai/artifact/VBhPRjdiXQoQDBzWtyc9vQ) are dropped.
 
 - **Design canvas** (Home, Run, Report, Network editor, Inspector, visual system):
@@ -149,17 +148,15 @@ that needs their eye under "Waiting for the owner".
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 
-## Waiting for the owner (raised 2026-10-20 and 2026-10-21)
+## Waiting for the owner (raised 2026-10-20 to 2026-10-22)
 
-- **The polish (2026-10-21): review it, then say when to push.** The review page lists where the build departs from
-  the boards: the score's bars are green (quality) and red (stalls) with grey for switches and startup, out of 100
-  points (the board drew pink and orange, which mean other things here, and doubled the bars); the state chip says
-  "Running" or "Finished" without the time or score; after a run the result card makes the left column longer than
-  the charts (the log keeps 96 px and scrolls); the Networks panel keeps the Name field, so its buttons sit on a second
-  row, and a saved network gets "Delete network" there; zoom's Earlier and Later are ‹ ›; the third-party samples keep
-  their "no guarantees" label; a few sizes moved 1–2 px onto the spacing scale (theme buttons 32 px, undo and redo 36,
-  every transition 200 ms) to stay inside the CSS budget. **The CSS budget has about 100 bytes left** (7,902 of 8,000
-  since 2026-10-21's fix): a larger visual change needs trimming or a bigger budget, the owner's call.
+- **Push the 19 local commits** (2026-10-22): M4.6 without group B, SEO, the new score. Ask, then check live.
+- **Rural 3G still scores 0 under the new score (D1), 2026-10-22.** From a run's breakdown: it's scored against 360p
+  (the best its 1.02 Mbps mean carries); the picture earns 68 points, the 11.7 s wait for the first frame costs 60
+  (Yin et al. charge each second of startup as much as a segment), and hls.js starting at 720p and dropping to 240p
+  costs 14. Recommended: keep the published formula; the Report's bars show the losses and the README explains it.
+  Changing startup's weight would be a departure from the paper, the owner's call.
+- **Group B's designs** are being made in Claude Design by the owner (2026-10-22).
 
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
@@ -175,7 +172,8 @@ that needs their eye under "Waiting for the owner".
   3. Start a run and switch to another tab for 20 s (the worker idles; the report should note background time).
   4. Inspect our "with problems" sample (four findings); the theme switch; Compare two runs.
   5. The polish's menus: open the Report's "⋯" with the keyboard (Tab, Enter), then click Export JSON with the mouse
-     (Safari doesn't focus a clicked button, which once closed the menu first; Playwright's WebKit showed it).
+     (Safari doesn't focus a clicked button, which once closed the menu first; Playwright's WebKit showed it). Then
+     Export HAR, and open the file in Safari's Web Inspector (Network, Import).
   6. Anything that looks wrong: a screenshot is enough.
 - **Compare's colours:** A is a solid line in the text colour, B a dashed line in the accent (no new colour tokens;
   the network keeps its blue). The owner may prefer two new hues.
@@ -199,9 +197,7 @@ that needs their eye under "Waiting for the owner".
     run's own stream and player when the editor came from a report's "Change network".
 - **On phones the network list comes before the editor** (11 cards to scroll past). Possible later: a compact
   list (a select, or collapsed groups) under 700 px. Not done; the design has the list first.
-- **Score on slow networks (observation; decision 5 stays until the owner reopens it).** Rural 3G played with no
-  stalls and scored 0–1/100, Tunnel 25–35: the score compares with the ladder's top quality, not with what the
-  network allows. Possible later: show "best possible on this network" next to the score.
+- **Score on slow networks:** answered by D1 (decision 19); Rural 3G's remaining 0 is above.
 - **The report at the end of a run:** the spec said the Report opens by itself; it's built as a "See the report"
   button so the live result stays in view. The owner can ask for it to open by itself.
 - **Idea, not started:** a setup's first run carries the real network's noise. A "warm-up" could download the ladder
@@ -222,6 +218,18 @@ that needs their eye under "Waiting for the owner".
 - Whether to publish the playlist parser or the network simulator as npm packages after launch.
 
 ## Lessons worth keeping
+
+- **Firefox logs "Failed to load ''. A ServiceWorker intercepted the request and encountered an unexpected error"
+  once for each download the page cancels while the worker streams its body** (found 2026-10-22, matched to the
+  run's log to the hundredth of a second): hls.js giving up a slow segment, or its downloads cut at a run's end.
+  Erroring or quietly closing the body made no difference, and resolving instead of rejecting only matters before
+  the first byte. It's the player's own cancellation, not a fault; left as it is. Playwright's Firefox shows these
+  messages in `page.on("console")`. Reproduce with our film and a short Playwright script against `pnpm preview`;
+  the small local stream rarely cancels mid-body.
+- **The repeatability job can see late downloads from localhost** when the Mac is busy (one Rural 3G run, 4 of 68,
+  2026-10-22); the run's own check flags them. Re-run that network alone before reading anything into it.
+- **`lsof -ti :4012,:4013` fails on macOS** ("unknown service"); use `lsof -ti tcp:4012`. And zsh expands a word
+  that starts with `=` (`echo =====X` fails): quote separators.
 
 - **Tailwind's `flex-1` is `flex: 1 1 0%`,** and a percentage basis in a column of indefinite height counts the
   content: the Run screen's event log grew with its lines. Use `flex-[1_1_0px]` to fill a column without growing it.

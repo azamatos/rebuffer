@@ -64,7 +64,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   keyboard** (arrows move the selected point, Tab between points, Delete removes). Step or linear between points.
 - The stream's ladder is drawn as horizontal lines over the curve, so you see where the network falls below each
   quality.
-- Latency (RTT, ms) and run length. Import or export a trace as JSON or CSV.
+- Latency (RTT, ms) and run length. Import a trace as JSON, CSV or HAR (DevTools' "Export HAR": the throughput the
+  page got, with a note that it isn't the line's capacity; built 2026-10-22); export CSV. JSON export was dropped on
+  2026-10-22 (the owner's call): it did what CSV does, and nothing else reads it.
 - **A network has a length, and a run lasts exactly that long** (or until the video ends; our film is 12:14, so runs
   end with the network). The length is what the curve covers: the simulator needs a bandwidth for every second, and
   a fixed length makes runs comparable. Presets run 1:00–2:00 (the Tunnel, the default, 1:30: long enough for the
@@ -128,7 +130,9 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - The same three charts, static, zoomable, with notes the lab writes: "0:42–0:54: bandwidth fell below the
   lowest quality (0.4 Mbps); the buffer ran out at 0:51; a stall of 2.1 s".
 - Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Copy link** (the link carries the
-  setup, not the results) and **More actions** (Export JSON, Delete); Copy link and Export confirm in a toast.
+  setup, not the results) and **More actions** (Export JSON, Export HAR, Delete); Copy link and Export confirm in a toast. Export HAR
+  (2026-10-22) saves the run's downloads as the simulation timed them, for DevTools' Network panel ("Import HAR
+  file"); the file says the times are simulated.
 - **Polished 2026-10-21 (M4.5):** the simulation check is a line under the title (a banner with details when the
   real network or a background tab shaped the run); the score shows its breakdown as bars; an eighth tile gives the
   real network's speed while downloading; "What happened" is one row per note; "Try next" a row of cards; each chart

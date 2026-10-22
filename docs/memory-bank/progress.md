@@ -16,8 +16,8 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | before Dec 6 | **in progress, paused 2026-10-21**: group A, the score (D1) and SEO built, not pushed; HAR import uncommitted; group B designed in Claude Design |
-| M5 Compare and launch | Dec 6 | Compare built 2026-10-20; the case study and the launch posts remain |
+| M4.6 Fixes from the owner's test | 2026-10-25 | **built except group B (2026-10-22), not pushed**: group A, the score (D1), SEO, HAR import and export, the tables re-measured; group B is being designed in Claude Design |
+| M5 Compare and launch | 2026-10-25 | Compare built 2026-10-20; the case study dropped 2026-10-22; pinning and the LinkedIn post after the owner's test |
 
 ## M0: decisions and setup — done
 
@@ -144,6 +144,11 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
 
 ## M4.6: fixes from the owner's test (planned 2026-10-21, decisions approved the same day, in progress)
 
+Status on 2026-10-22 (nothing pushed): group A, D1, SEO, HAR import (`6907809`) and export (`4325691`) are built,
+networks export CSV only (`0760ba7`), and `pnpm repeat` was run again for the new score (`2e90093`). Group B waits
+for the owner's designs from Claude Design (brief: `.design-sync/briefs/m4.6-group-b.md`). Firefox's "ServiceWorker
+… unexpected error" is explained and left (`activeContext.md`, Lessons).
+
 Status on 2026-10-21, evening (nothing pushed): every group A item is built, in `9185b6c`, `3b5a3e4`, `8f73b4b`,
 `5f5546c`, `a3b75f6` and `214d582`. The score (D1) is `84d99d3` and SEO is `3853f75`. HAR import is written and its
 unit tests pass, but it's uncommitted, with 2 lint errors in its test. HAR export isn't started. Group B is designed
@@ -196,12 +201,12 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
 
 **C. Features:**
 
-- [ ] **HAR import (D4):** a network curve from DevTools' "Export HAR". It reads the throughput of each response
+- [x] **HAR import (D4, built 2026-10-22):** a network curve from DevTools' "Export HAR". It reads the throughput of each response
       while it downloaded (`timings.receive`, body size), sums it per second, and takes the latency from the median
       `wait`. Seconds with no download hold the value before them, and the import says how many there were. It's the
       throughput the page got, not the line's capacity, and the import says so (rule 2). The file is read in the
       browser and only the curve is kept; HAR files can hold cookies. Core parser with unit tests; e2e import.
-- [ ] **HAR export (D4):** a run's downloads as a HAR file (More actions), to open in DevTools' Network panel
+- [x] **HAR export (D4, built 2026-10-22):** a run's downloads as a HAR file (More actions), to open in DevTools' Network panel
       ("Import HAR file") as a waterfall.
 - [x] **SEO and sharing:**
   - Open Graph and Twitter tags, a canonical link, `apple-touch-icon`, JSON-LD (`WebApplication`).
@@ -222,7 +227,8 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
 ## M5: compare and launch (target Dec 6)
 
 - [x] Compare two saved runs (differences in words, what changed, overlaid charts) (2026-10-20)
-- [ ] Case study on azamatos.com; repo pinned; LinkedIn post with a GIF
+- [ ] Repo pinned; LinkedIn post with a GIF, after the owner has tested the site
+- Dropped 2026-10-22 (the owner): the case study on azamatos.com
 
 ## Later (only if it earns it)
 
@@ -323,3 +329,8 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   polish (`activeContext.md`, Next step 4). The owner pushed the fix (`66c638a`): CI green, Lighthouse's assertions
   passed. WebKit's CSV import test had failed on its first try in both CI runs (axe read the import's toast mid-fade);
   the test now waits for the toast to leave.
+- 2026-10-22: the owner's new goal: finish this week. HAR import and export (the worker reports each response's
+  status), networks export CSV only, Home's CSS budget 9 KB; `pnpm repeat` again with the new score (scores within 2
+  points; Rural 3G's 0 explained from a run's breakdown) and our film on the tunnel 4× (60, 59, 59, 59); Firefox's
+  console error traced to the page cancelling downloads mid-body (not fixable from the worker); the Claude Design
+  brief for group B. 513 unit tests, 141 Playwright checks pass in three browsers.
