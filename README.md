@@ -61,29 +61,36 @@ flowchart LR
 | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Shaper accuracy (1 MiB at 4 Mbps steps, 100 ms RTT; Chromium, Firefox, WebKit) | 3–24 ms behind the curve, never ahead                                                                          |
 | Live charts, per frame at 4× CPU throttling                                    | 0.1 ms median, 1.8 ms at most                                                                                  |
-| Repeatability: each of the 7 presets run 5 times (below)                       | Scores within 1 point of each other; the same stalls and switches; no late downloads                           |
+| Repeatability: each of the 7 presets run 5 times (below)                       | Scores within 2 points of each other; the same stalls and switches; late downloads in 1 run of 35, flagged     |
 | Home's JavaScript (brotli, budget 100 KB)                                      | 95.1 KB                                                                                                        |
 | Lighthouse on Home (local)                                                     | performance 98–99, accessibility, best practices and SEO 100                                                   |
 | Tests                                                                          | 484 unit tests; 138 Playwright checks in Chromium, Firefox and WebKit, with axe on every screen in both themes |
 
 ### Repeatability
 
-Chromium 156.0.8078.4, hls.js 1.7.3; stream: synthetic, 2:00, five qualities from 240p (0.47 Mbps) to 1080p (6 Mbps), 4 s segments; measured 2026-10-20.
-Scores across runs of one network differ by at most 1 point (median spread 1 point).
+Chromium 156.0.8078.4, hls.js 1.7.3; stream: synthetic, 2:00, five qualities from 240p (0.47 Mbps) to 1080p (6 Mbps),
+4 s segments; measured 2026-10-22, each run scored against the best quality its network could carry. Scores across
+runs of one network differ by at most 2 points (median spread 1 point); the 2 is Home fibre's first run in a fresh
+browser (89, the rest 91).
 
 | Network                | Runs | Score | Spread | First frame     | Stalls | Stall time  | Average bitrate     | Switches | Late downloads |
 | ---------------------- | ---- | ----- | ------ | --------------- | ------ | ----------- | ------------------- | -------- | -------------- |
-| Home fibre             | 5    | 90–91 | 1      | 0.37 s–0.60 s   | 0      | 0.0 s       | 5.59 Mbps           | 1        | 0              |
-| Busy café Wi-Fi        | 5    | 39    | 0      | 2.99 s–3.03 s   | 0      | 0.0 s       | 3.04 Mbps           | 0        | 0              |
-| 4G commute             | 5    | 68–69 | 1      | 1.70 s–1.73 s   | 0      | 0.0 s       | 4.50 Mbps–4.56 Mbps | 3        | 0              |
-| Train through a tunnel | 5    | 8–9   | 1      | 2.23 s–2.24 s   | 1      | 2.5 s–2.7 s | 1.97 Mbps–1.98 Mbps | 4        | 0              |
-| Rural 3G               | 5    | 0     | 0      | 11.55 s–11.58 s | 0      | 0.0 s       | 0.61 Mbps           | 1        | 0              |
-| Lift                   | 5    | 41–42 | 1      | 1.59 s–1.71 s   | 0      | 0.0 s       | 3.04 Mbps           | 0        | 0              |
-| Evening congestion     | 5    | 89    | 0      | 1.20 s–1.22 s   | 0      | 0.0 s       | 5.53 Mbps–5.54 Mbps | 2        | 0              |
+| Home fibre             | 5    | 89–91 | 2      | 0.36 s–0.62 s   | 0      | 0.0 s       | 5.59 Mbps           | 1        | 0              |
+| Busy café Wi-Fi        | 5    | 86    | 0      | 2.99 s–3.02 s   | 0      | 0.0 s       | 3.04 Mbps           | 0        | 0              |
+| 4G commute             | 5    | 100   | 0      | 1.71 s–1.73 s   | 0      | 0.0 s       | 4.51 Mbps–4.56 Mbps | 3        | 0              |
+| Train through a tunnel | 5    | 37–38 | 1      | 2.23 s–2.26 s   | 1      | 2.5 s–2.6 s | 1.97 Mbps           | 4        | 0              |
+| Rural 3G               | 5    | 0     | 0      | 11.56 s–11.66 s | 0      | 0.0 s       | 0.61 Mbps           | 1        | 4              |
+| Lift                   | 5    | 41–42 | 1      | 1.59 s–1.69 s   | 0      | 0.0 s       | 3.04 Mbps           | 0        | 0              |
+| Evening congestion     | 5    | 88–89 | 1      | 1.20 s–1.22 s   | 0      | 0.0 s       | 5.53 Mbps–5.54 Mbps | 2        | 0              |
+
+One Rural 3G run had 4 of its 68 downloads delivered late by the local server, and its result said so; Rural 3G
+alone again had none in 5 runs. Rural 3G scores 0 because its start costs more than its picture earns. It's scored
+against 360p, the best its 1.02 Mbps mean can carry: the picture earns 68 points, the 11.7 s wait for the first frame
+costs 60, and hls.js starting at 720p and dropping to 240p costs 14.
 
 `pnpm repeat` measures it (`tests/repeat/README.md`): one run at a time, the stream from a local server, so the real
 network never holds a run back. The synthetic stream's scores aren't our film's: its ladder and segments differ. The
-first run in a fresh browser starts slower (Home fibre's 0.60 s) while the page's Service Worker starts.
+first run in a fresh browser starts slower (Home fibre's 0.62 s) while the page's Service Worker starts.
 
 ## Run it locally
 

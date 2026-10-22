@@ -9,7 +9,12 @@ import type { SavedRun } from "../../src/core/persist/runs";
 // player. Results go to repeat-results/<preset>.json; tests/repeat/summarize.mjs turns them into a table.
 const RUNS = Number(process.env.REPEAT_RUNS ?? 5);
 const ONLY = process.env.REPEAT_NETWORKS?.split(",");
-const STREAM = "http://localhost:4013/hls/repeat/master.m3u8";
+// REPEAT_STREAM measures another stream, such as our film over the internet: its first run downloads it, the rest play
+// the copy the browser saved.
+const STREAM = process.env.REPEAT_STREAM ?? "http://localhost:4013/hls/repeat/master.m3u8";
+const STREAM_NAME =
+  process.env.REPEAT_STREAM ??
+  "synthetic, 2:00, five qualities from 240p (0.47 Mbps) to 1080p (6 Mbps), 4 s segments";
 const OUT = new URL("../../repeat-results/", import.meta.url);
 
 /** What one run measured. */
@@ -60,8 +65,7 @@ for (const preset of presets.filter((network) => !ONLY || ONLY.includes(network.
           network: { id: preset.id, name: preset.name, lengthS: preset.curve.lengthS },
           browser: `Chromium ${browser.version()}`,
           player,
-          stream:
-            "synthetic, 2:00, five qualities from 240p (0.47 Mbps) to 1080p (6 Mbps), 4 s segments",
+          stream: STREAM_NAME,
           measuredAt: new Date().toISOString(),
           runs,
         },
