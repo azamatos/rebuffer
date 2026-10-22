@@ -59,6 +59,8 @@ export const requestEventMessage = z.object({
   bytes: z.number(),
   /** The response size, when the server said (Content-Length) or once it ended. */
   totalBytes: z.number().optional(),
+  /** The HTTP status the page got, once the response has arrived. */
+  status: z.number().int().optional(),
   /** How long the real network kept the first byte waiting past the simulated RTT (its latency was higher). */
   firstByteLateMs: z.number(),
   /** How long the real network kept later bytes waiting (it couldn't keep up with the simulated bandwidth). */

@@ -5,12 +5,14 @@ import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
 import { computeMetrics, computeScore, topLevel, type RunMetrics } from "@/core/metrics";
 import { savedRuns, type SavedRun } from "@/core/persist/runs";
 import { describeScoreTarget, formatMbps } from "@/core/run/describe";
+import { runToHar } from "@/core/run/har";
 import { whatHappened, type Note } from "@/core/run/notes";
 import { noteRange, wholeRange, type TimeRange } from "@/core/run/range";
 import { tryNext } from "@/core/run/ideas";
 import { describeSettings, ideaSearch, playerChanges, savedRunSearch } from "@/core/run/report";
 import { playerTitle } from "@/core/player/settings";
 import { buildTimeline, type Timeline } from "@/core/run/timeline";
+import { download } from "@/ui/feedback/download";
 import { flash } from "@/ui/feedback/flash";
 import { toast } from "@/ui/feedback/toast";
 import { MenuItem, Popover } from "@/ui/menu/Popover";
@@ -119,16 +121,19 @@ function Report({ run }: { run: SavedRun }) {
   const settings = describeSettings(player.settings);
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify(run, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `rebuffer-run-${run.id}.json`;
-    anchor.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
+    download(JSON.stringify(run, null, 2), "application/json", `rebuffer-run-${run.id}.json`);
     toast("Downloaded the run as JSON.");
+  };
+
+  const exportHar = () => {
+    download(
+      JSON.stringify(runToHar(run), null, 2),
+      "application/json",
+      `rebuffer-run-${run.id}.har`,
+    );
+    toast(
+      "Downloaded the run's downloads as HAR. DevTools' Network panel opens it as a waterfall.",
+    );
   };
 
   const copyLink = async () => {
@@ -237,6 +242,14 @@ function Report({ run }: { run: SavedRun }) {
                   }}
                 >
                   Export JSON
+                </MenuItem>
+                <MenuItem
+                  onSelect={() => {
+                    exportHar();
+                    close();
+                  }}
+                >
+                  Export HAR
                 </MenuItem>
                 <MenuItem
                   danger

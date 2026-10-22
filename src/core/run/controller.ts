@@ -101,6 +101,7 @@ export async function startRun(
       phase: message.phase,
       bytes: message.bytes,
       ...(message.totalBytes === undefined ? {} : { totalBytes: message.totalBytes }),
+      ...(message.status === undefined ? {} : { status: message.status }),
       firstByteLateMs: message.firstByteLateMs,
       bodyLateMs: message.bodyLateMs,
       ...(message.realFirstByteAt === undefined

@@ -56,6 +56,7 @@ describe("worker messages", () => {
       ...event,
       phase: "end",
       totalBytes: 1_400_000,
+      status: 200,
       realFirstByteAt: 12.1,
       realEndAt: 12.9,
     };

@@ -154,6 +154,8 @@ export function createSession(options: SessionOptions): Session {
   function post(shaped: Shaped, phase: RequestPhase, at: number, lateness: Lateness): void {
     if (ended) return;
     const { totalBytes, realFirstByteAt, realEndAt, fromSaved } = shaped;
+    // The page gets the redirect itself when the real server redirected (`redirectTo`).
+    const status = shaped.redirectTo === undefined ? shaped.init?.status : 302;
     options.post({
       type: "request",
       sessionId: options.id,
@@ -163,6 +165,7 @@ export function createSession(options: SessionOptions): Session {
       at,
       bytes: shaped.released,
       ...(totalBytes === undefined ? {} : { totalBytes }),
+      ...(status === undefined ? {} : { status }),
       firstByteLateMs: lateness.firstByteLateMs,
       bodyLateMs: lateness.bodyLateMs,
       ...(realFirstByteAt === undefined ? {} : { realFirstByteAt }),

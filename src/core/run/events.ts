@@ -60,6 +60,8 @@ export type RunEvent =
       /** Bytes released to the player so far. */
       bytes: number;
       totalBytes?: number;
+      /** The HTTP status the page got, once the response has arrived. Runs before 2026-10-22 don't have it. */
+      status?: number;
       /** How long the real network kept the first byte waiting past the simulated RTT: its latency was higher. */
       firstByteLateMs: number;
       /** How long the real network kept later bytes waiting: it couldn't keep up with the simulated bandwidth. */

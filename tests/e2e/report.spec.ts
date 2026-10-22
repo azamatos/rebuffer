@@ -119,6 +119,24 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await settle(page.locator("#toasts"));
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
+  // HAR: the run's downloads as the simulation timed them, for DevTools' Network panel.
+  await more.click();
+  const harDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export HAR" }).click();
+  const { log } = JSON.parse(await readFile(await (await harDownload).path(), "utf8")) as {
+    log: { entries: { request: { url: string }; response: { status: number } }[]; comment: string };
+  };
+  expect(log.entries.length).toBeGreaterThan(3);
+  expect(
+    log.entries.some(
+      ({ request, response }) => request.url.endsWith(".m3u8") && response.status === 200,
+    ),
+  ).toBe(true);
+  expect(log.comment).toContain("not a measurement of a real network");
+  await expect(
+    page.locator("#toasts").getByText(/^Downloaded the run's downloads as HAR\./),
+  ).toBeVisible();
+
   // The run is listed on Home and on the Runs page, which opens its report from the keyboard.
   await openApp(page, "/");
   await expect(page.getByRole("region", { name: "Recent runs" })).toContainText("Custom network");
