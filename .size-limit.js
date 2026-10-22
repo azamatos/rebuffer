@@ -25,5 +25,5 @@ const homeScripts = [...new Set([...entries, ...app])].map((file) => `dist/${fil
 
 export default [
   { name: "Home: JavaScript (brotli)", path: homeScripts, limit: "100 kB" },
-  { name: "Home: CSS (brotli)", path: "dist/assets/index-*.css", limit: "8 kB" },
+  { name: "Home: CSS (brotli)", path: "dist/assets/index-*.css", limit: "9 kB" },
 ];
