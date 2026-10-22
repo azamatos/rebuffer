@@ -188,7 +188,8 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
     }
     edit(result.curve, 0);
     setName(file.name.replace(/\.[^.]+$/, "").slice(0, MAX_NETWORK_NAME));
-    setNotice(undefined);
+    // A HAR's curve is what a page got, not what the line could carry: that stays on screen, not in a toast.
+    setNotice("note" in result ? { text: result.note } : undefined);
     toast(
       `Imported ${result.curve.points.length} points from ${file.name}. Undo brings the last network back.`,
     );
@@ -505,7 +506,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
                         fileRef.current?.click();
                       }}
                     >
-                      Import JSON or CSV
+                      Import JSON, CSV or HAR
                     </MenuItem>
                     <MenuItem
                       onSelect={() => {
@@ -540,7 +541,7 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
           <input
             ref={fileRef}
             type="file"
-            accept=".json,.csv,.txt,application/json,text/csv,text/plain"
+            accept=".json,.csv,.txt,.har,application/json,text/csv,text/plain"
             className="hidden"
             onChange={(event) => void importFile(event)}
           />

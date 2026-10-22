@@ -6,6 +6,7 @@ import {
   type CurveResult,
   type NetworkCurve,
 } from "./curve";
+import { curveFromHar, type HarResult } from "./har";
 
 /**
  * Networks as CSV, for spreadsheets and recorded traces: one `time,bandwidth` row per point. The file the Networks
@@ -89,8 +90,12 @@ export function curveFromCsv(text: string): CurveResult {
   });
 }
 
-/** Reads an imported file: JSON when it looks like JSON, CSV otherwise. */
-export function curveFromFile(name: string, text: string): CurveResult {
+/**
+ * Reads an imported file: a HAR file (developer tools' "Export HAR") by its name or its opening `{"log":`, then JSON
+ * when it looks like JSON, CSV otherwise. A HAR's curve comes with a note on what it can and can't tell.
+ */
+export function curveFromFile(name: string, text: string): CurveResult | HarResult {
+  if (/\.har$/i.test(name) || /^\s*\{\s*"log"\s*:/.test(text)) return curveFromHar(text);
   const json = /\.json$/i.test(name) || (!/\.csv$/i.test(name) && text.trimStart().startsWith("{"));
   return json ? curveFromJson(text) : curveFromCsv(text);
 }

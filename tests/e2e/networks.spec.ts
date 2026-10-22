@@ -132,7 +132,7 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
   await tabTo(page, browserName, page.getByRole("button", { name: "Import / Export" }));
   await page.keyboard.press("Enter");
   const chooser = page.waitForEvent("filechooser");
-  await tabTo(page, browserName, page.getByRole("button", { name: "Import JSON or CSV" }));
+  await tabTo(page, browserName, page.getByRole("button", { name: "Import JSON, CSV or HAR" }));
   await page.keyboard.press("Enter");
   await (
     await chooser
@@ -148,6 +148,29 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
   await expect(page.getByRole("heading", { name: "Point 1 of 3" })).toBeVisible();
   await expect(page.getByLabel("Length")).toHaveValue("0:55");
 
+  // A HAR file from a browser's developer tools becomes a curve, with a note on what it can't tell.
+  const download = (at: number, bytes: number) => ({
+    startedDateTime: new Date(Date.UTC(2026, 9, 21, 10, 0, at)).toISOString(),
+    time: 1030,
+    response: { status: 200, bodySize: bytes, content: { size: bytes } },
+    timings: { blocked: 0, dns: -1, connect: -1, send: 0, wait: 30, receive: 1000 },
+  });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "trip.har",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        log: { entries: [download(0, 500_000), download(1, 250_000), download(2, 1_000_000)] },
+      }),
+    ),
+  });
+  await expect(page.getByRole("heading", { level: 2, name: /^trip/ })).toBeVisible();
+  await expect(
+    page.getByText(/^From 3 of 3 downloads over 0:04: the throughput the page got/),
+  ).toBeVisible();
+  // The downloads straddle seconds: 4, 2.06, 7.82 and 8 Mbps.
+  await expect(page.getByRole("heading", { name: "Point 1 of 4" })).toBeVisible();
+
   await page.locator('input[type="file"]').setInputFiles({
     name: "broken.json",
     mimeType: "application/json",
@@ -156,7 +179,7 @@ test("a CSV is imported from the keyboard, and a file the lab can't read is expl
   await expect(
     page.getByText("broken.json isn't a network the lab can read. This isn't valid JSON."),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Point 1 of 3" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Point 1 of 4" })).toBeVisible();
   // The import's toast fades out 3.2 s after it came; on a slow runner axe would read it mid-fade.
   await expect(page.locator("#toasts p")).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
