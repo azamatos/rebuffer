@@ -14,15 +14,17 @@ the buffer draining, every stall. Then read a report with the numbers viewers fe
 - **Run** any HLS stream through a simulated network, with three live charts on one time axis (bandwidth and
   quality, buffer, segment downloads) and an event log.
 - **Draw a network**: a bandwidth curve with the stream's qualities drawn over it, so you see where each one stops
-  fitting. Seven presets, four recorded 4G journeys, or your own; works with the keyboard alone. Import and export
-  JSON or CSV.
+  fitting. Seven presets, four recorded 4G journeys, or your own; works with the keyboard alone. Import JSON, CSV
+  or a HAR file from your browser's developer tools; export CSV.
 - **Tune the player**: hls.js defaults, a low-memory TV preset, quality first, fast start, or one setting changed.
 - **Read the report**: a score from a published QoE model with its breakdown, numbered notes on what happened when,
-  ideas to try next (each the same setup with one change), zoomable charts, JSON export, a link to the setup.
-- **Compare two runs**: their numbers side by side with the difference in words, what their setups changed, and the
-  charts overlaid.
-- **Inspect a playlist**: the ladder with declared, average and measured bitrates, codecs in plain words, segments,
-  and findings with the line, the file and the spec they break.
+  ideas to try next (each the same setup with one change), zoomable charts, JSON and HAR export, a link to the setup.
+- **Change one thing and compare**: from a report, run B with another player setup or network, and Compare opens
+  when it ends: what changed, a verdict, the numbers in groups (a difference inside the measured run-to-run spread
+  says so), and the charts overlaid, each with a takeaway.
+- **Inspect a playlist**: the ladder grouped by codec and range, one row per video playlist with its audio pairings,
+  declared and measured bitrates, codecs in plain words, each segment's bitrate against what's declared, and
+  findings with the line, the file and the spec they break. Big streams (Apple's 100-variant example) fold and search.
 
 Everything runs in your browser: no backend, no accounts; runs and networks stay in the browser that made them.
 
