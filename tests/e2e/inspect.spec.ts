@@ -46,7 +46,10 @@ test("a stream is inspected from a link typed with the keyboard", async ({ page,
   // Each segment's bit rate, measured, against what its variant declares.
   await expect(page.getByText("10 segments · 2 s each · 0:20 · average")).toBeVisible();
   await expect(
-    page.getByRole("img", { name: /^480p · 1 Mbps: (Every segment fits|The busiest segment)/ }),
+    // The bitrate is the encode's own: CI encodes the test stream afresh.
+    page.getByRole("img", {
+      name: /^480p · [\d.]+ (Mbps|kbps): (Every segment fits|The busiest segment)/,
+    }),
   ).toBeVisible();
   // A row's Segments button shows that playlist there.
   await ladder.getByRole("button", { name: "Segments of 240p" }).click();

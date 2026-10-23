@@ -76,10 +76,12 @@ https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. Read this first, then `progre
    departures from the group B designs.
 3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner"), then LinkedIn's Post
    Inspector, pinning the repo and the post.
-4. **At the next `/design-sync`:** Claude Design's check lists 4 `--tw-*` variables set inside component classes and
-   13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and Lightning CSS's). They
-   don't change the designs. A `/* @kind other */` comment in `src/styles.css` wouldn't survive the build, so filter
-   them in `.design-sync/app-css.mjs`. Group B's new parts (GroupedLadder, ChangeOne, RunSwatch) could be synced.
+4. **At the next `/design-sync` (the owner starts it):** Claude Design's check lists 4 `--tw-*` variables set inside
+   component classes and 13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and
+   Lightning CSS's). They don't change the designs, and they stay: the converter has no option to skip variables,
+   and taking Tailwind's out of the stylesheet would break the previews (checked 2026-10-23; the earlier plan to
+   filter them in `.design-sync/app-css.mjs` was wrong). Group B's new parts (GroupedLadder, ChangeOne, RunSwatch)
+   could be synced then.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
@@ -129,6 +131,8 @@ that needs their eye under "Waiting for the owner".
 | 26 | Network export | CSV only; JSON export dropped (it did what the CSV does, and nothing else reads it). Import keeps JSON, CSV and HAR. The owner's "Okay" to the recommendation, 2026-10-22 (`0760ba7`) |
 | 27 | CSS budget | Home's CSS budget 9 KB (was 8), room for group B. The owner's "Do recommended", 2026-10-22 (`14f59d4`) |
 | 28 | Schedule | Finish this week (by 2026-10-25); the case study on azamatos.com dropped ("leave it. Do ur rebuffer"); the LinkedIn post after the owner has tested the site. The owner, 2026-10-22 |
+| 29 | Rural 3G's 0 | Keep Yin et al.'s formula as published: the 11.7 s first frame and hls.js starting at 720p cost what the paper charges; the Report's bars and the README show why. The owner's "go … with recommended", 2026-10-23 |
+| 30 | Group B as built | The departures from the Claude Design screens stand (review page, 2026-10-23): "within spread" in every comparison, verdicts written from the numbers, "HEVC · HDR (PQ)" for HDR10+, Inspect's input card kept, no peak tag, "Segments" always, pictures named as the app does, hand-set settings kept in B. Pushed on the owner's "push and go other stuff with recommended", 2026-10-23 |
 
 ## Design and plan artifacts
 
@@ -152,8 +156,7 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20 to 2026-10-22)
 
-- **Push group B** (2026-10-23): 5 commits. Ask, then check live.
-- **Group B's departures from the Claude Design screens** (2026-10-23, on the review page):
+- **Settled 2026-10-23 (decision 30): group B's departures from the Claude Design screens stand** (review page):
   - "Within spread" applies to every comparison, not only the same setup: a first frame 0.04 s sooner isn't
     "better" when repeat runs differ by up to 0.27 s. Limits from `pnpm repeat` (2 points, 0.3 s, 0.1 s of stall,
     0.1 Mbps; `SPREAD` in `src/core/run/compare.ts`).
@@ -164,7 +167,8 @@ that needs their eye under "Waiting for the owner".
     "Showing" that isn't in the name); pictures are named as the app does (a 1920×800 film is 1080p).
   - Change one thing keeps settings changed by hand; its network list is the seven presets (drawn networks through
     the editor); run B's toast says "Compare reads it against A".
-- **Rural 3G still scores 0 under the new score (D1), 2026-10-22.** From a run's breakdown: it's scored against 360p
+- **Settled 2026-10-23 (decision 29): Rural 3G keeps its 0.** Was:
+  **Rural 3G still scores 0 under the new score (D1), 2026-10-22.** From a run's breakdown: it's scored against 360p
   (the best its 1.02 Mbps mean carries); the picture earns 68 points, the 11.7 s wait for the first frame costs 60
   (Yin et al. charge each second of startup as much as a segment), and hls.js starting at 720p and dropping to 240p
   costs 14. Recommended: keep the published formula; the Report's bars show the losses and the README explains it.
