@@ -1,12 +1,12 @@
 # Active context
 
-**Updated 2026-10-23 (ninth session, evening).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
-2026-10-25), the LinkedIn post after they've tested the site, the case study dropped. **M4.6 is built, group B
-included**, from the owner's Claude Design screens, and **all of it is live** (pushed 2026-10-23 on the owner's "push
-and go other stuff with recommended"; CI green; checked live in three browsers). Review page with screenshots:
-https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. What's left is the owner's: the Safari check, LinkedIn's Post
-Inspector, pinning the repo and the post (a draft was given in chat on 2026-10-23). Read this first, then
-`progress.md` (M4.6).
+**Updated 2026-10-23 (ninth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
+2026-10-25), the LinkedIn post after they've tested the site. M4.6 group B (Compare reworked, Change one thing, Inspect
+for big streams) is **live** (pushed 2026-10-23, CI green, checked in three browsers). **But the owner tested Compare
+and rejects it: "they look awful", "a lot of misleading things in the table and graphs", and nothing visibly changed
+from the old page. Compare needs a real redesign; the owner can't test the product while it looks like this.** Next
+session starts there (see "Next step"). Review page of group B: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
+Read this first, then `progress.md` (M4.6).
 
 ## Where things stand
 
@@ -74,13 +74,33 @@ Inspector, pinning the repo and the post (a draft was given in chat on 2026-10-2
 
 ## Next step (in this order)
 
-1. **The owner tests the live site** (said 2026-10-22: the LinkedIn post comes after that), including the real
-   Safari check (about 10 minutes; checklist under "Waiting for the owner").
-2. **LinkedIn's Post Inspector** on https://rebuffer.azamatos.com, then pinning the repo and the post (the owner
-   approves the draft).
-3. Whatever the owner's test finds: fix, show, ask before each push.
-4. **Later, when the owner says so:** a clearer, smoother, more charming graphic for the link preview image
-   (`public/og.png`); the owner's note of 2026-10-23 ("that is future task"). `progress.md`, Later.
+1. **Compare redesign (the owner's priority, 2026-10-23).** The brief for Claude Design is
+   `.design-sync/briefs/compare-redo.md` (context only, no layout orders: the owner said Claude Design has its own
+   skills; it names the live problems, the situations and the limits). The owner copied it to the clipboard and is
+   pasting it into Claude Design (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472); they'll
+   say when the screens are done. Then: (a) export the project archive (Share → Export → Project HTML → Project
+   archive; ask before downloading) and read the new `templates/compare/*`; (b) **check the screens against the
+   brief's problem list point by point and tell the owner what they miss BEFORE building** (the first design missed
+   the brief's "metric cards with bars" and was built anyway: that was the agent's failure); (c) build, with unit
+   tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d) show the owner, ask before pushing.
+   Charts: own canvas today (decision 15); a library (uPlot was the candidate) is an open decision, recommended only
+   if it makes the lane timeline simpler.
+2. **Bugs in the live Compare, to fix with it** (owner's screenshots): over a 6 s stretch A scored 0 and B 100 with a
+   green "▲ 100 points higher" under "Too early to tell"; "held back 23 of 17 downloads" (a download late both at its
+   start and mid-body counted twice); the run dropdown showed 22/100 for a run the page scored 0, and a run stopped at
+   0:06 showed 100/100 unmarked; the quality chart draws two networks plus two runs on one log axis, A (solid black)
+   and B (dashed green) hard to tell apart. **Half-done fixes are uncommitted in the working tree** (typecheck
+   passes, no tests run): `Honesty.lateRequests` counts each late download once (`metrics.ts`, used by
+   `compare.ts`; test fixtures updated), `SUMMARY_VERSION` 3 with `RunSummary.stopped` (`runs.ts`, `summary.ts`),
+   and in `compare.ts` `longEnough`/`MIN_COMPARED_S` (30 s, or half the shorter network) plus a `tooShortS` option in
+   `compareVerdict` and `tally(rows, over)`. Not yet wired into `ComparePage.tsx`; no tests yet. Keep, test and wire
+   them, or discard with `git checkout`.
+2b. **The owner tests the live site** (the LinkedIn post comes after that), including the real Safari check (about 10
+   minutes; checklist under "Waiting for the owner"), then LinkedIn's Post Inspector, pinning the repo and the post
+   (a draft was given in chat; the owner approves it).
+3. Whatever else the owner's test finds: fix, show, ask before each push. The owner's other note: **a new link preview
+   image** (`public/og.png` looks odd; clearer, smoother, more charming), a later task: design it in Claude Design,
+   then `scripts/og/card.html` and `node scripts/og/render.mjs` (`progress.md`, Later).
 4. **At the next `/design-sync` (the owner starts it):** Claude Design's check lists 4 `--tw-*` variables set inside
    component classes and 13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and
    Lightning CSS's). They don't change the designs, and they stay: the converter has no option to skip variables,
@@ -240,6 +260,12 @@ that needs their eye under "Waiting for the owner".
 
 ## Lessons worth keeping
 
+- **Check a design against the brief before building it** (2026-10-23): Claude Design's Compare kept the old page's
+  structure and dropped the brief's metric cards; the agent built it as drawn, pushed it and called it done. The owner
+  saw "nothing changed". Compare the screens with the brief's list first, say what's missing, and let the owner
+  decide. Also: a verdict, colour or score the data can't back (a 6 s stretch) is worse than no verdict.
+- **The owner wants Claude Design briefs as context only:** what the screen is for, what's wrong, the situations, the
+  limits. Don't dictate layout; it has its own design skills (2026-10-23).
 - **Claude Design's screens come out as source:** Share → Export → Project HTML → Project archive (instant, free)
   downloads a zip of every file, `templates/*/*.dc.html` included (2026-10-23; ask the owner before downloading).
   The `DesignSync` tool is for `/design-sync` only. Read the boards' notes first: they list the design's choices.

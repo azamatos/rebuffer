@@ -16,7 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | 2026-10-25 | **built**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built from the owner's Claude Design screens and live 2026-10-23, CI green |
+| M4.6 Fixes from the owner's test | 2026-10-25 | **built, but Compare is being redesigned (owner rejected it 2026-10-23)**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built from the owner's Claude Design screens and live 2026-10-23, CI green |
 | M5 Compare and launch | 2026-10-25 | Compare built 2026-10-20; the case study dropped 2026-10-22; pinning and the LinkedIn post after the owner's test |
 
 ## M0: decisions and setup — done
@@ -346,6 +346,10 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   points; Rural 3G's 0 explained from a run's breakdown) and our film on the tunnel 4× (60, 59, 59, 59); Firefox's
   console error traced to the page cancelling downloads mid-body (not fixable from the worker); the Claude Design
   brief for group B. 513 unit tests, 141 Playwright checks pass in three browsers.
+- 2026-10-23 night: the owner tested live Compare and rejected it (misleading scores and charts, looks like the old
+  page). Brief for a real redesign written (`.design-sync/briefs/compare-redo.md`, context only); the owner is taking
+  it to Claude Design. Bug fixes half done in the working tree (`activeContext.md`, Next step 2). Nothing else
+  pushed after the README and memory bank; CI green.
 - 2026-10-23: the owner pushed the 20 commits ("go with push"); live in 30 s with every page's own head, the
   sitemap and the preview image; "Try the tunnel", the report and Export HAR checked live in Chromium, Firefox and
   WebKit. Group B built from the owner's Claude Design screens: Compare leads with what changed and a verdict, reads
