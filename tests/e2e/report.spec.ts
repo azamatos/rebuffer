@@ -62,9 +62,26 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(setup).toContainText("maxBufferLength 30");
   await expect(page.getByRole("region", { name: "Simulation check" })).toContainText("downloads");
 
-  // Change network opens the run's network in the editor; a run from there keeps the stream and the player.
-  await tabTo(page, browserName, page.getByRole("link", { name: "Change network" }));
+  // Change one thing opens a panel under the header, with focus in it; this run's own preset can't be picked.
+  const change = page.getByRole("button", { name: "Change one thing" });
+  await tabTo(page, browserName, change);
   await page.keyboard.press("Enter");
+  await expect(change).toHaveAttribute("aria-expanded", "true");
+  const panel = page.getByRole("region", { name: "Change one thing, then compare" });
+  const player = panel.getByRole("button", { name: "Player setup" });
+  await expect(player).toBeFocused();
+  await expect(panel.getByRole("radio", { name: /^Defaults/ })).toBeDisabled();
+  await expect(panel.getByRole("link", { name: /^Run B · 0:08$/ })).toBeVisible();
+  await settle(panel);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  // The network side: the presets, and the editor for drawing one; a run from there is B of a comparison too.
+  await tabTo(page, browserName, panel.getByRole("button", { name: "Network", exact: true }));
+  await page.keyboard.press("Enter");
+  // A drawn network matches no preset, so the first preset is picked.
+  await expect(panel.getByRole("radio", { name: /^Home fibre\b/ })).toBeChecked();
+  await expect(panel).toContainText(/It runs 1:00, A ran 0:08; Compare lines them up from 0:00\./);
+  const runId = /\/runs\/([0-9a-f]{8})$/.exec(reportUrl)?.[1] ?? "";
+  await panel.getByRole("link", { name: "draw a network in the editor" }).click();
   // The router quotes an id that reads as a number.
   await expect(page).toHaveURL(/\/networks\?run=(%22)?[0-9a-f]{8}(%22)?$/);
   await expect(page.getByRole("heading", { level: 2, name: "Custom network" })).toBeVisible();
@@ -73,6 +90,7 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   expect(Object.fromEntries(new URL(use ?? "", "http://localhost").searchParams)).toEqual({
     stream: STREAM,
     curve: CURVE,
+    vs: runId,
   });
   await page.goto(reportUrl);
 
@@ -157,6 +175,57 @@ test("a finished run is saved and opens as a report", async ({ page, browserName
   await expect(page.getByText("No runs yet.")).toBeVisible();
   await page.goto(reportUrl);
   await expect(page.getByText("This browser has no run at this address.")).toBeVisible();
+});
+
+test("change one thing runs B with that change, then opens Compare", async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(90_000);
+  const reportUrl = await runAndOpenReport(page, browserName);
+  const runId = /\/runs\/([0-9a-f]{8})$/.exec(reportUrl)?.[1] ?? "";
+  await page.getByRole("button", { name: "Change one thing" }).click();
+  const panel = page.getByRole("region", { name: "Change one thing, then compare" });
+  await panel.getByRole("radio", { name: /^Low-memory TV/ }).check();
+  await expect(panel).toContainText("B: localhost:4013 · Custom network · Low-memory TV.");
+  await panel.getByRole("link", { name: /^Run B · / }).click();
+
+  // The Run screen says it's B of a comparison, and what changed.
+  const banner = page.getByRole("region", { name: "Run B of a comparison" });
+  await expect(banner).toContainText(
+    /Changed: player setup, Defaults →\s+changed to Low-memory TV\./,
+  );
+  await expect(page).toHaveURL(new RegExp(`vs=(%22)?${runId}`));
+  expect(
+    (await new AxeBuilder({ page }).include("main > div > section").analyze()).violations,
+  ).toEqual([]);
+
+  // At the end, Compare opens with this report's run as A.
+  await expect(page).toHaveURL(new RegExp(`/runs/compare\\?a=${runId}&b=[0-9a-f]{8}$`), {
+    timeout: 40_000,
+  });
+  await expect(page.locator("#toasts")).toContainText("Run B finished and saved.");
+  const verdict = page.getByRole("region", { name: /did|difference/ });
+  await expect(verdict).toContainText("What changed · 1 thing");
+  await expect(verdict).toContainText(/Player setup\s*Defaults\s*→\s*changed to\s*Low-memory TV/);
+});
+
+test("a run started as B of a comparison can run on its own instead", async ({
+  page,
+  browserName,
+}) => {
+  test.setTimeout(60_000);
+  const reportUrl = await runAndOpenReport(page, browserName);
+  const runId = /\/runs\/([0-9a-f]{8})$/.exec(reportUrl)?.[1] ?? "";
+  // Not started, so nothing races the click.
+  await page.goto(
+    `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&player=fast-start&vs=${runId}`,
+  );
+  const banner = page.getByRole("region", { name: "Run B of a comparison" });
+  await expect(banner).toContainText(/Changed: player setup, Defaults →\s+changed to Fast start\./);
+  await banner.getByRole("button", { name: "Run it on its own instead" }).click();
+  await expect(banner).toBeHidden();
+  await expect(page).not.toHaveURL(/vs=/);
 });
 
 test("the report's charts zoom by keyboard and by mouse", async ({ page, browserName }) => {

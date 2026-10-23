@@ -25,13 +25,18 @@ import {
   describeScoreTarget,
   formatMbps,
 } from "@/core/run/describe";
+import { setupChanges, type SetupChange } from "@/core/run/compare";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
+import { playerChanges } from "@/core/run/report";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
+import { toast } from "@/ui/feedback/toast";
 import { Hint } from "@/ui/hints/Hint";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { SimulationCheck } from "@/ui/run/SimulationCheck";
+import { RunSwatch } from "@/ui/runs/RunSwatch";
+import { useSavedRun } from "@/ui/runs/useSavedRun";
 
 export interface RunSearch {
   stream?: string;
@@ -44,6 +49,8 @@ export interface RunSearch {
   set?: string;
   /** Start as soon as the screen opens (Home's Run button); dropped from the URL once the run starts. */
   start?: string;
+  /** The saved run this one is B of a comparison with: Compare opens when it ends ("Change one thing"). */
+  vs?: string;
 }
 
 type Phase = "ready" | "starting" | "running" | "finished" | "failed";
@@ -126,6 +133,14 @@ const settingsOf = (setup: ResolvedSetup): PlayerSettings => ({
   ...setup.changes,
 });
 
+/** The setup as a saved run records it. */
+const savedSetup = (setup: ResolvedSetup): SavedRun["setup"] => ({
+  streamUrl: setup.streamUrl,
+  streamName: setup.streamName,
+  network: { id: setup.networkId, name: setup.networkName, curve: setup.curve },
+  player: { presetId: setup.player.id, name: setup.player.name, settings: settingsOf(setup) },
+});
+
 /** A finished run as the browser keeps it. */
 function toSavedRun(setup: ResolvedSetup, result: RunResult, video: HTMLVideoElement): SavedRun {
   return {
@@ -134,16 +149,7 @@ function toSavedRun(setup: ResolvedSetup, result: RunResult, video: HTMLVideoEle
     id: newRunId(),
     startedAt: result.startedAt,
     savedAt: Date.now(),
-    setup: {
-      streamUrl: setup.streamUrl,
-      streamName: setup.streamName,
-      network: { id: setup.networkId, name: setup.networkName, curve: setup.curve },
-      player: {
-        presetId: setup.player.id,
-        name: setup.player.name,
-        settings: settingsOf(setup),
-      },
-    },
+    setup: savedSetup(setup),
     player: result.player,
     environment: {
       browser: describeBrowser(navigator.userAgent),
@@ -182,11 +188,26 @@ export function RunPage({ search }: { search: RunSearch }) {
       </section>
     );
   }
-  return <RunScreen setup={resolved.setup} autostart={search.start !== undefined} />;
+  return <RunScreen setup={resolved.setup} autostart={search.start !== undefined} vs={search.vs} />;
 }
 
-function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: boolean }) {
+function RunScreen({
+  setup,
+  autostart,
+  vs,
+}: {
+  setup: ResolvedSetup;
+  autostart: boolean;
+  vs: string | undefined;
+}) {
   const navigate = useNavigate();
+  // Run B of a comparison: A is the saved run the link names. Without it in this browser, this is a run on its own.
+  const against = useSavedRun(vs);
+  const runA = against?.status === "ready" ? against.run : undefined;
+  const runARef = useRef<SavedRun | undefined>(undefined);
+  useEffect(() => {
+    runARef.current = runA;
+  });
   const videoRef = useRef<HTMLVideoElement>(null);
   const runRef = useRef<Run | undefined>(undefined);
   // The run's handle, so the charts can follow it; its data never goes through React state.
@@ -242,6 +263,16 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         setSavedId(saved.id);
       } catch {
         setSavedId(false);
+        return;
+      }
+      // Run B of a comparison goes straight to Compare, stopped early or not.
+      const a = runARef.current;
+      if (a) {
+        toast(
+          `Run B ${finished.reason === "complete" ? "finished" : "stopped"} and saved. Compare reads it against A.`,
+          { showMs: 6000 },
+        );
+        void navigate({ to: "/runs/compare", search: { a: a.id, b: saved.id } });
       }
     } catch (caught) {
       setError(errorMessage(caught));
@@ -309,17 +340,37 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         ? "Waiting for the first frame…"
         : undefined;
 
+  const alone = () => {
+    void navigate({
+      to: "/run",
+      search: (previous) => {
+        const next = { ...previous };
+        delete next.vs;
+        return next;
+      },
+      replace: true,
+    });
+  };
+
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-4 px-4 py-5 sm:px-8">
+      {runA && <ComparingBanner a={runA} b={savedSetup(setup)} onAlone={alone} />}
       <section
         aria-label="Run status"
         className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-[18px] py-3.5"
       >
         <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-2">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-            <h1 className="text-[17px] font-semibold">
-              {setup.streamName} · {setup.networkName} · hls.js{" "}
-              {playerTitle(setup.player.name, setup.changes)}
+            <h1 className="flex flex-wrap items-center gap-x-2 text-[17px] font-semibold">
+              {runA && (
+                <span className="inline-flex items-center gap-1.5">
+                  <RunSwatch side="b" />B
+                </span>
+              )}
+              <span>
+                {setup.streamName} · {setup.networkName} · hls.js{" "}
+                {playerTitle(setup.player.name, setup.changes)}
+              </span>
             </h1>
             <p
               role="status"
@@ -460,6 +511,72 @@ function RunScreen({ setup, autostart }: { setup: ResolvedSetup; autostart: bool
         <RunCharts curve={setup.curve} run={run} events={events} untilS={elapsed} />
       </div>
     </div>
+  );
+}
+
+/** "Changed: player setup, Defaults → Low-memory TV." */
+function ChangedText({ changes }: { changes: SetupChange[] }) {
+  if (changes.length === 0) return <>Nothing changed: this runs A&apos;s setup again.</>;
+  return (
+    <>
+      Changed:{" "}
+      {changes.map((change, i) => (
+        <span key={change.label}>
+          {i > 0 && "; "}
+          {change.label.toLowerCase()}, <span className="text-fg-2">{change.a}</span>
+          <span aria-hidden="true"> → </span>
+          <span className="sr-only"> changed to </span>
+          <strong className="font-semibold">{change.b}</strong>
+        </span>
+      ))}
+      .
+    </>
+  );
+}
+
+/** Run B of a comparison: what it's compared with, what changed, and what happens at the end. */
+function ComparingBanner({
+  a,
+  b,
+  onAlone,
+}: {
+  a: SavedRun;
+  b: SavedRun["setup"];
+  onAlone: () => void;
+}) {
+  const score = computeScore(computeMetrics(a.events), a.setup.network.curve);
+  // B's player and browser are A's: only the setup differs before B has run.
+  const changes = setupChanges(a, { ...a, setup: b });
+  return (
+    <section
+      aria-labelledby="comparing-h"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-accent/35 bg-accent/6 px-[18px] py-3"
+    >
+      <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
+        <h2 id="comparing-h" className="font-mono text-xs tracking-[0.06em] text-accent uppercase">
+          Run B of a comparison
+        </h2>
+        <p className="text-[15px]">
+          Against{" "}
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <RunSwatch side="a" />A
+          </span>
+          , {a.setup.network.name} · {playerTitle(a.setup.player.name, playerChanges(a))} ·{" "}
+          {Math.round(score.score)}/100. <ChangedText changes={changes} />
+        </p>
+        <p className="text-sm text-fg-2">
+          When this run ends, Compare opens with A and B. Stop it early and Compare opens anyway,
+          with a note.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAlone}
+        className="text-sm text-fg-2 underline underline-offset-2 hover:text-fg"
+      >
+        Run it on its own instead
+      </button>
+    </section>
   );
 }
 

@@ -19,18 +19,18 @@ function set(next: Toast | undefined): void {
   for (const listener of listeners) listener();
 }
 
-/** Shows `text` for a few seconds, in place of any toast already showing. */
-export function toast(text: string): void {
+/** Shows `text` for a few seconds (`showMs`), in place of any toast already showing. */
+export function toast(text: string, { showMs = SHOW_MS } = {}): void {
   for (const timer of timers) clearTimeout(timer);
   const id = nextId++;
   set({ id, text, leaving: false });
   timers = [
     setTimeout(() => {
       set({ id, text, leaving: true });
-    }, SHOW_MS),
+    }, showMs),
     setTimeout(() => {
       set(undefined);
-    }, SHOW_MS + LEAVE_MS),
+    }, showMs + LEAVE_MS),
   ];
 }
 

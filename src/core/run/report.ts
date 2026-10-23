@@ -63,6 +63,28 @@ export function describeSettings(settings: PlayerSettings): string[] {
   });
 }
 
+/** One thing to change for run B of a comparison: the player preset or the network. */
+export type OneChange =
+  { kind: "player"; presetId: string } | { kind: "network"; networkId: string };
+
+/**
+ * The Run screen's search params for "Change one thing": this run's setup with the one change, started at once, as
+ * run B of a comparison with this run. Settings changed by hand stay, so only the preset or the network differs.
+ */
+export function changeOneSearch(run: SavedRun, change: OneChange): RunLinkSearch & NetworkSearch {
+  const next = savedRunSearch(run, { start: true });
+  if (change.kind === "player") {
+    if (change.presetId === DEFAULT_PLAYER_ID) delete next.player;
+    else next.player = change.presetId;
+  } else {
+    delete next.curve;
+    delete next.name;
+    if (change.networkId === DEFAULT_NETWORK_ID) delete next.network;
+    else next.network = change.networkId;
+  }
+  return { ...next, vs: run.id };
+}
+
 /** The Run screen's search params for `idea`: this run's setup with the one change, started at once. */
 export function ideaSearch(run: SavedRun, idea: Idea): RunLinkSearch & NetworkSearch {
   const next = savedRunSearch(run, { start: true });

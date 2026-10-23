@@ -16,6 +16,7 @@ import { download } from "@/ui/feedback/download";
 import { flash } from "@/ui/feedback/flash";
 import { toast } from "@/ui/feedback/toast";
 import { MenuItem, Popover } from "@/ui/menu/Popover";
+import { ChangeOne } from "@/ui/report/ChangeOne";
 import { ZoomBar } from "@/ui/report/ZoomBar";
 import { RunCharts } from "@/ui/run/RunCharts";
 import { SimulationCheck } from "@/ui/run/SimulationCheck";
@@ -96,6 +97,12 @@ function Report({ run }: { run: SavedRun }) {
   const timelineRef = useRef<HTMLElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
   const scoreRef = useRef<HTMLDetailsElement>(null);
+  const [changing, setChanging] = useState(false);
+  const changeButton = useRef<HTMLButtonElement>(null);
+  const closeChange = () => {
+    setChanging(false);
+    changeButton.current?.focus();
+  };
   const now = useNow();
   const metrics = useMemo(() => computeMetrics(run.events), [run]);
   const timeline = useMemo(() => buildTimeline(run.events), [run]);
@@ -201,9 +208,18 @@ function Report({ run }: { run: SavedRun }) {
             </svg>
             Run again
           </Link>
-          <Link to="/networks" search={{ run: run.id }} className={secondaryButton}>
-            Change network
-          </Link>
+          <button
+            ref={changeButton}
+            type="button"
+            aria-expanded={changing}
+            aria-controls="change-one"
+            onClick={() => {
+              setChanging((open) => !open);
+            }}
+            className={`${secondaryButton} aria-expanded:border-accent aria-expanded:bg-accent/10 aria-expanded:text-accent-hover`}
+          >
+            Change one thing
+          </button>
           <Link to="/runs/compare" search={{ a: run.id }} className={secondaryButton}>
             Compare with…
           </Link>
@@ -269,6 +285,8 @@ function Report({ run }: { run: SavedRun }) {
           </p>
         )}
       </section>
+
+      {changing && <ChangeOne id="change-one" run={run} onClose={closeChange} />}
 
       <SimulationCheck honesty={metrics.honesty} curve={network.curve} />
 

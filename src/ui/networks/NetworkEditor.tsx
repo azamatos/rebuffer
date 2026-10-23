@@ -129,7 +129,10 @@ export function NetworkEditor({ start, onSaved, onDeleted }: NetworkEditorProps)
     name: linkName,
     curve,
   };
-  const runSearch = start.run ? runSearchWithNetwork(start.run, network) : networkSearch(network);
+  // From a report's "Change one thing", the run is B of a comparison with the report's run.
+  const runSearch = start.run
+    ? { ...runSearchWithNetwork(start.run, network), vs: start.run.id }
+    : networkSearch(network);
 
   const save = async () => {
     const id = savedId ?? newNetworkId();

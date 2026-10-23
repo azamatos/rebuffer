@@ -8,6 +8,7 @@ import {
   drawLadder,
   drawTimeAxis,
   fitCanvas,
+  FONT,
   GUTTER_PX,
   hairline,
   readTheme,
@@ -27,14 +28,19 @@ export interface CompareView {
   b: Timeline;
   curveA: NetworkCurve;
   curveB: NetworkCurve;
-  /** The longer run's length, seconds. */
+  /** The time the charts span, seconds: the longer run, or the stretch both covered. */
   lengthS: number;
+  /** The two runs played different streams, so their ladders can't share the axis: bitrates only. */
+  mbps: boolean;
+  /** Where a run that ended early stopped, marked on each chart. */
+  stop?: { atS: number; label: string };
 }
 
 export interface CompareCanvases {
   quality: HTMLCanvasElement;
   buffer: HTMLCanvasElement;
-  stalls: HTMLCanvasElement;
+  /** Left out when neither run stalled: a line of text says so instead. */
+  stalls?: HTMLCanvasElement | null;
 }
 
 const DASH_B = [7, 4];
@@ -53,6 +59,35 @@ const timeAxis = (view: CompareView) => ({
 
 const timeScale = (view: CompareView, { width }: Painter) =>
   linearScale([0, view.lengthS], [0, Math.max(1, width - GUTTER_PX)]);
+
+/** A dashed line where a run that ended early stopped, with its label at the top when there's room. */
+function drawStop(
+  painter: Painter,
+  theme: ChartTheme,
+  view: CompareView,
+  x: (t: number) => number,
+  bottom: number,
+  { label = false } = {},
+): void {
+  if (!view.stop || view.stop.atS >= view.lengthS) return;
+  const { ctx } = painter;
+  const at = x(view.stop.atS);
+  ctx.save();
+  ctx.strokeStyle = theme.fgMuted;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(at, 0);
+  ctx.lineTo(at, bottom);
+  ctx.stroke();
+  if (label) {
+    ctx.font = FONT;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = theme.fgMuted;
+    ctx.fillText(view.stop.label, at + 6, 2);
+  }
+  ctx.restore();
+}
 
 /** Both ladders, each bitrate once, highest first. */
 function ladders(view: CompareView): Level[] {
@@ -97,7 +132,8 @@ export function drawCompareQuality(painter: Painter, theme: ChartTheme, view: Co
   const domain: [number, number] = [Math.min(lowA, lowB), Math.max(highA, highB)];
   const y = logScale(domain, [bottom, top]);
 
-  drawLadder(painter, theme, levels, y, domain);
+  // Two streams' ladders would mix their rungs on one axis: then only the bitrates are marked.
+  drawLadder(painter, theme, view.mbps ? [] : levels, y, domain);
   ctx.strokeStyle = theme.lineStrong;
   ctx.lineWidth = 1;
   hairline(ctx, bottom, 0, plotRight);
@@ -138,6 +174,7 @@ export function drawCompareQuality(painter: Painter, theme: ChartTheme, view: Co
   runStroke(ctx, theme, "b");
   drawSteps(ctx, view.b, x, y);
   ctx.restore();
+  drawStop(painter, theme, view, x, bottom, { label: true });
   ctx.restore();
 
   drawTimeAxis(painter, theme, timeAxis(view), x, height - 12);
@@ -187,6 +224,7 @@ export function drawCompareBuffer(painter: Painter, theme: ChartTheme, view: Com
     ctx.stroke();
   }
   ctx.restore();
+  drawStop(painter, theme, view, x, bottom);
   ctx.restore();
 }
 
@@ -225,6 +263,7 @@ export function drawCompareStalls(painter: Painter, theme: ChartTheme, view: Com
       ctx.fill();
     }
   }
+  drawStop(painter, theme, view, x, height);
   ctx.restore();
 }
 
@@ -241,7 +280,7 @@ export function mountCompareCharts(canvases: CompareCanvases, view: CompareView)
   const draw = () => {
     const quality = painters.get(canvases.quality);
     const buffer = painters.get(canvases.buffer);
-    const stalls = painters.get(canvases.stalls);
+    const stalls = canvases.stalls && painters.get(canvases.stalls);
     if (quality) drawCompareQuality(quality, theme, view);
     if (buffer) drawCompareBuffer(buffer, theme, view);
     if (stalls) drawCompareStalls(stalls, theme, view);
@@ -254,6 +293,7 @@ export function mountCompareCharts(canvases: CompareCanvases, view: CompareView)
     draw();
   });
   for (const canvas of [canvases.quality, canvases.buffer, canvases.stalls]) {
+    if (!canvas) continue;
     painters.set(canvas, fitCanvas(canvas));
     resize.observe(canvas);
   }

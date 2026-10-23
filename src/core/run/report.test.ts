@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RUN_FORMAT, RUN_VERSION, type SavedRun } from "@/core/persist/runs";
 import { DEFAULT_STREAM } from "@/core/samples";
-import { describeSettings, runSearchWithNetwork, savedRunSearch } from "./report";
+import { changeOneSearch, describeSettings, runSearchWithNetwork, savedRunSearch } from "./report";
 
 const saved = (network: SavedRun["setup"]["network"], presetId = "defaults"): SavedRun => ({
   format: RUN_FORMAT,
@@ -66,6 +66,34 @@ describe("runSearchWithNetwork", () => {
       player: "fast-start",
       set: "maxBufferLength:10",
     });
+  });
+});
+
+describe("changeOneSearch", () => {
+  it("runs this setup with one change, started at once, as B of a comparison with this run", () => {
+    const run = saved({ id: undefined, name: "My tunnel", curve }, "fast-start");
+    run.setup.player.settings = { startLevel: 0, maxBufferLength: 10 };
+    expect(changeOneSearch(run, { kind: "player", presetId: "low-memory-tv" })).toEqual({
+      player: "low-memory-tv",
+      curve: "steps,50,12,0:4",
+      name: "My tunnel",
+      set: "maxBufferLength:10",
+      start: "now",
+      vs: "a1b2c3d4",
+    });
+    expect(changeOneSearch(run, { kind: "player", presetId: "defaults" })).not.toHaveProperty(
+      "player",
+    );
+    expect(changeOneSearch(run, { kind: "network", networkId: "lift" })).toEqual({
+      player: "fast-start",
+      network: "lift",
+      set: "maxBufferLength:10",
+      start: "now",
+      vs: "a1b2c3d4",
+    });
+    expect(changeOneSearch(run, { kind: "network", networkId: "tunnel" })).not.toHaveProperty(
+      "network",
+    );
   });
 });
 

@@ -25,6 +25,11 @@ export interface RunLinkSearch {
    * "1": the router quotes values that read as numbers.
    */
   start?: string;
+  /**
+   * A saved run this one is the second half of a comparison with ("Change one thing"): when it ends, Compare opens
+   * with that run as A and this one as B.
+   */
+  vs?: string;
 }
 
 /** The Run screen's search params for `choice`. Defaults are left out, so links stay short. */

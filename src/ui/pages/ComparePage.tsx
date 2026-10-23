@@ -2,55 +2,38 @@ import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { mountCompareCharts, type CompareCharts } from "@/charts/compare";
 import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
-import { savedRuns, type RunSummary, type SavedRun } from "@/core/persist/runs";
+import type { RunSummary, SavedRun } from "@/core/persist/runs";
 import { playerTitle } from "@/core/player/settings";
 import {
+  bufferTakeaway,
   compared,
   compareMetrics,
   compareRows,
-  describeCompareBuffer,
+  compareVerdict,
   describeCompareQuality,
-  describeCompareStalls,
-  setupDifferences,
+  endedEarly,
+  qualityTakeaway,
+  setupChanges,
+  sharedSpanS,
+  stallsTakeaway,
+  tally,
   type ComparedRun,
+  type MetricComparison,
+  type SetupChange,
   type Verdict,
 } from "@/core/run/compare";
-import { playerChanges } from "@/core/run/report";
+import { playerChanges, runSearchWithNetwork, savedRunSearch } from "@/core/run/report";
+import { SeverityIcon } from "@/ui/inspect/SeverityIcon";
 import { ChartOrTable, Key, ShowAs, Td, Th } from "@/ui/run/chart-parts";
+import { RunSwatch } from "@/ui/runs/RunSwatch";
 import { useNow } from "@/ui/runs/useNow";
+import { useSavedRun } from "@/ui/runs/useSavedRun";
 import { useSavedRuns } from "@/ui/runs/useSavedRuns";
 import { useTheme } from "@/ui/theme/useTheme";
 
 export interface CompareSearch {
   a?: string;
   b?: string;
-}
-
-type Loaded = { status: "loading" } | { status: "ready"; run: SavedRun } | { status: "missing" };
-
-/** A saved run by id, loaded from this browser; undefined when no id is given. */
-function useSavedRun(id: string | undefined): Loaded | undefined {
-  const [loaded, setLoaded] = useState<{ id: string; value: Loaded }>();
-  useEffect(() => {
-    if (!id) return;
-    let current = true;
-    savedRuns()
-      .get(id)
-      .then(
-        (run) => {
-          if (current)
-            setLoaded({ id, value: run ? { status: "ready", run } : { status: "missing" } });
-        },
-        () => {
-          if (current) setLoaded({ id, value: { status: "missing" } });
-        },
-      );
-    return () => {
-      current = false;
-    };
-  }, [id]);
-  if (!id) return undefined;
-  return loaded?.id === id ? loaded.value : { status: "loading" };
 }
 
 const titleOf = (summary: RunSummary) => summary.playerTitle ?? summary.playerName;
@@ -220,160 +203,349 @@ function RunPicker({
   );
 }
 
-/** A's solid line or B's dashed one, as the charts draw them. */
-function RunSwatch({ side }: { side: "a" | "b" }) {
-  return (
-    <svg width="18" height="10" aria-hidden="true" className="flex-none overflow-visible">
-      <path
-        d="M0 5 H18"
-        strokeWidth="2.5"
-        strokeDasharray={side === "b" ? "5 3" : undefined}
-        className={side === "a" ? "stroke-fg" : "stroke-accent"}
-      />
-    </svg>
-  );
-}
-
 const card = "rounded-2xl border border-line bg-surface";
+const textLink = "text-accent underline underline-offset-2 hover:text-accent-hover";
 
-const verdicts: Record<Verdict, { text: string; icon: string; className: string }> = {
+const verdicts: Record<Verdict, { text: string; icon?: string; className: string }> = {
   better: { text: "better", icon: "▲", className: "text-accent" },
   worse: { text: "worse", icon: "▼", className: "text-error-text" },
   same: { text: "same", icon: "=", className: "text-fg-3" },
+  spread: { text: "within spread", icon: "≈", className: "text-fg-3" },
+  "not-comparable": { text: "not comparable", className: "text-fg-3" },
 };
 
+function VerdictWord({ verdict }: { verdict: Verdict }) {
+  const { text, icon, className } = verdicts[verdict];
+  return (
+    <span className={`text-sm ${className}`}>
+      {icon && <span aria-hidden="true">{icon} </span>}
+      {text}
+    </span>
+  );
+}
+
+/** A run's setup in a line: the network and the player, and the stream when the two runs' streams differ. */
+function setupLine(run: SavedRun, withStream: boolean): string {
+  const player = playerTitle(run.setup.player.name, playerChanges(run));
+  return `${withStream ? `${run.setup.streamName} · ` : ""}${run.setup.network.name} · ${player}`;
+}
+
 function Comparison({ a: runA, b: runB }: { a: SavedRun; b: SavedRun }) {
-  const now = useNow();
-  const a = useMemo(() => compared(runA), [runA]);
-  const b = useMemo(() => compared(runB), [runB]);
-  const rows = compareMetrics(a, b);
-  const changes = setupDifferences(runA, runB);
+  const ended = useMemo(() => endedEarly(runA, runB), [runA, runB]);
+  const sharedS = useMemo(() => sharedSpanS(runA, runB), [runA, runB]);
+  // When a run ended early, the stretch both covered compares; whole runs on request.
+  const [whole, setWhole] = useState(false);
+  const untilS = whole ? undefined : sharedS;
+  const a = useMemo(() => compared(runA, untilS), [runA, untilS]);
+  const b = useMemo(() => compared(runB, untilS), [runB, untilS]);
+  const firstFrameOnly = whole && ended.length > 0;
+  const rows = compareMetrics(a, b, { firstFrameOnly });
+  const changes = setupChanges(runA, runB);
+  const verdict = compareVerdict(a, b, changes, rows, { ended, whole });
+  const otherStream = runA.setup.streamUrl !== runB.setup.streamUrl;
+  const stoppedB = ended.find((end) => end.side === "B");
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2">
-        <RunCard side="a" run={a} now={now} />
-        <RunCard side="b" run={b} now={now} />
-      </div>
-
-      <section aria-labelledby="changed-h" className={`${card} p-5`}>
-        <h2 id="changed-h" className="mb-2 text-lg font-semibold">
-          What changed
-        </h2>
-        {changes.length === 0 ? (
-          <p className="text-fg-2">
-            The same setup. What differs between them is the spread from one run to the next;{" "}
-            <Link
-              to="/about"
-              hash="repeatable"
-              className="text-accent underline underline-offset-2 hover:text-accent-hover"
-            >
-              how repeatable runs are
-            </Link>
-            .
+      <Warning a={runA} b={runB} changes={changes} />
+      {sharedS !== undefined && ended[0] && (
+        <section
+          role="note"
+          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[10px] border border-line-strong bg-note/10 px-3.5 py-3"
+        >
+          <p className="flex min-w-0 flex-[1_1_360px] items-start gap-2 text-sm">
+            <span className="flex h-5 items-center">
+              <SeverityIcon severity="note" size={12} />
+            </span>
+            <span>
+              <strong className="font-semibold text-note-text">Note:</strong>{" "}
+              {ended
+                .map(
+                  (end) =>
+                    `${end.side} ${end.reason === "stopped" ? "was stopped" : "broke off"} at ${formatClock(end.atS)} of ${formatClock(end.lengthS)}.`,
+                )
+                .join(" ")}{" "}
+              {whole
+                ? `Numbers cover all of each run, so most don't compare.`
+                : `Numbers and charts cover the first ${formatClock(sharedS)} of both runs.`}
+            </span>
           </p>
-        ) : (
-          <table className="w-full text-left text-[15px]">
-            <thead>
-              <tr>
-                <Th>Setting</Th>
-                <Th>A</Th>
-                <Th>B</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {changes.map((change) => (
-                <tr key={change.label} className="border-t border-fg/6">
-                  <Td>{change.label}</Td>
-                  <Td>{change.a}</Td>
-                  <Td>{change.b}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+          <span
+            role="group"
+            aria-label="Compare over"
+            className="inline-flex flex-none rounded-lg bg-fg/6 p-0.5 text-sm"
+          >
+            {[false, true].map((option) => (
+              <button
+                key={String(option)}
+                type="button"
+                aria-pressed={whole === option}
+                onClick={() => {
+                  setWhole(option);
+                }}
+                className="rounded-md px-2.5 py-1 text-fg-2 transition-colors duration-200 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)]"
+              >
+                {option ? "Whole runs" : `First ${formatClock(sharedS)} of both`}
+              </button>
+            ))}
+          </span>
+        </section>
+      )}
 
-      <section aria-labelledby="numbers-h" className={`${card} p-5`}>
-        <h2 id="numbers-h" className="mb-2 text-lg font-semibold">
-          The numbers
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-[15px] tabular-nums">
-            <thead>
-              <tr>
-                <Th>Metric</Th>
-                <Th>A</Th>
-                <Th>B</Th>
-                <Th>B against A</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const verdict = verdicts[row.verdict];
-                return (
-                  <tr key={row.label} className="border-t border-fg/6">
-                    <th scope="row" className="py-2 pr-4 font-medium">
-                      {row.label}
-                    </th>
-                    <Td>{row.a}</Td>
-                    <Td>{row.b}</Td>
-                    <Td>
-                      <span className="inline-flex flex-wrap items-baseline gap-x-2">
-                        {row.difference !== "—" && <span>{row.difference}</span>}
-                        <span className={`text-sm ${verdict.className}`}>
-                          <span aria-hidden="true">{verdict.icon} </span>
-                          {verdict.text}
-                        </span>
+      <section aria-labelledby="verdict-h" className={`${card} flex flex-col`}>
+        <div className="flex flex-col gap-2 px-5 py-4">
+          <h2 className="font-mono text-xs tracking-[0.06em] text-fg-3 uppercase">
+            What changed
+            {changes.length > 0 &&
+              ` · ${changes.length === 1 ? "1 thing" : `${changes.length} things`}`}
+          </h2>
+          <Changes a={runA} changes={changes} />
+        </div>
+        <div className="flex flex-col gap-4 border-t border-line p-5">
+          <div className="flex flex-wrap items-end gap-x-7 gap-y-4">
+            {[
+              { side: "a" as const, run: a },
+              { side: "b" as const, run: b },
+            ].map(({ side, run }) => {
+              const end = ended.find((candidate) => candidate.side === side.toUpperCase());
+              return (
+                <div key={side} className="flex min-w-0 flex-col gap-1.5">
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                    <span className="flex items-center gap-2 font-semibold">
+                      <RunSwatch side={side} />
+                      {side.toUpperCase()}
+                    </span>
+                    <span className="text-fg-2">{setupLine(run.run, otherStream)}</span>
+                    {end && (
+                      <span className="rounded-full bg-fg/6 px-2 py-0.5 text-xs text-fg-2">
+                        Stopped at {formatClock(end.atS)}
                       </span>
-                    </Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    )}
+                  </p>
+                  <p className="text-5xl leading-none font-semibold tabular-nums">
+                    {Math.round(run.score.score)}
+                    <span className="text-lg font-medium text-fg-3"> / 100</span>
+                  </p>
+                </div>
+              );
+            })}
+            <ScoreDifference {...verdict.difference} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h2 id="verdict-h" className="text-xl font-semibold text-balance">
+              {verdict.headline}
+            </h2>
+            <p className="max-w-[880px] text-fg-2">
+              {verdict.detail}
+              {verdict.spread && (
+                <>
+                  {" "}
+                  <Link to="/about" hash="repeatable" className="underline underline-offset-2">
+                    How repeatable runs are
+                  </Link>
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {stoppedB && (
+              <Link
+                to="/run"
+                search={{ ...savedRunSearch(runB, { start: true }), vs: runA.id }}
+                className="inline-flex min-h-10 items-center gap-2 rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M2.5 1.5 L10.5 6 L2.5 10.5 Z" fill="currentColor" />
+                </svg>
+                Run B again
+              </Link>
+            )}
+            <Link to="/runs/$runId" params={{ runId: runA.id }} className={textLink}>
+              Open A&apos;s report
+            </Link>
+            <Link to="/runs/$runId" params={{ runId: runB.id }} className={textLink}>
+              Open B&apos;s report
+            </Link>
+          </div>
         </div>
       </section>
 
-      <CompareChartsView a={a} b={b} />
+      <Numbers rows={rows} />
+      <CompareChartsView a={a} b={b} mbps={otherStream} cutS={untilS} ended={whole ? ended : []} />
     </>
   );
 }
 
-function RunCard({
-  side,
-  run: { run, score },
-  now,
-}: {
-  side: "a" | "b";
-  run: ComparedRun;
-  now: number;
-}) {
+/** When A and B differ in more than one thing, or in the stream: what the numbers can't say. */
+function Warning({ a, b, changes }: { a: SavedRun; b: SavedRun; changes: SetupChange[] }) {
+  const stream = changes.find((change) => change.label === "Stream");
+  if (!stream && changes.length < 2) return null;
+  const others = changes.filter((change) => change.label !== "Stream");
+  const network = changes.find((change) => change.label === "Network");
+  const named = changes.map((change) => change.label.toLowerCase());
+  const several =
+    changes.length < 2
+      ? ""
+      : `The ${named.slice(0, -1).join(", ")} and ${named.at(-1) ?? ""} ${changes.length === 2 ? "both" : "all"} changed, so these numbers can't say which change made the difference. To find out, change one thing at a time.`;
   return (
     <section
-      aria-label={`Summary of run ${side.toUpperCase()}`}
-      className={`${card} flex flex-col gap-1.5 p-5`}
+      role="note"
+      aria-labelledby="warning-h"
+      className="flex flex-col gap-2 rounded-[10px] border border-warning/50 bg-warning/6 px-3.5 py-3"
     >
-      <p className="flex items-center gap-2 text-sm font-semibold">
-        <RunSwatch side={side} />
-        {side.toUpperCase()}
+      <h2 id="warning-h" className="flex items-center gap-2 font-semibold text-warning-text">
+        <SeverityIcon severity="warning" size={12} />
+        {stream && others.length === 0
+          ? "Warning: different streams"
+          : `Warning: A and B differ in ${changes.length} things`}
+      </h2>
+      <p className="max-w-[880px] text-sm text-fg-2">
+        {stream &&
+          `${stream.a} and ${stream.b} have different qualities, so the quality chart shows Mbps instead of quality names, and “At top quality” means each stream's own top. `}
+        {several}
       </p>
-      <p className="text-lg font-semibold">
-        {run.setup.network.name} · hls.js {playerTitle(run.setup.player.name, playerChanges(run))}
-      </p>
+      {network && others.length === 2 && (
+        <div className="flex">
+          {/* A's setup on B's network differs from B in the player alone, and from A in the network alone. */}
+          <Link
+            to="/run"
+            search={{ ...runSearchWithNetwork(a, b.setup.network, { start: true }), vs: a.id }}
+            className="inline-flex min-h-10 items-center rounded-[10px] border border-line-strong px-4 text-sm font-medium text-fg hover:border-fg-3"
+          >
+            Run A again on {b.setup.network.name}
+          </Link>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Changes({ a, changes }: { a: SavedRun; changes: SetupChange[] }) {
+  if (changes.length === 0) {
+    return (
       <p className="text-fg-2">
-        {run.setup.streamName} · {formatWhen(run.startedAt, now)} ·{" "}
-        <span className="tabular-nums">{Math.round(score.score)}/100</span>
+        Nothing. Both ran {a.setup.streamName} on {a.setup.network.name} with{" "}
+        {playerTitle(a.setup.player.name, playerChanges(a))}.
       </p>
-      <p>
-        <Link
-          to="/runs/$runId"
-          params={{ runId: run.id }}
-          className="text-accent underline underline-offset-2 hover:text-accent-hover"
-        >
-          Open {side.toUpperCase()}&apos;s report
-        </Link>
+    );
+  }
+  return (
+    <dl className="grid gap-x-7 gap-y-2 sm:grid-cols-[max-content_1fr]">
+      {changes.map((change) => (
+        <div key={change.label} className="contents">
+          <dt className="font-medium">{change.label}</dt>
+          <dd className="flex flex-col gap-0.5">
+            <span className="flex flex-wrap items-center gap-x-2">
+              <span className="text-fg-2">{change.a}</span>
+              <span aria-hidden="true" className="text-fg-3">
+                →
+              </span>
+              <span className="sr-only">changed to</span>
+              <span className="font-semibold">{change.b}</span>
+            </span>
+            {change.detail && <span className="text-sm text-fg-2">{change.detail}</span>}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ScoreDifference({ text, verdict }: { text: string; verdict: Verdict }) {
+  if (verdict === "better" || verdict === "worse") {
+    const { icon, className } = verdicts[verdict];
+    return (
+      <p className={`pb-1 text-lg font-semibold ${className}`}>
+        <span aria-hidden="true">{icon} </span>
+        {text}
       </p>
+    );
+  }
+  return (
+    <p className="pb-1 text-lg font-medium text-fg-2">
+      {verdict === "not-comparable" ? "" : <span aria-hidden="true">≈ </span>}
+      {text}
+    </p>
+  );
+}
+
+/** The numbers in groups: a table on wide screens, a list on phones. */
+function Numbers({ rows }: { rows: MetricComparison[] }) {
+  const groups: { name: string; rows: MetricComparison[] }[] = [];
+  for (const row of rows) {
+    const group = groups.find((candidate) => candidate.name === row.group);
+    if (group) group.rows.push(row);
+    else groups.push({ name: row.group, rows: [row] });
+  }
+  return (
+    <section aria-labelledby="numbers-h" className={`${card} p-5`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id="numbers-h" className="text-lg font-semibold">
+          The numbers
+        </h2>
+        <p className="text-sm text-fg-2">{tally(rows)}</p>
+      </div>
+      <table className="w-full text-left text-[15px] tabular-nums max-sm:hidden">
+        <thead>
+          <tr>
+            <Th>Metric</Th>
+            <Th>A</Th>
+            <Th>B</Th>
+            <Th>B against A</Th>
+          </tr>
+        </thead>
+        {groups.map((group) => (
+          <tbody key={group.name}>
+            <tr>
+              <th
+                scope="rowgroup"
+                colSpan={4}
+                className="pt-4 pb-1 font-mono text-xs font-normal tracking-[0.06em] text-fg-3 uppercase"
+              >
+                {group.name}
+              </th>
+            </tr>
+            {group.rows.map((row) => (
+              <tr key={row.label} className="border-t border-fg/6">
+                <th scope="row" className="py-2 pr-4 font-medium">
+                  {row.label}
+                </th>
+                <Td>{row.a}</Td>
+                <Td>{row.b}</Td>
+                <Td>
+                  <span className="inline-flex flex-wrap items-baseline gap-x-2">
+                    {row.difference && <span>{row.difference}</span>}
+                    <VerdictWord verdict={row.verdict} />
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+      <div className="flex flex-col sm:hidden">
+        {groups.map((group) => (
+          <div key={group.name}>
+            <h3 className="pt-4 pb-1 font-mono text-xs tracking-[0.06em] text-fg-3 uppercase">
+              {group.name}
+            </h3>
+            <ul>
+              {group.rows.map((row) => (
+                <li key={row.label} className="flex flex-col gap-0.5 border-t border-fg/6 py-2">
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                    <span className="font-medium">{row.label}</span>
+                    <VerdictWord verdict={row.verdict} />
+                  </span>
+                  <span className="text-sm text-fg-2 tabular-nums">
+                    A {row.a} · B {row.b}
+                    {row.difference && ` · ${row.difference}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -382,11 +554,15 @@ function ChartFigure({
   title,
   unit,
   keys,
+  lookFor,
+  takeaway,
   children,
 }: {
   title: string;
   unit: string;
-  keys: ReactNode;
+  keys?: ReactNode;
+  lookFor?: string;
+  takeaway?: string;
   children: ReactNode;
 }) {
   return (
@@ -395,9 +571,16 @@ function ChartFigure({
         <span className="text-sm font-semibold">
           {title} <span className="font-normal text-fg-3">· {unit}</span>
         </span>
-        <span className="flex flex-wrap gap-3 text-xs text-fg-2">{keys}</span>
+        {keys && <span className="flex flex-wrap gap-3 text-xs text-fg-2">{keys}</span>}
       </figcaption>
+      {lookFor && <p className="mb-3 text-sm text-fg-2">{lookFor}</p>}
       {children}
+      {/* The chart's label says the same, so it's read once. */}
+      {takeaway && (
+        <p aria-hidden="true" className="mt-2.5 border-t border-fg/6 pt-2 text-[15px]">
+          {takeaway}
+        </p>
+      )}
     </figure>
   );
 }
@@ -407,7 +590,21 @@ const lineB = (
   <path d="M0 5 H16" strokeWidth="2.5" strokeDasharray="5 3" className="stroke-accent" />
 );
 
-function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
+function CompareChartsView({
+  a,
+  b,
+  mbps,
+  cutS,
+  ended,
+}: {
+  a: ComparedRun;
+  b: ComparedRun;
+  mbps: boolean;
+  /** Where both runs were cut, when only the stretch both covered compares. */
+  cutS: number | undefined;
+  /** Runs that ended early when whole runs are compared: their ends are marked. */
+  ended: ReturnType<typeof endedEarly>;
+}) {
   const qualityRef = useRef<HTMLCanvasElement>(null);
   const bufferRef = useRef<HTMLCanvasElement>(null);
   const stallsRef = useRef<HTMLCanvasElement>(null);
@@ -417,20 +614,25 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
   const curveB = b.run.setup.network.curve;
   const sameNetwork = JSON.stringify(curveA) === JSON.stringify(curveB);
   const [table, setTable] = useState(false);
+  const stalled = a.metrics.stalls.count + b.metrics.stalls.count > 0;
+  const stop = ended[0];
 
   useEffect(() => {
     const quality = qualityRef.current;
     const buffer = bufferRef.current;
-    const stalls = stallsRef.current;
-    if (!quality || !buffer || !stalls) return;
+    if (!quality || !buffer) return;
     const charts = mountCompareCharts(
-      { quality, buffer, stalls },
+      { quality, buffer, stalls: stallsRef.current },
       {
         a: a.timeline,
         b: b.timeline,
         curveA,
         curveB,
         lengthS: Math.max(a.timeline.endS ?? 0, b.timeline.endS ?? 0, 1),
+        mbps,
+        ...(stop && {
+          stop: { atS: stop.atS, label: `${stop.side} stopped, ${formatClock(stop.atS)}` },
+        }),
       },
     );
     chartsRef.current = charts;
@@ -438,7 +640,7 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
       charts.destroy();
       chartsRef.current = undefined;
     };
-  }, [a, b, curveA, curveB]);
+  }, [a, b, curveA, curveB, mbps, stop, stalled, table]);
 
   useEffect(() => {
     chartsRef.current?.retheme();
@@ -450,6 +652,9 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
       <Key swatch={lineB} label="B" />
     </>
   );
+  const quality = qualityTakeaway(a, b, { mbps });
+  const buffer = bufferTakeaway(a, b);
+  const stalls = stallsTakeaway(a, b, cutS);
 
   return (
     <section aria-labelledby="charts-h" className="flex flex-col gap-3">
@@ -491,7 +696,9 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
         <div className="flex flex-col gap-3">
           <ChartFigure
             title="Quality on screen"
-            unit="Mbps, log scale"
+            unit={mbps ? "Mbps, log scale" : "quality, log scale"}
+            lookFor="Look for where each line steps down, and how far it sits below the network."
+            takeaway={quality}
             keys={
               <>
                 <Key
@@ -518,35 +725,65 @@ function CompareChartsView({ a, b }: { a: ComparedRun; b: ComparedRun }) {
             <canvas
               ref={qualityRef}
               role="img"
-              aria-label={describeCompareQuality(a, b)}
+              aria-label={`${describeCompareQuality(a, b)} ${quality}`}
               className="block h-[200px] w-full"
             />
           </ChartFigure>
-          <ChartFigure title="Buffer" unit="seconds of video ahead" keys={keysAB}>
+          <ChartFigure
+            title="Buffer"
+            unit="seconds of video ahead"
+            keys={keysAB}
+            lookFor="Look for how low each line gets. At zero, the picture stops."
+            takeaway={buffer}
+          >
             <canvas
               ref={bufferRef}
               role="img"
-              aria-label={describeCompareBuffer(a, b)}
+              aria-label={buffer}
               className="block h-[140px] w-full"
             />
           </ChartFigure>
-          <ChartFigure
-            title="Stalls"
-            unit="A above, B below"
-            keys={
-              <Key
-                swatch={<rect width="12" height="10" rx="2" className="fill-error" />}
-                label="Stall"
+          {stalled ? (
+            <ChartFigure
+              title="Stalls"
+              unit="A above, B below"
+              lookFor="Red bands are time with no picture."
+              takeaway={stalls}
+              keys={
+                <Key
+                  swatch={<rect width="12" height="10" rx="2" className="fill-error" />}
+                  label="Stall"
+                />
+              }
+            >
+              <canvas
+                ref={stallsRef}
+                role="img"
+                aria-label={stalls}
+                className="block h-[64px] w-full"
               />
-            }
-          >
-            <canvas
-              ref={stallsRef}
-              role="img"
-              aria-label={describeCompareStalls(a, b)}
-              className="block h-[64px] w-full"
-            />
-          </ChartFigure>
+            </ChartFigure>
+          ) : (
+            <ChartFigure title="Stalls" unit="A above, B below">
+              <p className="flex items-center gap-2 py-1.5 text-[15px]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  aria-hidden="true"
+                  className="flex-none"
+                >
+                  <path
+                    d="M2.5 7.5 L5.5 10.5 L11.5 3.5"
+                    fill="none"
+                    strokeWidth="2"
+                    className="stroke-accent"
+                  />
+                </svg>
+                {stalls}
+              </p>
+            </ChartFigure>
+          )}
         </div>
       </ChartOrTable>
     </section>
