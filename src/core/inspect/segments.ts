@@ -97,7 +97,7 @@ export function segmentChart(
     takeaway = `The busiest segment, at ${formatClock(peak.start)}, needs ${formatMbps(peak.bps)}; on average ${formatMbps(averageBps ?? 0)}.`;
   } else if (peak.bps > declaredBps) {
     const over = Math.round((peak.bps / declaredBps - 1) * 100);
-    takeaway = `The busiest segment, at ${formatClock(peak.start)}, needs ${formatMbps(peak.bps)}: ${over > 0 ? `${String(over)}% more than` : "more than"} the ${formatMbps(declaredBps)} declared.`;
+    takeaway = `The busiest segment, at ${formatClock(peak.start)}, needs ${formatMbps(peak.bps)}: ${over > 0 ? `${String(over)}% more than` : "just over"} the ${formatMbps(declaredBps)} declared.`;
   } else {
     takeaway = `Every segment fits under the declared ${formatMbps(declaredBps)}. The busiest, at ${formatClock(peak.start)}, needs ${formatMbps(peak.bps)}.`;
   }

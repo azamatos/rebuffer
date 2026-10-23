@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parsePlaylist, type MediaPlaylist } from "@/core/hls";
-import { matchesFind, playlistChoices, videoGroups } from "./groups";
+import { heightName, matchesFind, playlistChoices, videoGroups } from "./groups";
 import type { Inspection } from "./load";
 
 const url = "https://media.example/stream/main.m3u8";
@@ -89,6 +89,11 @@ describe("videoGroups", () => {
       shade: 4,
     });
     expect(groups[0]?.rows[1]?.shade).toBe(0);
+  });
+
+  it("names a picture as the app does everywhere: a 1920×800 film is 1080p", () => {
+    expect(heightName({ width: 1920, height: 800 })).toBe("1080p");
+    expect(heightName(undefined)).toBeUndefined();
   });
 
   it("finds a rendition by any word of it", () => {

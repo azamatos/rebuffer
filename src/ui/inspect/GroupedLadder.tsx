@@ -54,7 +54,11 @@ function playsHere(rows: readonly VideoRow[], answers: Answers): string {
 
 /** "11 video playlists · 19 variants · 270p–1080p · 0.41–18.4 Mbps" */
 function groupFacts(group: VideoGroup): string {
-  const heights = group.rows.flatMap((row) => (row.resolution ? [row.resolution.height] : []));
+  const sized = group.rows
+    .flatMap((row) => (row.resolution ? [row.resolution] : []))
+    .sort((a, b) => a.height - b.height);
+  const lowest = heightName(sized[0]);
+  const highest = heightName(sized.at(-1));
   const rates = group.rows.flatMap((row) =>
     row.declared ? [row.declared.low, row.declared.high] : [],
   );
@@ -62,7 +66,7 @@ function groupFacts(group: VideoGroup): string {
   return [
     `${String(playlists)} video ${playlists === 1 ? "playlist" : "playlists"}`,
     group.variants !== playlists && `${String(group.variants)} variants`,
-    heights.length > 0 && `${String(Math.min(...heights))}p–${String(Math.max(...heights))}p`,
+    lowest && highest && (lowest === highest ? lowest : `${lowest}–${highest}`),
     rates.length > 0 && `${formatMbps(Math.min(...rates))}–${formatMbps(Math.max(...rates))}`,
   ]
     .filter(Boolean)

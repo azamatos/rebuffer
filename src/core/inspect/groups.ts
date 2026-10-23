@@ -1,6 +1,7 @@
 import { formatMbps } from "@/core/format/bitrate";
 import {
   describeCodec,
+  qualityLabel,
   type CodecInfo,
   type MediaPlaylist,
   type Resolution,
@@ -190,9 +191,9 @@ export function videoGroups(inspection: Inspection, measured: Measurements): Vid
     });
 }
 
-/** "1080p", from the picture size; undefined without one. */
+/** "1080p", as the app names a picture size everywhere (a 1920×800 film is 1080p); undefined without one. */
 export const heightName = (resolution: Resolution | undefined) =>
-  resolution ? `${String(resolution.height)}p` : undefined;
+  resolution ? qualityLabel(resolution) : undefined;
 
 /**
  * Whether a row matches what someone typed into "Find a rendition": every word of it appears in the row's height,
