@@ -1,5 +1,6 @@
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import {
+  useId,
   useMemo,
   useRef,
   useState,
@@ -8,6 +9,7 @@ import {
   type SubmitEvent,
 } from "react";
 import { flushSync } from "react-dom";
+import { playlistChoices, videoGroups } from "@/core/inspect/groups";
 import { MEASURED_SEGMENTS, UNRESOLVED, type MediaLoad } from "@/core/inspect/load";
 import {
   countFindings,
@@ -21,8 +23,8 @@ import {
 import { readStreamLink } from "@/core/run/setup";
 import { SAMPLE_STREAMS } from "@/core/samples";
 import { FindingsList } from "@/ui/inspect/FindingsList";
-import { LadderTable } from "@/ui/inspect/LadderTable";
-import { SegmentsPanel, type SegmentsChoice } from "@/ui/inspect/SegmentsPanel";
+import { GroupedLadder } from "@/ui/inspect/GroupedLadder";
+import { SegmentsPanel } from "@/ui/inspect/SegmentsPanel";
 import { SeverityIcon } from "@/ui/inspect/SeverityIcon";
 import { useInspection, type InspectSource, type InspectState } from "@/ui/inspect/useInspection";
 import { usePlayback } from "@/ui/inspect/usePlayback";
@@ -430,7 +432,17 @@ export function InspectPage({ search }: { search: InspectSearch }) {
         </section>
       )}
 
-      {state.status === "ready" && <Results state={state} />}
+      {state.status === "ready" && (
+        <Results
+          state={state}
+          // Pasted text whose links couldn't be followed: the address it came from reads them.
+          {...(source?.kind === "text" && {
+            onBase: (base: string) => {
+              inspectText(source.text, source.name, base);
+            },
+          })}
+        />
+      )}
     </div>
   );
 }
@@ -446,7 +458,16 @@ function labelList(list: readonly MediaLoad[]): string {
  * The media playlists that weren't read, one sentence per reason, their names behind a disclosure: a pasted
  * multivariant playlist with relative links would otherwise list each of its playlists with the same reason.
  */
-function Unread({ unread }: { unread: readonly MediaLoad[] }) {
+function Unread({
+  unread,
+  onBase,
+}: {
+  unread: readonly MediaLoad[];
+  onBase: ((base: string) => void) | undefined;
+}) {
+  const [base, setBase] = useState("");
+  const [baseError, setBaseError] = useState<string>();
+  const baseId = useId();
   const reasons = new Map<string, MediaLoad[]>();
   for (const media of unread) {
     const problem = media.problem ?? "";
@@ -465,7 +486,7 @@ function Unread({ unread }: { unread: readonly MediaLoad[] }) {
                 read or checked:
               </strong>{" "}
               pasted text has no address to resolve their relative links against. Add the address it
-              came from under Paste text, or inspect the link itself.
+              came from, or inspect the link itself.
             </p>
           ) : (
             <p>
@@ -484,6 +505,47 @@ function Unread({ unread }: { unread: readonly MediaLoad[] }) {
               <summary className="cursor-pointer">Which ones</summary>
               <p className="mt-1">{labelList(list)}</p>
             </details>
+          )}
+          {problem === UNRESOLVED && onBase && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const result = readStreamLink(base, window.location.protocol);
+                if (!result.ok) {
+                  setBaseError(result.error);
+                  return;
+                }
+                setBaseError(undefined);
+                onBase(result.url);
+              }}
+              className="mt-2.5 flex flex-wrap items-end gap-2"
+            >
+              <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
+                <label htmlFor={baseId} className="text-[13px] text-fg-2">
+                  Address it came from
+                </label>
+                <input
+                  id={baseId}
+                  type="url"
+                  value={base}
+                  onChange={(event) => {
+                    setBase(event.target.value);
+                  }}
+                  placeholder="https://example.com/video/main.m3u8"
+                  aria-invalid={baseError !== undefined}
+                  aria-describedby={baseError ? `${baseId}-error` : undefined}
+                  className={field}
+                />
+              </div>
+              <button type="submit" className={primary}>
+                Read the links
+              </button>
+              {baseError && (
+                <p id={`${baseId}-error`} className="w-full text-sm text-error-text">
+                  {baseError}
+                </p>
+              )}
+            </form>
           )}
         </div>
       ))}
@@ -508,32 +570,58 @@ const countChip = {
   note: "bg-note/10 text-note-text",
 } as const;
 
-function Results({ state }: { state: Extract<InspectState, { status: "ready" }> }) {
+function Results({
+  state,
+  onBase,
+}: {
+  state: Extract<InspectState, { status: "ready" }>;
+  onBase?: (base: string) => void;
+}) {
   const { inspection, measured } = state;
-  const rows = useMemo(() => ladderRows(inspection, measured), [inspection, measured]);
-  const playback = usePlayback(useMemo(() => ladderRows(inspection, new Map()), [inspection]));
+  const ladder = useMemo(() => ladderRows(inspection, new Map()), [inspection]);
+  const playback = usePlayback(ladder);
+  const groups = useMemo(() => videoGroups(inspection, measured), [inspection, measured]);
+  const choices = useMemo(
+    () => playlistChoices(inspection, videoGroups(inspection, new Map())),
+    [inspection],
+  );
   const findings = useMemo(() => inspectionFindings(inspection, measured), [inspection, measured]);
+  const severities = useMemo(
+    () => playlistSeverities(inspection, measured),
+    [inspection, measured],
+  );
   const counts = countFindings(findings);
   const unread = inspection.media.filter((media) => !media.playlist);
-  const choices = useMemo<SegmentsChoice[]>(() => {
-    if (inspection.top.kind === "media")
-      return [
-        { key: "top", label: inspection.file, playlist: inspection.top, severity: undefined },
-      ];
-    const severities = playlistSeverities(inspection, measured);
-    return inspection.media.flatMap((media) =>
-      media.playlist
-        ? [
-            {
-              key: media.url ?? media.label,
-              label: media.label,
-              playlist: media.playlist,
-              severity: media.url === undefined ? undefined : severities.get(media.url),
-            },
-          ]
-        : [],
+  const [selected, setSelected] = useState<string>();
+  // Each playlist the Segments panel can show, by address, with the name the ladder gives it.
+  const charted = useMemo(() => {
+    const names = new Map<string, string>();
+    for (const group of groups)
+      for (const row of group.rows) if (row.url) names.set(row.url, row.name);
+    return new Map(
+      choices.flatMap((group) =>
+        group.choices.map((choice) => [choice.key, names.get(choice.key) ?? choice.label] as const),
+      ),
     );
-  }, [inspection, measured]);
+  }, [groups, choices]);
+  const showSegments = (key: string) => {
+    flushSync(() => {
+      setSelected(key);
+    });
+    document.getElementById("segments")?.scrollIntoView({ block: "start" });
+  };
+
+  // What a run would use: the variants this browser says it can play.
+  const answers = [...playback.values()];
+  const known = answers.filter((answer) => answer !== undefined && answer !== "unknown");
+  const playable = known.filter((answer) => answer.supported).length;
+  const runNote =
+    answers.includes("unknown") || known.length === 0
+      ? ""
+      : playable === answers.length
+        ? `Plays all ${String(playable)} ${playable === 1 ? "variant" : "variants"}.`
+        : `Uses the ${String(playable)} ${playable === 1 ? "variant" : "variants"} this browser can play.`;
+  const measuredSoFar = state.toMeasure - state.measuring;
 
   return (
     <>
@@ -558,47 +646,81 @@ function Results({ state }: { state: Extract<InspectState, { status: "ready" }> 
             </li>
           )}
         </ul>
+        {state.measuring > 0 && (
+          <div
+            role="progressbar"
+            aria-label="Measuring peaks"
+            aria-valuemin={0}
+            aria-valuemax={state.toMeasure}
+            aria-valuenow={measuredSoFar}
+            aria-valuetext={`${String(measuredSoFar)} of ${String(state.toMeasure)} playlists`}
+            className="h-1.5 w-40 overflow-hidden rounded-full bg-fg/8"
+          >
+            <div
+              style={{ scale: `${String(measuredSoFar / Math.max(state.toMeasure, 1))} 1` }}
+              className="h-1.5 origin-left rounded-full bg-accent"
+            />
+          </div>
+        )}
         {inspection.url && (
-          <Link to="/run" search={streamRunSearch(inspection.url)} className={`${primary} gap-2`}>
-            <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M4 2.5 L13 8 L4 13.5 Z" className="fill-accent-ink" />
-            </svg>
-            Run this stream
-          </Link>
+          <span className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
+            {runNote && <span className="text-[13px] text-fg-2">{runNote}</span>}
+            <Link to="/run" search={streamRunSearch(inspection.url)} className={`${primary} gap-2`}>
+              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4 2.5 L13 8 L4 13.5 Z" className="fill-accent-ink" />
+              </svg>
+              Run this stream
+            </Link>
+          </span>
         )}
       </section>
 
-      {unread.length > 0 && <Unread unread={unread} />}
+      {unread.length > 0 && <Unread unread={unread} onBase={onBase} />}
 
       {inspection.top.kind === "multivariant" && (
-        <section aria-labelledby="ladder-h" className={card}>
-          <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="ladder-h" className="text-lg font-semibold">
-              Quality ladder
-            </h2>
-            <p className="text-[13px] text-fg-3">
-              Measured: the first {MEASURED_SEGMENTS} segments of each quality, sizes read by this
-              browser
-            </p>
-          </div>
-          <LadderTable rows={rows} playback={playback} measuring={state.measuring > 0} />
-          <p className="mt-3 text-sm text-fg-2">
-            Tracks: {describeTracks(inspection.top).join(" · ")}
-          </p>
-        </section>
+        <GroupedLadder
+          groups={groups}
+          playback={playback}
+          measuring={state.measuring > 0}
+          tracks={describeTracks(inspection.top)}
+          selected={selected ?? choices[0]?.choices[0]?.key}
+          charted={new Set(charted.keys())}
+          onSegments={showSegments}
+        />
       )}
 
       <div className="flex flex-wrap items-start gap-4">
         <section
           aria-labelledby="findings-h"
-          className="min-w-0 flex-[999_1_560px] rounded-xl border border-line bg-surface px-[18px] pt-3.5 pb-1.5"
+          className="min-w-0 flex-[1_1_360px] rounded-xl border border-line bg-surface px-[18px] pt-3.5 pb-1.5"
         >
           <h2 id="findings-h" className="mb-1 text-lg font-semibold">
-            Findings
+            Findings{" "}
+            {state.measuring > 0 && <span className="text-sm font-normal text-fg-3">· so far</span>}
           </h2>
-          <FindingsList findings={findings} streamUrl={inspection.url} />
+          <FindingsList
+            findings={findings}
+            streamUrl={inspection.url}
+            charted={charted}
+            onSegments={showSegments}
+          />
         </section>
-        {choices.length > 0 && <SegmentsPanel key={inspection.file} choices={choices} />}
+        {choices.length > 0 ? (
+          <SegmentsPanel
+            key={inspection.file}
+            groups={choices}
+            selected={selected}
+            onSelect={setSelected}
+            severities={severities}
+            className="flex-[999_1_560px] lg:sticky lg:top-6 lg:self-start"
+          />
+        ) : (
+          unread.length > 0 && (
+            <p className="min-w-0 flex-[999_1_560px] rounded-xl border border-dashed border-line-strong px-4 py-7 text-center text-sm text-fg-2">
+              Segments need the playlists&apos; links, above.
+            </p>
+          )
+        )}
       </div>
     </>
   );

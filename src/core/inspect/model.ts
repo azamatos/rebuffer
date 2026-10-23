@@ -196,6 +196,8 @@ export interface FindingSource {
   /** For a media playlist: what it's for and its name ("subtitles", "Italiano (SDH)"); the top playlist has none. */
   kind?: MediaLoad["kind"];
   name?: string;
+  /** The media playlist's address, so the Segments panel can show it. */
+  url?: string;
 }
 
 /** A finding with every file it was found in: one rule broken the same way in five renditions is one finding. */
@@ -248,27 +250,60 @@ export function inspectionFindings(
   const found: (Finding & Omit<FindingSource, "line"> & { declaredBps?: number })[] = [];
   if (top.kind === "multivariant") {
     for (const finding of lintMultivariant(top)) found.push({ ...finding, file: inspection.file });
-    for (const { variant, finding } of bandwidthFindings(inspection, measured)) {
-      found.push({
-        ...finding,
-        file: inspection.file,
-        ...(variant.bandwidth === undefined ? {} : { declaredBps: variant.bandwidth }),
-      });
+    const overs = bandwidthFindings(inspection, measured);
+    if (overs.length === 1) {
+      for (const { variant, finding } of overs) {
+        found.push({
+          ...finding,
+          file: inspection.file,
+          kind: "variant",
+          name: variantName(variant),
+          ...(variant.resolvedUri && { url: variant.resolvedUri }),
+          ...(variant.bandwidth === undefined ? {} : { declaredBps: variant.bandwidth }),
+        });
+      }
+    } else if (overs.length > 1) {
+      // One finding for every variant that peaks over what it declares, by how much at most.
+      const rows = ladderRows(inspection, measured);
+      const most = Math.max(
+        ...overs.map(({ variant }) => rows.find((row) => row.line === variant.line)?.over ?? 0),
+      );
+      for (const { variant, finding } of overs) {
+        found.push({
+          ...finding,
+          message: `${String(overs.length)} variants peak above the bandwidth they declare, by up to ${String(Math.round(most * 100))}%.`,
+          file: inspection.file,
+          kind: "variant",
+          name: variantName(variant),
+          ...(variant.resolvedUri && { url: variant.resolvedUri }),
+        });
+      }
     }
     for (const media of inspection.media) {
       if (!media.playlist) continue;
       const file = relativeName(media.url, inspection.url);
       for (const finding of lintMedia(media.playlist))
-        found.push({ ...finding, file, kind: media.kind, name: media.name });
+        found.push({
+          ...finding,
+          file,
+          kind: media.kind,
+          name: media.name,
+          ...(media.url && { url: media.url }),
+        });
     }
   } else {
     for (const finding of lintMedia(top)) found.push({ ...finding, file: inspection.file });
   }
 
   const grouped = new Map<string, SourcedFinding>();
-  for (const { file, line, kind, name, declaredBps, ...finding } of found) {
+  for (const { file, line, kind, name, url, declaredBps, ...finding } of found) {
     const key = `${finding.id}\n${finding.message}\n${finding.detail}`;
-    const source: FindingSource = { file, line, ...(kind && name ? { kind, name } : {}) };
+    const source: FindingSource = {
+      file,
+      line,
+      ...(kind && name ? { kind, name } : {}),
+      ...(url === undefined ? {} : { url }),
+    };
     const existing = grouped.get(key);
     if (existing) {
       existing.sources.push(source);

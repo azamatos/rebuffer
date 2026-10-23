@@ -22,12 +22,14 @@ test("a stream is inspected from a link typed with the keyboard", async ({ page,
   await expect(summary).toContainText(
     "Multivariant playlist · HLS v7 · VOD, 0:20 · 3 qualities · 1 audio track · fMP4 segments · not encrypted",
   );
-  const ladder = page.getByRole("region", { name: "Quality ladder table" });
+  // One group, so no group headers and no search: the rows, with their audio.
+  const ladder = page.getByRole("region", { name: /^Quality ladder · 3 qualities/ });
   for (const name of ["720p", "480p", "240p"]) {
-    await expect(ladder.getByRole("rowheader", { name })).toBeVisible();
+    await expect(ladder.getByRole("rowheader", { name: new RegExp(`^${name}\\b`) })).toBeVisible();
   }
   await expect(ladder.getByRole("row", { name: /^720p/ })).toContainText("H.264 High 3.1");
-  await expect(ladder.getByRole("row", { name: /^720p/ })).toContainText("with its audio");
+  await expect(ladder.getByRole("row", { name: /^720p/ })).toContainText("AAC-LC");
+  await expect(ladder.getByLabel("Find a rendition")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Findings" })).toContainText(
     "The playlist has no I-frame playlists",
   );
@@ -41,7 +43,18 @@ test("a stream is inspected from a link typed with the keyboard", async ({ page,
   await tabTo(page, browserName, playlists.getByRole("radio", { name: "720p" }));
   await page.keyboard.press("ArrowRight");
   await expect(playlists.getByRole("radio", { name: "480p" })).toBeChecked();
-  await expect(page.getByRole("img", { name: /^480p: 10 segments, each 2 s\.$/ })).toBeVisible();
+  // Each segment's bit rate, measured, against what its variant declares.
+  await expect(page.getByText("10 segments · 2 s each · 0:20 · average")).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /^480p · 1 Mbps: (Every segment fits|The busiest segment)/ }),
+  ).toBeVisible();
+  // A row's Segments button shows that playlist there.
+  await ladder.getByRole("button", { name: "Segments of 240p" }).click();
+  await expect(playlists.getByRole("radio", { name: "240p" })).toBeChecked();
+  await expect(ladder.getByRole("button", { name: "Segments of 240p" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   // Their table, in the chart's place.
   const showAs = page.getByRole("group", { name: "Segments: show as" });
   await tabTo(page, browserName, showAs.getByRole("button", { name: "Table" }));
@@ -125,9 +138,10 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
   await expect(page.getByRole("list", { name: "Findings" })).toContainText("4 not read");
   await expect(page.getByRole("link", { name: "Run this stream" })).toHaveCount(0);
   // With the address it came from, its links are followed.
-  const from = page.getByLabel(/^Where it came from/);
+  const from = page.getByLabel("Address it came from");
   await from.fill(STREAM);
-  await from.press("Enter");
+  await tabTo(page, browserName, page.getByRole("button", { name: "Read the links" }));
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("group", { name: "Playlist" }).getByRole("radio")).toHaveCount(4);
   await expect(page.getByRole("region", { name: "Playlists not read" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Run this stream" })).toHaveCount(0);
@@ -148,5 +162,103 @@ test("pasted text and an opened file are inspected; a blocked server and a bad l
   await field.fill("not a link");
   await field.press("Enter");
   await expect(page.getByRole("alert")).toHaveText(/^That isn't a web address\./);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("a big stream's ladder groups, folds and finds; its playlists come from a select", async ({
+  page,
+  browserName,
+}) => {
+  // A stream like Apple's advanced example, served here: H.264 and HEVC HDR, two audio formats sharing each video
+  // playlist from 720p up, audio and subtitles. 11 video playlists, 16 variants, 14 playlists in all.
+  const base = "https://big.example/stream/";
+  const cors = { "access-control-allow-origin": "*" };
+  const variant = (bps: number, codecs: string, height: number, audio: string, uri: string) => [
+    `#EXT-X-STREAM-INF:BANDWIDTH=${String(bps)},CODECS="${codecs}",RESOLUTION=${String(Math.round((height * 16) / 9))}x${String(height)},AUDIO="${audio}",SUBTITLES="subs"${codecs.startsWith("hvc1") ? ",VIDEO-RANGE=PQ" : ""}`,
+    uri,
+  ];
+  const ladder = (codec: string, prefix: string, heights: number[]) =>
+    heights.flatMap((height) => {
+      const bps = height * 6000;
+      const uri = `${prefix}${String(height)}/index.m3u8`;
+      return height >= 720
+        ? [
+            ...variant(bps + 640_000, `${codec},ec-3`, height, "ec3", uri),
+            ...variant(bps + 128_000, `${codec},mp4a.40.2`, height, "aac", uri),
+          ]
+        : variant(bps + 128_000, `${codec},mp4a.40.2`, height, "aac", uri);
+    });
+  const master = [
+    "#EXTM3U",
+    "#EXT-X-VERSION:7",
+    "#EXT-X-INDEPENDENT-SEGMENTS",
+    '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",NAME="English",DEFAULT=YES,URI="audio/aac.m3u8"',
+    '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="ec3",NAME="English",DEFAULT=YES,URI="audio/ec3.m3u8"',
+    '#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,URI="subs/en.m3u8"',
+    ...ladder("avc1.640028", "avc", [1080, 720, 540, 360, 240]),
+    ...ladder("hvc1.2.4.L150.B0", "hevc", [2160, 1080, 720, 540, 360, 240]),
+    "",
+  ].join("\n");
+  const media =
+    '#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MAP:URI="init.mp4"\n#EXTINF:6.0,\ns1.m4s\n#EXTINF:6.0,\ns2.m4s\n#EXTINF:4.0,\ns3.m4s\n#EXT-X-ENDLIST\n';
+  await page.route(`${base}**`, (route) => {
+    const url = route.request().url();
+    if (url.endsWith(".m3u8")) {
+      return route.fulfill({
+        body: url.endsWith("main.m3u8") ? master : media,
+        headers: { ...cors, "content-type": "application/vnd.apple.mpegurl" },
+      });
+    }
+    return route.fulfill({ body: Buffer.alloc(30_000), headers: cors });
+  });
+
+  await page.goto(`/inspect?url=${encodeURIComponent(`${base}main.m3u8`)}`);
+  const ladderRegion = page.getByRole("region", {
+    name: /^Quality ladder · 16 variants on 11 video playlists/,
+  });
+  await expect(ladderRegion).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(/^Measured the first/, { timeout: 20_000 });
+
+  // Groups by codec and range, H.264 open; a row per video playlist with its audio pairings.
+  const h264 = ladderRegion.getByRole("button", { name: /^H\.264 SDR/ });
+  const hevc = ladderRegion.getByRole("button", { name: /^HEVC HDR \(PQ\)/ });
+  await expect(h264).toHaveAttribute("aria-expanded", "true");
+  await expect(hevc).toHaveAttribute("aria-expanded", "false");
+  await expect(h264).toContainText("5 video playlists · 7 variants · 240p–1080p");
+  await expect(ladderRegion.getByRole("row", { name: /^1080p/ })).toContainText(
+    "Dolby Digital Plus (E-AC-3) or AAC-LC",
+  );
+  await tabTo(page, browserName, hevc);
+  await page.keyboard.press("Enter");
+  await expect(hevc).toHaveAttribute("aria-expanded", "true");
+  await expect(ladderRegion.getByRole("rowheader", { name: /^2160p/ })).toBeVisible();
+
+  // Find a rendition searches every group.
+  const find = ladderRegion.getByLabel("Find a rendition");
+  await find.fill("1080p hevc");
+  await expect(ladderRegion.getByText("1 of 11 video playlists match “1080p hevc”.")).toBeVisible();
+  await expect(ladderRegion.getByRole("row", { name: /^1080p/ })).toHaveCount(1);
+  await find.fill("8K");
+  await expect(ladderRegion.getByText(/^Nothing matches “8K”\./)).toBeVisible();
+  await find.fill("");
+
+  // More than 12 playlists: a select with groups, which a row's Segments button also sets.
+  const chooser = page.getByLabel(/^Playlist · 14 in 4 groups/);
+  await expect(chooser).toHaveValue(`${base}avc1080/index.m3u8`);
+  await chooser.selectOption(`${base}hevc2160/index.m3u8`);
+  await expect(page.getByRole("img", { name: /^2160p · .+: Every segment fits/ })).toBeVisible();
+  await ladderRegion.getByRole("button", { name: "Segments of hevc540" }).click();
+  await expect(chooser).toHaveValue(`${base}hevc540/index.m3u8`);
+  await chooser.selectOption(`${base}subs/en.m3u8`);
+  await expect(
+    page.getByText("Subtitles have no bit rate to chart.", { exact: false }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  // On a phone the rows stack, and nothing scrolls sideways.
+  await page.setViewportSize({ width: 360, height: 800 });
+  await expect(ladderRegion.getByRole("list", { name: "H.264 · SDR" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await switchTheme(page, "dark");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

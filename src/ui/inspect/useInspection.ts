@@ -17,8 +17,9 @@ export type InspectState =
       status: "ready";
       inspection: Inspection;
       measured: ReadonlyMap<string, Measured>;
-      /** Media playlists still being measured. */
+      /** Media playlists still being measured, of `toMeasure`. */
       measuring: number;
+      toMeasure: number;
     };
 
 /**
@@ -62,7 +63,13 @@ export function useInspection(source: InspectSource | undefined): InspectState {
         inspection.top.kind === "media"
           ? [{ url: inspection.url, playlist: inspection.top }]
           : inspection.media.filter((media) => media.kind !== "subtitles" && media.playlist);
-      set({ status: "ready", inspection, measured: new Map(), measuring: toMeasure.length });
+      set({
+        status: "ready",
+        inspection,
+        measured: new Map(),
+        measuring: toMeasure.length,
+        toMeasure: toMeasure.length,
+      });
       await Promise.all(
         toMeasure.map(async ({ url, playlist }) => {
           if (!playlist || url === undefined) return;

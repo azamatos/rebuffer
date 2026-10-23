@@ -212,6 +212,24 @@ describe("the screen's model", () => {
     });
   });
 
+  it("makes one finding of every variant that peaks over what it declares, each playlist named", async () => {
+    const inspection = await problems();
+    const findings = inspectionFindings(
+      inspection,
+      peaks({ [`${BASE}1280/index.m3u8`]: 3.4, [`${BASE}1920/index.m3u8`]: 9 }),
+    );
+    const bandwidth = findings.filter((finding) => finding.id === "bandwidth-under-declared");
+    expect(bandwidth).toHaveLength(1);
+    expect(bandwidth[0]?.message).toMatch(
+      /^2 variants peak above the bandwidth they declare, by up to \d+%\.$/,
+    );
+    expect(bandwidth[0]?.sources.map((source) => [source.name, source.url])).toEqual([
+      ["720p", `${BASE}1280/index.m3u8`],
+      ["1080p", `${BASE}1920/index.m3u8`],
+    ]);
+    expect(bandwidth[0]?.declaredBps).toBeUndefined();
+  });
+
   it("describes a rendition's segments in words", () => {
     const stats = segmentStats(parseMedia(problemsMedia, `${BASE}1280/index.m3u8`));
     expect(stats).toMatchObject({

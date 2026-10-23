@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { declaredRunSearch, declaredRunSpeed, type SourcedFinding } from "@/core/inspect/model";
 import { severityText, severityWord } from "./severity";
 import { SeverityIcon } from "./SeverityIcon";
@@ -64,14 +65,62 @@ function describeKinds(finding: SourcedFinding): string {
     : parts.join("; ");
 }
 
+/** Buttons that open a finding's playlists in the Segments panel: four, then the rest on request. */
+function SeeSegments({
+  urls,
+  charted,
+  onSegments,
+}: {
+  urls: string[];
+  charted: ReadonlyMap<string, string>;
+  onSegments: (url: string) => void;
+}) {
+  const [all, setAll] = useState(false);
+  const shown = all ? urls : urls.slice(0, 4);
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="text-xs text-fg-3">See segments:</span>
+      {shown.map((url) => (
+        <button
+          key={url}
+          type="button"
+          onClick={() => {
+            onSegments(url);
+          }}
+          className="inline-flex min-h-8 items-center rounded-lg border border-line-strong px-2 font-mono text-xs text-fg hover:border-fg-3"
+        >
+          {charted.get(url)}
+        </button>
+      ))}
+      {urls.length > 4 && (
+        <button
+          type="button"
+          aria-expanded={all}
+          onClick={() => {
+            setAll((open) => !open);
+          }}
+          className="inline-flex min-h-8 items-center px-2 text-[13px] text-accent hover:text-accent-hover"
+        >
+          {all ? "Show fewer" : `+${String(urls.length - 4)} more`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** The findings, errors first, each with where it comes from and the rule it breaks. */
 export function FindingsList({
   findings,
   streamUrl,
+  charted,
+  onSegments,
 }: {
   findings: readonly SourcedFinding[];
   /** The stream's address, to offer "run it" links; undefined for pasted text. */
   streamUrl: string | undefined;
+  /** The playlists the Segments panel can show, by address, with their short names. */
+  charted: ReadonlyMap<string, string>;
+  onSegments: (url: string) => void;
 }) {
   if (findings.length === 0) {
     return (
@@ -126,6 +175,18 @@ export function FindingsList({
                 <p className="mt-1 break-words">{describeSources(finding)}</p>
               </details>
             )}
+            {(() => {
+              const urls = [
+                ...new Set(
+                  finding.sources.flatMap((source) =>
+                    source.url !== undefined && charted.has(source.url) ? [source.url] : [],
+                  ),
+                ),
+              ];
+              return urls.length > 0 ? (
+                <SeeSegments urls={urls} charted={charted} onSegments={onSegments} />
+              ) : null;
+            })()}
           </div>
         </li>
       ))}
