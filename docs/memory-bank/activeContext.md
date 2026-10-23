@@ -2,9 +2,11 @@
 
 **Updated 2026-10-23 (ninth session, evening).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
 2026-10-25), the LinkedIn post after they've tested the site, the case study dropped. **M4.6 is built, group B
-included**, from the owner's Claude Design screens. The live site has everything but group B (pushed 2026-10-23,
-CI green); local `main` is 5 commits ahead (group B and this memory bank). Review page with screenshots:
-https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. Read this first, then `progress.md` (M4.6).
+included**, from the owner's Claude Design screens, and **all of it is live** (pushed 2026-10-23 on the owner's "push
+and go other stuff with recommended"; CI green; checked live in three browsers). Review page with screenshots:
+https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. What's left is the owner's: the Safari check, LinkedIn's Post
+Inspector, pinning the repo and the post (a draft was given in chat on 2026-10-23). Read this first, then
+`progress.md` (M4.6).
 
 ## Where things stand
 
@@ -16,9 +18,12 @@ https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. Read this first, then `progre
 - **Live site = `main` at `9ffe308`** (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
   CI green on a re-run, after the first try hung 32 minutes installing browsers). **Every push to `main` deploys on
   its own.** Pushing is outward-facing: ask the owner before each push.
-- **Local `main`: 5 commits ahead**, M4.6 group B: Compare reworked and Change one thing (`1de8583`), Inspect for big
-  streams (`a17f61a`), run A dotted behind run B's live charts (`5668e29`), Inspect's picture names (`80ae3b1`), this
-  memory bank. Screens in `productContext.md`; departures from the designs under "Waiting for the owner".
+- **Group B, live since 2026-10-23** (`main` at the README commit `0dfff96` and this memory bank): Compare reworked
+  and Change one thing (`1de8583`), Inspect for big streams (`a17f61a`), run A dotted behind run B's live charts
+  (`5668e29`), Inspect's picture names (`80ae3b1`). CI failed once on the push: the Inspect test matched the local
+  encode's "1 Mbps" and CI encodes the test stream afresh; fixed in `14229e8`, CI green. Live checks (2026-10-23):
+  Inspect with Apple's advanced example in Chromium, Firefox and WebKit; Change one thing end to end with our film
+  in Chromium. Screens in `productContext.md`; the departures are decision 30.
 - **Live since 2026-10-23** (the 20 commits pushed then), M4.6 except group B:
   - the CSV import test's toast wait (WebKit's flaky CI retry);
   - group A (the Run screen keeps its last frame and a short result, the network's name in the editor's header, a
@@ -69,13 +74,11 @@ https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. Read this first, then `progre
 
 ## Next step (in this order)
 
-1. **The owner reviews group B** (the review page above) and says whether to push the 5 commits (`! git push origin
-   main` if the agent's push is refused). Then check the live site in three browsers (Change one thing end to end,
-   Compare, Inspect with Apple's advanced example) and CI.
-2. **The owner's decisions** under "Waiting for the owner": Rural 3G's 0 (recommended: keep the formula), and the
-   departures from the group B designs.
-3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner"), then LinkedIn's Post
-   Inspector, pinning the repo and the post.
+1. **The owner tests the live site** (said 2026-10-22: the LinkedIn post comes after that), including the real
+   Safari check (about 10 minutes; checklist under "Waiting for the owner").
+2. **LinkedIn's Post Inspector** on https://rebuffer.azamatos.com, then pinning the repo and the post (the owner
+   approves the draft).
+3. Whatever the owner's test finds: fix, show, ask before each push.
 4. **At the next `/design-sync` (the owner starts it):** Claude Design's check lists 4 `--tw-*` variables set inside
    component classes and 13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and
    Lightning CSS's). They don't change the designs, and they stay: the converter has no option to skip variables,

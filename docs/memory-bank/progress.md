@@ -16,7 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | 2026-10-25 | **built**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built 2026-10-23 from the owner's Claude Design screens, not pushed |
+| M4.6 Fixes from the owner's test | 2026-10-25 | **built**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built from the owner's Claude Design screens and live 2026-10-23, CI green |
 | M5 Compare and launch | 2026-10-25 | Compare built 2026-10-20; the case study dropped 2026-10-22; pinning and the LinkedIn post after the owner's test |
 
 ## M0: decisions and setup — done
@@ -347,4 +347,6 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   differences within the measured spread as such, compares a stopped run over the stretch both covered, warns about
   two changes or two streams; the Report's Change one thing runs B and opens Compare (checked end to end with our
   film); Inspect groups Apple's 100 variants into 50 rows in four groups, with search, a select for the playlists
-  and a bit rate chart per segment.
+  and a bit rate chart per segment. Pushed on the owner's word the same evening; CI's first run failed on a test that
+  matched the local encode's bitrate (fixed); checked live in three browsers. Decisions 29 (Rural 3G keeps its 0) and
+  30 (group B as built).
