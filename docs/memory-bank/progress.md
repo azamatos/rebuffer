@@ -239,6 +239,11 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
 
 ## Later (only if it earns it)
 
+- **A new link preview image (the owner, 2026-10-23, "that is future task"):** the graphic on `public/og.png` looks
+  too odd; make it clearer, smoother and more charming. Design it in Claude Design (decision 25), then rebuild the
+  card in `scripts/og/card.html` and run `node scripts/og/render.mjs`; check LinkedIn's Post Inspector after the
+  push. Planned, not started.
+
 - Shaka Player adapter: "player vs player" on the same network.
 - Segment probing in a worker (keyframes at segment starts, real codec vs declared).
 - DASH; low-latency HLS; more recorded traces (Lumos5G).

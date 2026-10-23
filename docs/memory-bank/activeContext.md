@@ -79,6 +79,8 @@ Inspector, pinning the repo and the post (a draft was given in chat on 2026-10-2
 2. **LinkedIn's Post Inspector** on https://rebuffer.azamatos.com, then pinning the repo and the post (the owner
    approves the draft).
 3. Whatever the owner's test finds: fix, show, ask before each push.
+4. **Later, when the owner says so:** a clearer, smoother, more charming graphic for the link preview image
+   (`public/og.png`); the owner's note of 2026-10-23 ("that is future task"). `progress.md`, Later.
 4. **At the next `/design-sync` (the owner starts it):** Claude Design's check lists 4 `--tw-*` variables set inside
    component classes and 13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and
    Lightning CSS's). They don't change the designs, and they stay: the converter has no option to skip variables,
