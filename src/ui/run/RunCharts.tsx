@@ -32,9 +32,18 @@ interface RunChartsProps {
   range?: TimeRange;
   /** Called with the stretch a pointer picks on the charts; without it, they can't be picked. */
   onPick?: (range: TimeRange) => void;
+  /** Run A's log, behind run B of a comparison: its quality and buffer as dotted lines. */
+  reference?: readonly RunEvent[] | undefined;
 }
 
 const NO_MARKERS: readonly ChartMarker[] = [];
+
+const referenceKey = (
+  <Key
+    swatch={<path d="M0 5 H16" strokeWidth="1.5" strokeDasharray="1 3" className="stroke-fg-3" />}
+    label="A, for reference"
+  />
+);
 
 /** Bandwidth and quality, buffer and downloads on one time axis, each with a sentence and a data table. */
 export function RunCharts({
@@ -45,6 +54,7 @@ export function RunCharts({
   markers = NO_MARKERS,
   range,
   onPick,
+  reference,
 }: RunChartsProps) {
   const networkRef = useRef<HTMLCanvasElement>(null);
   const bufferRef = useRef<HTMLCanvasElement>(null);
@@ -56,13 +66,17 @@ export function RunCharts({
     const buffer = bufferRef.current;
     const downloads = downloadsRef.current;
     if (!network || !buffer || !downloads) return;
-    const charts = mountRunCharts({ network, buffer, downloads }, curve);
+    const charts = mountRunCharts(
+      { network, buffer, downloads },
+      curve,
+      reference && buildTimeline(reference),
+    );
     chartsRef.current = charts;
     return () => {
       charts.destroy();
       chartsRef.current = undefined;
     };
-  }, [curve]);
+  }, [curve, reference]);
 
   // Live events go from the run to the canvases directly, not through React state.
   useEffect(() => {
@@ -153,6 +167,7 @@ export function RunCharts({
               swatch={<rect width="12" height="10" rx="2" className="fill-error/35" />}
               label="Stall"
             />
+            {reference && referenceKey}
           </>
         }
         {...showAs("network")}
@@ -200,6 +215,7 @@ export function RunCharts({
               swatch={<rect width="12" height="10" rx="2" className="fill-error/35" />}
               label="Stall"
             />
+            {reference && referenceKey}
           </>
         }
         {...showAs("buffer")}

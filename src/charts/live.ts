@@ -51,7 +51,12 @@ const DRAG_PX = 4;
  * Draws `curve` and the runs that follow on three canvases. Until a run starts, the network chart previews the whole
  * curve. Drawing pauses with the tab (no animation frames there) and catches up when it's back.
  */
-export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve): RunCharts {
+export function mountRunCharts(
+  canvases: RunChartCanvases,
+  curve: NetworkCurve,
+  /** Run A, behind run B of a comparison. */
+  reference?: Timeline,
+): RunCharts {
   let timeline: Timeline = createTimeline();
   let clock: (() => number) | undefined;
   let markers: readonly ChartMarker[] = [];
@@ -78,6 +83,7 @@ export function mountRunCharts(canvases: RunChartCanvases, curve: NetworkCurve):
       markers,
       range: range ?? wholeRange(curve.lengthS),
       selection,
+      reference,
     };
     const network = painters.get(canvases.network);
     const buffer = painters.get(canvases.buffer);

@@ -93,6 +93,16 @@ export interface Frame {
   range: TimeRange;
   /** The stretch a drag across the charts is picking, while it lasts. */
   selection: TimeRange | undefined;
+  /** Run A, finished, behind run B of a comparison: a dotted line in the muted text colour. */
+  reference?: Timeline | undefined;
+}
+
+/** The style of run A's line behind run B: thin, dotted, muted. */
+function referenceStroke(ctx: CanvasRenderingContext2D, theme: ChartTheme): void {
+  ctx.strokeStyle = theme.fgMuted;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([1, 3]);
+  ctx.lineJoin = "round";
 }
 
 /** Room on the right for axis labels. Every chart keeps the same, so their time axes line up. */
@@ -313,6 +323,25 @@ export function drawNetwork(painter: Painter, theme: ChartTheme, frame: Frame): 
   ctx.stroke();
   ctx.restore();
 
+  // Run A's quality on screen, the whole of it, so B can be seen parting from it.
+  const { reference } = frame;
+  if (reference) {
+    const referenceBitrate = new Map(reference.levels.map((level) => [level.index, level.bitrate]));
+    const end = reference.endS ?? 0;
+    ctx.save();
+    referenceStroke(ctx, theme);
+    ctx.beginPath();
+    reference.shown.forEach((change, i) => {
+      const level = y(referenceBitrate.get(change.level) ?? domain[0]);
+      const until = Math.min(reference.shown[i + 1]?.t ?? end, end);
+      if (i === 0) ctx.moveTo(x(change.t), level);
+      else ctx.lineTo(x(change.t), level);
+      ctx.lineTo(x(until), level);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // The quality on screen, as steps.
   const bitrateOf = new Map(timeline.levels.map((level) => [level.index, level.bitrate]));
   ctx.save();
@@ -430,7 +459,9 @@ export function drawBuffer(painter: Painter, theme: ChartTheme, frame: Frame): v
     most = Math.max(most, bufferS[count] ?? 0);
     count++;
   }
-  const topS = bufferTop(most);
+  // Run A's buffer, behind B's, sets the scale too, so it doesn't move as B fills.
+  const reference = frame.reference?.samples;
+  const topS = bufferTop(Math.max(most, ...(reference?.bufferS ?? [])));
   const y = linearScale([0, topS], [bottom, top]);
 
   ctx.save();
@@ -449,6 +480,19 @@ export function drawBuffer(painter: Painter, theme: ChartTheme, frame: Frame): v
   hairline(ctx, bottom, 0, plotRight);
   clipToPlot(painter);
   drawStalls(painter, theme, frame, x, top, bottom);
+
+  if (reference && reference.t.length > 0) {
+    ctx.save();
+    referenceStroke(ctx, theme);
+    ctx.beginPath();
+    reference.t.forEach((t, i) => {
+      const point: [number, number] = [x(t), y(reference.bufferS[i] ?? 0)];
+      if (i === 0) ctx.moveTo(...point);
+      else ctx.lineTo(...point);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
 
   if (count > 0) {
     ctx.save();

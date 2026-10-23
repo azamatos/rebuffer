@@ -201,9 +201,13 @@ test("change one thing runs B with that change, then opens Compare", async ({
   ).toEqual([]);
 
   // At the end, Compare opens with this report's run as A.
-  await expect(page).toHaveURL(new RegExp(`/runs/compare\\?a=${runId}&b=[0-9a-f]{8}$`), {
-    timeout: 40_000,
-  });
+  await expect(page).toHaveURL(
+    // The router quotes an id that reads as a number.
+    new RegExp(`/runs/compare\\?a=(%22)?${runId}(%22)?&b=(%22)?[0-9a-f]{8}(%22)?$`),
+    {
+      timeout: 40_000,
+    },
+  );
   await expect(page.locator("#toasts")).toContainText("Run B finished and saved.");
   const verdict = page.getByRole("region", { name: /did|difference/ });
   await expect(verdict).toContainText("What changed · 1 thing");

@@ -508,7 +508,13 @@ function RunScreen({
           </section>
         </div>
 
-        <RunCharts curve={setup.curve} run={run} events={events} untilS={elapsed} />
+        <RunCharts
+          curve={setup.curve}
+          run={run}
+          events={events}
+          untilS={elapsed}
+          reference={runA?.events}
+        />
       </div>
     </div>
   );
