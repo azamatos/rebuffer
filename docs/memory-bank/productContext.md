@@ -52,6 +52,19 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - **Polished 2026-10-21 (M4.5):** the three ways in are tabs (Link, Paste text, File with a drop zone), each saying
   what it takes; samples, finding counts and the Segments panel's playlists are chips, each playlist's chip marked
   with its worst finding (its own, or its measured bandwidth against what it declares).
+- **Big streams (M4.6 group B, built 2026-10-23 from the owner's Claude Design screens):** the ladder groups video
+  playlists by codec and range (H.264, HEVC, Dolby Vision, AV1, VP9; SDR, then HDR (HLG), HDR (PQ)), H.264 open and
+  the rest folded, each group saying whether this browser plays it; one row per video playlist (variants that share
+  one are listed once with their audio pairings and the declared range), its name shortened to what tells it apart
+  ("hls290"); "Find a rendition" searches every group (height, name, codec, range, bitrate, audio); on phones the
+  rows stack. Apple's advanced example reads as 50 rows in four groups. HDR10+ isn't named: the playlist only says
+  `VIDEO-RANGE=PQ`, so it shows as "HEVC · HDR (PQ)". Above 12 playlists the Segments chooser is a select with groups
+  (the ladder's, then Audio, Subtitles); below, chips in the same groups. Segments is a chart of fixed height beside
+  Findings (sticky from 1024 px): each segment's bit rate (every segment of the chosen playlist measured when it's
+  chosen, up to 400) against what its variants declare, with the stats and a takeaway, and its table; subtitles say
+  they have no bit rate. Each row's Segments button and each finding's "See segments" open a playlist there.
+  Measured peaks over the declared bandwidth are one finding across variants. Measuring shows a progress bar; Run
+  says how many variants it will use; pasted text whose links can't be read asks for the address it came from.
 
 ### Network
 
@@ -79,7 +92,7 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   before or after, since Tab must leave the editor; N adds, Delete removes, Cmd/Ctrl+Z undoes; drag or double-click
   with a pointer; changes read out; a points table), the chosen point's time and bandwidth, the whole network's
   name, latency and length, steps or slopes, import JSON or CSV, export JSON and CSV, Save to my networks, Use in a
-  run. The Report's "Change network" opens a run's network here and keeps its stream and player.
+  run. The Report's "Change one thing" links here to draw a network for run B, keeping its stream and player.
 - **Polished 2026-10-21 (M4.5):** the list is compact rows in a sidebar that stays in view on wide screens; the
   editor's header holds Steps | Slopes, undo, redo, a `?` list of the keys (also the `?` key), **Save** and **Run
   with this network**; the points table is behind Chart | Table; import and export are one **Import / Export** menu.
@@ -129,7 +142,8 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
 - **Score** (see Metrics) and tiles with one-line explanations.
 - The same three charts, static, zoomable, with notes the lab writes: "0:42–0:54: bandwidth fell below the
   lowest quality (0.4 Mbps); the buffer ran out at 0:51; a stall of 2.1 s".
-- Setup summary. Actions: **Run again**, **Change network**, **Compare with…**, **Copy link** (the link carries the
+- Setup summary. Actions: **Run again**, **Change one thing** (2026-10-23; it replaced Change network), **Compare
+  with…**, **Copy link** (the link carries the
   setup, not the results) and **More actions** (Export JSON, Export HAR, Delete); Copy link and Export confirm in a toast. Export HAR
   (2026-10-22) saves the run's downloads as the simulation timed them, for DevTools' Network panel ("Import HAR
   file"); the file says the times are simulated.
@@ -159,12 +173,30 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   to the charts and rings the chart for a moment. The three charts
   zoom together, down to 4 s; the time axis, markers, sentences and tables follow the view, and the vertical scales
   stay those of the whole run.
-- **Change network** (built 2026-10-20) opens the network editor with the run's network; **Compare with…** (built
+- **Change network** (built 2026-10-20) opened the network editor with the run's network; **Compare with…** (built
   2026-10-20) opens Compare with this run as A.
+- **Change one thing (M4.6 group B, built 2026-10-23, decision 23):** a panel under the header: Player setup |
+  Network, this run's own choice marked "A · this run" and disabled, networks with their thumbnail and length, B's
+  whole setup with the change in bold (and how Compare lines up runs of different lengths), Run B. Drawing a network
+  stays a link to the editor, whose "Run with this network" then runs B too. The Run screen says it's run B of a
+  comparison (against A, what changed, what happens at the end), with "Run it on its own instead"; at the end,
+  stopped or not, it opens Compare with a toast. The run link carries `vs=<A's id>`, so a reload keeps it.
 
 ### Compare (built 2026-10-20, `/runs/compare`)
 
 - Two saved runs side by side: metric tiles with differences, charts overlaid on one time axis.
+- **Reworked (M4.6 group B, built 2026-10-23 from the owner's Claude Design screens):** what changed comes first (a
+  player preset is one change, with the settings it changes listed under it; settings changed by hand count one
+  each), then both scores with the difference, a headline naming the number that moved most (a stall, then
+  switches, then the bitrate; "though" when it runs against the verdict) and the facts under it (stalls, first
+  frame, buffer, and the real network's part when it held downloads back). Differences within the spread measured
+  between repeat runs (2 points, 0.3 s first frame, 0.1 s stall time, 0.1 Mbps) read "≈ within spread"; the same
+  setup reads "no real difference" with a link to How repeatable it is. The numbers come in groups (Overall,
+  Starting, Stalling, Picture, Data) with a tally; on phones they're a list. Each chart has a "Look for" line and a
+  takeaway from the data; with no stalls in either run, one line replaces the lanes. A run that ended early
+  compares over the stretch both covered (the default) or whole runs, where only the first frame compares; "Run B
+  again" finishes it. A warning when the runs differ in more than one thing (with "Run A again on <B's network>"
+  when the network is one of two changes) or in the stream (the quality chart then marks bitrates only).
 - **Built:** two pickers (native selects) and Swap; without a choice, the newest run is B and the one before it A;
   from a report, the newest other run is B. A card per run with its report; "What changed" (stream, network, player
   setup, each setting, hls.js version, browser; "the same setup" points to the run-to-run spread on About); every

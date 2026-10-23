@@ -1,10 +1,10 @@
 # Active context
 
-**Updated 2026-10-23 (eighth session, after midnight).** The owner set a new goal on 2026-10-22: **finish this week**
-(by Sunday 2026-10-25), the LinkedIn post after they've tested the site, the case study dropped. M4.6 is built except
-group B, which the owner is designing in Claude Design now (the agent's brief: `.design-sync/briefs/m4.6-group-b.md`).
-Nothing is pushed: local `main` is 19 commits ahead of the live site plus this memory bank. Read this first, then
-`progress.md` (M4.6).
+**Updated 2026-10-23 (ninth session, evening).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
+2026-10-25), the LinkedIn post after they've tested the site, the case study dropped. **M4.6 is built, group B
+included**, from the owner's Claude Design screens. The live site has everything but group B (pushed 2026-10-23,
+CI green); local `main` is 5 commits ahead (group B and this memory bank). Review page with screenshots:
+https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN. Read this first, then `progress.md` (M4.6).
 
 ## Where things stand
 
@@ -13,14 +13,18 @@ Nothing is pushed: local `main` is 19 commits ahead of the live site plus this m
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `66c638a`** (2026-10-21, CI green). **Every push to `main` deploys on its own.** Pushing
-  is outward-facing: ask the owner before each push.
-- **Local `main`: 19 commits ahead** (`7b5385e` … `41121b0`, then this memory bank), all M4.6 except group B:
+- **Live site = `main` at `9ffe308`** (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
+  CI green on a re-run, after the first try hung 32 minutes installing browsers). **Every push to `main` deploys on
+  its own.** Pushing is outward-facing: ask the owner before each push.
+- **Local `main`: 5 commits ahead**, M4.6 group B: Compare reworked and Change one thing (`1de8583`), Inspect for big
+  streams (`a17f61a`), run A dotted behind run B's live charts (`5668e29`), Inspect's picture names (`80ae3b1`), this
+  memory bank. Screens in `productContext.md`; departures from the designs under "Waiting for the owner".
+- **Live since 2026-10-23** (the 20 commits pushed then), M4.6 except group B:
   - the CSV import test's toast wait (WebKit's flaky CI retry);
   - group A (the Run screen keeps its last frame and a short result, the network's name in the editor's header, a
     softer text selection, Inspect for pasted and big streams, fewer quality lines on charts), the CSP's `data:` (D2);
   - the score against the network (D1), SEO and link previews (D3: Open Graph and Twitter tags, `public/og.png`,
-    per-page titles and heads written at build time, `sitemap.xml`); the live site has none of it yet;
+    per-page titles and heads written at build time, `sitemap.xml`), checked live with `curl` on 2026-10-23;
   - HAR import (D4, `6907809`), HAR export (D4, `4325691`: the worker now reports each response's status), networks
     export CSV only (`0760ba7`), Home's CSS budget 9 KB (`14f59d4`), the repeatability tables re-measured
     (`2e90093`), the Claude Design brief (`41121b0`).
@@ -47,9 +51,10 @@ Nothing is pushed: local `main` is 19 commits ahead of the live site plus this m
     numbers and the score, privacy, credits (film, 4G dataset, test streams, libraries with licences).
   - **Light theme (built 2026-10-20, the owner asked for it):** System (default), Light or Dark from three radios in
     the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
-- **Quality bar today (2026-10-23, local):** 513 unit tests; 144 Playwright checks in Chromium, Firefox and WebKit,
-  141 pass and 3 keyboard checks are skipped in WebKit (which only tabs to text fields); axe on every screen in both
-  themes. Home's JavaScript 96.66 of 100 KB and its CSS 7.94 of 9 KB (brotli; the budget was 8 until 2026-10-22).
+- **Quality bar today (2026-10-23, local):** 534 unit tests; 162 Playwright checks in Chromium, Firefox and WebKit:
+  the full run had 158 pass, 3 keyboard checks skipped in WebKit (which only tabs to text fields) and 1 flaky (the
+  Report's mouse-drag zoom in WebKit under the full load; 3 of 3 alone); the specs changed since pass in all three.
+  axe on every screen in both themes. Home's JavaScript 96.63 of 100 KB and its CSS 7.97 of 9 KB (brotli).
   Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the Linux container, 1.0 in the rest, CLS 0
   (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout shift stays under 0.03 on every screen.
 - **Repeatability (`pnpm repeat`, measured again 2026-10-22 with the new score):** each preset 5× in Chromium on the
@@ -64,20 +69,17 @@ Nothing is pushed: local `main` is 19 commits ahead of the live site plus this m
 
 ## Next step (in this order)
 
-1. **Ask the owner to push** the 19 commits and this memory bank (`! git push origin main` if the agent's push is
-   refused). Then check the live site in three browsers (the SEO heads with `curl`, a run, Export HAR), CI, and ask
-   the owner to try LinkedIn's Post Inspector.
-2. **Group B when the owner's Claude Design screens arrive** (the owner: "u will be noticed when it finishes"):
-   Compare reworked with "Change one thing", then Inspect for big streams. The agent sent Claude Design a follow-up
-   prompt on 2026-10-22 (via the owner): the 9 KB budget, the multi-setting warning, chart takeaways, the states,
-   scope "Change one thing" to a player preset or a network, and Inspect, which its plan had left out. Build from
-   its designs with keyboard tests and axe; check `pnpm size` (about 1 KB of CSS room).
-3. **The owner's decisions** under "Waiting for the owner": Rural 3G's 0 (recommended: keep the formula).
-4. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner").
-5. **At the next `/design-sync`:** Claude Design's check lists 4 `--tw-*` variables set inside component classes and
+1. **The owner reviews group B** (the review page above) and says whether to push the 5 commits (`! git push origin
+   main` if the agent's push is refused). Then check the live site in three browsers (Change one thing end to end,
+   Compare, Inspect with Apple's advanced example) and CI.
+2. **The owner's decisions** under "Waiting for the owner": Rural 3G's 0 (recommended: keep the formula), and the
+   departures from the group B designs.
+3. **Real Safari check** (owner, about 10 minutes; checklist under "Waiting for the owner"), then LinkedIn's Post
+   Inspector, pinning the repo and the post.
+4. **At the next `/design-sync`:** Claude Design's check lists 4 `--tw-*` variables set inside component classes and
    13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and Lightning CSS's). They
    don't change the designs. A `/* @kind other */` comment in `src/styles.css` wouldn't survive the build, so filter
-   them in `.design-sync/app-css.mjs`.
+   them in `.design-sync/app-css.mjs`. Group B's new parts (GroupedLadder, ChangeOne, RunSwatch) could be synced.
 
 The owner collects fixes and reviews them when everything is ready (said 2026-10-20): keep building, list anything
 that needs their eye under "Waiting for the owner".
@@ -150,13 +152,23 @@ that needs their eye under "Waiting for the owner".
 
 ## Waiting for the owner (raised 2026-10-20 to 2026-10-22)
 
-- **Push the 19 local commits** (2026-10-22): M4.6 without group B, SEO, the new score. Ask, then check live.
+- **Push group B** (2026-10-23): 5 commits. Ask, then check live.
+- **Group B's departures from the Claude Design screens** (2026-10-23, on the review page):
+  - "Within spread" applies to every comparison, not only the same setup: a first frame 0.04 s sooner isn't
+    "better" when repeat runs differ by up to 0.27 s. Limits from `pnpm repeat` (2 points, 0.3 s, 0.1 s of stall,
+    0.1 Mbps; `SPREAD` in `src/core/run/compare.ts`).
+  - Verdict sentences are written by rules from the numbers and state facts, not causes; the design's were examples.
+  - HDR10+ reads "HEVC · HDR (PQ)": Apple's playlist only says `VIDEO-RANGE=PQ`.
+  - Inspect keeps its input card on top instead of a title with "Inspect another stream"; no floating peak tag on
+    the segment chart (the takeaway names it); the ladder's button always says "Segments" (axe fails a visible
+    "Showing" that isn't in the name); pictures are named as the app does (a 1920×800 film is 1080p).
+  - Change one thing keeps settings changed by hand; its network list is the seven presets (drawn networks through
+    the editor); run B's toast says "Compare reads it against A".
 - **Rural 3G still scores 0 under the new score (D1), 2026-10-22.** From a run's breakdown: it's scored against 360p
   (the best its 1.02 Mbps mean carries); the picture earns 68 points, the 11.7 s wait for the first frame costs 60
   (Yin et al. charge each second of startup as much as a segment), and hls.js starting at 720p and dropping to 240p
   costs 14. Recommended: keep the published formula; the Report's bars show the losses and the README explains it.
   Changing startup's weight would be a departure from the paper, the owner's call.
-- **Group B's designs** are being made in Claude Design by the owner (2026-10-22).
 
 - **The light theme's look** is new and not on the design canvas: a light grey ground, white cards, the mint accent
   darkened to teal (`#0a7a5a`) so white text reads on buttons, qualities from light to dark green. The wordmark's
@@ -219,6 +231,16 @@ that needs their eye under "Waiting for the owner".
 
 ## Lessons worth keeping
 
+- **Claude Design's screens come out as source:** Share → Export → Project HTML → Project archive (instant, free)
+  downloads a zip of every file, `templates/*/*.dc.html` included (2026-10-23; ask the owner before downloading).
+  The `DesignSync` tool is for `/design-sync` only. Read the boards' notes first: they list the design's choices.
+- **`pnpm e2e` empties `test-results/`,** scratch specs included. Keep throwaway Playwright scripts in
+  `.claude/scratch-e2e/` (ESLint and Prettier ignore `.claude/`; it's in `.git/info/exclude`, so local only), with
+  their own config pointing at a `vite preview --port 4022` of the build.
+- **CI can hang installing browsers** (`playwright install --with-deps`, 32 minutes on 2026-10-23, against 7 for a
+  whole run): `gh run cancel <id>`, then `gh run rerun <id>`; the re-run took 7 minutes.
+- **A run id like `91827e74` reads as a number** (91827×10⁷⁴), so the router quotes it in links; match ids in tests
+  with optional `%22` around them.
 - **Firefox logs "Failed to load ''. A ServiceWorker intercepted the request and encountered an unexpected error"
   once for each download the page cancels while the worker streams its body** (found 2026-10-22, matched to the
   run's log to the hundredth of a second): hls.js giving up a slow segment, or its downloads cut at a run's end.

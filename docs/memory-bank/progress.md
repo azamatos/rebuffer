@@ -16,7 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | 2026-10-25 | **built except group B (2026-10-22), not pushed**: group A, the score (D1), SEO, HAR import and export, the tables re-measured; group B is being designed in Claude Design |
+| M4.6 Fixes from the owner's test | 2026-10-25 | **built**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built 2026-10-23 from the owner's Claude Design screens, not pushed |
 | M5 Compare and launch | 2026-10-25 | Compare built 2026-10-20; the case study dropped 2026-10-22; pinning and the LinkedIn post after the owner's test |
 
 ## M0: decisions and setup — done
@@ -142,7 +142,12 @@ boards, `activeContext.md` lists it under "Waiting for the owner".
       specs repeated three times. A code review of the range found 10 issues: 8 fixed in `6c43a60`, the memory bank written
       at the end, and the progress bar's step back of about a frame at Stop left as it is.
 
-## M4.6: fixes from the owner's test (planned 2026-10-21, decisions approved the same day, in progress)
+## M4.6: fixes from the owner's test (planned 2026-10-21, decisions approved the same day, built 2026-10-23)
+
+Status on 2026-10-23: the 20 commits of 2026-10-21/22 are live (the owner's "go with push", `9ffe308`; CI green
+after a re-run: its first try hung 32 minutes installing browsers). Group B is built from the owner's Claude Design
+screens (exported as a project archive, read from source): Compare and Change one thing (`1de8583`), Inspect for big
+streams (`a17f61a`). Not pushed. The design's optional "A for reference" line on run B's live charts isn't built.
 
 Status on 2026-10-22 (nothing pushed): group A, D1, SEO, HAR import (`6907809`) and export (`4325691`) are built,
 networks export CSV only (`0760ba7`), and `pnpm repeat` was run again for the new score (`2e90093`). Group B waits
@@ -185,11 +190,12 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
 
 **B. Needs boards first** (`design-review-before-ui-code`):
 
-- [ ] **Inspect for big ladders.** The playlist chooser groups and shrinks when there are many: Video by codec and
+- [x] **Inspect for big ladders** (built 2026-10-23, `a17f61a`; `productContext.md`, Inspect). The playlist chooser groups and shrinks when there are many: Video by codec and
       range (H.264, HEVC, Dolby Vision, HDR10+), Audio, Subtitles; a select with groups above about 12. Variants that
       share one video playlist are listed once (Apple's 1080p hls290 has three audio pairings). The ladder table
       groups the same way. The layout doesn't leave the Findings column empty beside a long Segments column.
-- [ ] **Compare, reworked to answer a question.** The owner: "we need real comparison which will be useful".
+- [x] **Compare, reworked to answer a question** (built 2026-10-23, `1de8583`; `productContext.md`, Compare and
+      Report). The owner: "we need real comparison which will be useful".
   - "Change one thing" from a report: pick another player preset or network, and the lab runs B with only that
     change, then opens Compare.
   - A warning when two runs differ in more than one setting or in the stream. Two ladders can't share one quality
@@ -197,7 +203,8 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
   - A verdict headline, then metric cards with icons and A/B bars, grouped as Start, Smoothness, Picture and Data.
   - Each chart gets a line on what to look for and a takeaway written from the data ("B stayed at 576p; A dropped
     to 342p at 0:12"). "No stalls in either run" replaces two empty lanes.
-- [ ] **Run screen end state** (from A): the last frame, the waiting message and the short result are built; any further design comes from Claude Design.
+- [x] **Run screen end state** (from A): the last frame, the waiting message and the short result are built; Claude
+      Design left it as built. Run B of a comparison has its banner (2026-10-23).
 
 **C. Features:**
 
@@ -334,3 +341,10 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   points; Rural 3G's 0 explained from a run's breakdown) and our film on the tunnel 4× (60, 59, 59, 59); Firefox's
   console error traced to the page cancelling downloads mid-body (not fixable from the worker); the Claude Design
   brief for group B. 513 unit tests, 141 Playwright checks pass in three browsers.
+- 2026-10-23: the owner pushed the 20 commits ("go with push"); live in 30 s with every page's own head, the
+  sitemap and the preview image; "Try the tunnel", the report and Export HAR checked live in Chromium, Firefox and
+  WebKit. Group B built from the owner's Claude Design screens: Compare leads with what changed and a verdict, reads
+  differences within the measured spread as such, compares a stopped run over the stretch both covered, warns about
+  two changes or two streams; the Report's Change one thing runs B and opens Compare (checked end to end with our
+  film); Inspect groups Apple's 100 variants into 50 rows in four groups, with search, a select for the playlists
+  and a bit rate chart per segment.
