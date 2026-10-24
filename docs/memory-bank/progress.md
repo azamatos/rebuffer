@@ -247,10 +247,12 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
 
 ## Later (only if it earns it)
 
-- **A new link preview image (the owner, 2026-10-23, "that is future task"):** the graphic on `public/og.png` looks
-  too odd; make it clearer, smoother and more charming. Design it in Claude Design (decision 25), then rebuild the
-  card in `scripts/og/card.html` and run `node scripts/og/render.mjs`; check LinkedIn's Post Inspector after the
-  push. Planned, not started.
+- [x] **A new link preview image** (the owner, 2026-10-23: "looks odd"; 2026-10-25: "this image is awful … DO it
+  yourself and push"). Built 2026-10-25 by the agent, not in Claude Design, on the owner's word: a question ("12
+  seconds with no signal. Does the video stop?"), the answer, and a chart of a real run of our film on the tunnel
+  (score 57, no stall, the buffer from 22 s to 10 s), drawn from its data in `scripts/og/card.html`. A second real run
+  agreed (58, no stall). The brief written for Claude Design (`.design-sync/briefs/og-image.md`) wasn't used.
+  Telegram and LinkedIn keep old previews until asked: @WebpageBot, and LinkedIn's Post Inspector.
 
 - Shaka Player adapter: "player vs player" on the same network.
 - Segment probing in a worker (keyframes at segment starts, real codec vs declared).
