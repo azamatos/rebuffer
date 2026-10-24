@@ -25,10 +25,10 @@ import {
   describeScoreTarget,
   formatMbps,
 } from "@/core/run/describe";
-import { setupChanges, type SetupChange } from "@/core/run/compare";
+import { playerLabel, setupChanges, type SetupChange } from "@/core/run/compare";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
-import { playerChanges, savedRunSearch } from "@/core/run/report";
+import { savedRunSearch } from "@/core/run/report";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 import { toast } from "@/ui/feedback/toast";
@@ -597,16 +597,17 @@ function ComparingBanner({
       className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-accent/35 bg-accent/6 px-[18px] py-3"
     >
       <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
+        {/* "Comparison · run B", not "Run B of a comparison": set in capitals, run A's banner would read "RUN A OF A". */}
         <h2 id="comparing-h" className="font-mono text-xs tracking-[0.06em] text-accent uppercase">
-          Run B of a comparison
+          Comparison · run B
         </h2>
         <p className="text-[15px]">
           Against{" "}
           <span className="inline-flex items-center gap-1.5 font-medium">
             <RunSwatch side="a" />A
           </span>
-          , {a.setup.network.name} · {playerTitle(a.setup.player.name, playerChanges(a))} ·{" "}
-          {Math.round(score.score)}/100. <ChangedText changes={changes} />
+          , {a.setup.network.name} · {playerLabel(a)} · {Math.round(score.score)}/100.{" "}
+          <ChangedText changes={changes} />
         </p>
         <p className="text-sm text-fg-2">
           When this run ends, Compare opens with A and B. Stop it early and Compare opens anyway,
@@ -624,7 +625,7 @@ function ComparingBanner({
   );
 }
 
-/** Run A of a comparison: run again to compare with a saved B, or before B runs again. */
+/** Run A of a comparison: run again to compare with a saved B, or before B runs again (`next`). */
 function RunABanner({ b, next, onAlone }: { b: SavedRun; next: boolean; onAlone: () => void }) {
   return (
     <section
@@ -633,12 +634,12 @@ function RunABanner({ b, next, onAlone }: { b: SavedRun; next: boolean; onAlone:
     >
       <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
         <h2 id="comparing-h" className="font-mono text-xs tracking-[0.06em] text-accent uppercase">
-          Run A of a comparison
+          {next ? "Comparison · run A, then B" : "Comparison · run A"}
         </h2>
         <p className="text-sm text-fg-2">
           {next
-            ? `When this run ends, B runs again (${b.setup.network.name} · ${playerTitle(b.setup.player.name, playerChanges(b))}), then Compare opens with both.`
-            : `When this run ends, Compare opens with it as A and the saved B (${b.setup.network.name} · ${playerTitle(b.setup.player.name, playerChanges(b))}).`}
+            ? `When this run ends, B runs again (${b.setup.network.name} · ${playerLabel(b)}), then Compare opens with both.`
+            : `When this run ends, Compare opens with it as A and the saved B (${b.setup.network.name} · ${playerLabel(b)}).`}
         </p>
       </div>
       <button

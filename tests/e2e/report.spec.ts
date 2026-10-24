@@ -191,7 +191,7 @@ test("change one thing runs B with that change, then opens Compare", async ({
   await panel.getByRole("link", { name: /^Run B · / }).click();
 
   // The Run screen says it's B of a comparison, and what changed.
-  const banner = page.getByRole("region", { name: "Run B of a comparison" });
+  const banner = page.getByRole("region", { name: "Comparison · run B" });
   await expect(banner).toContainText(
     /Changed: player setup, Defaults →\s+changed to Low-memory TV\./,
   );
@@ -230,7 +230,7 @@ test("Compare's Run both again runs A, then B, then opens Compare", async ({
   await page.goto(
     `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&player=fast-start&start=now&then=${runId}`,
   );
-  await expect(page.getByRole("region", { name: "Run A of a comparison" })).toContainText(
+  await expect(page.getByRole("region", { name: "Comparison · run A, then B" })).toContainText(
     "When this run ends, B runs again",
   );
   await expect(page).toHaveURL(/vs=(%22)?[0-9a-f]{8}/, { timeout: 40_000 });
@@ -255,7 +255,7 @@ test("a run started as B of a comparison can run on its own instead", async ({
   await page.goto(
     `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&player=fast-start&vs=${runId}`,
   );
-  const banner = page.getByRole("region", { name: "Run B of a comparison" });
+  const banner = page.getByRole("region", { name: "Comparison · run B" });
   await expect(banner).toContainText(/Changed: player setup, Defaults →\s+changed to Fast start\./);
   await banner.getByRole("button", { name: "Run it on its own instead" }).click();
   await expect(banner).toBeHidden();
