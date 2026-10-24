@@ -16,7 +16,8 @@ Read this first, then `progress.md` (M4.6).
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `02e8904`** (the Compare redesign, pushed 2026-10-24, CI green). Before it: `9ffe308` (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
+- **Live site = `main` at `c52f752`** (new-tab links and the banners' wording, pushed 2026-10-24 on the owner's "Lets
+  go", CI green; the Compare redesign `02e8904` before it). Before it: `9ffe308` (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
   CI green on a re-run, after the first try hung 32 minutes installing browsers). **Every push to `main` deploys on
   its own.** Pushing is outward-facing: ask the owner before each push.
 - **Group B, live since 2026-10-23** (`main` at the README commit `0dfff96` and this memory bank): Compare reworked
