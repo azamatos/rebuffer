@@ -5,7 +5,8 @@
 ("misleading things in the table and graphs"). **Compare is redesigned and built (2026-10-24, local, not pushed)** from
 Claude Design's second round, which fixed the five gaps the agent found in the first: every state checked in both
 themes at 1280 and 360 px, 554 unit tests and 176 Playwright checks pass. **Next: the owner looks at it, then a
-push on their word** (see "Next step", 1). Review page of group B: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
+push on their word** (see "Next step", 1). Review page of the redesign (screens of every state, departures, the
+Firefox finding): https://claude.ai/artifact/8tZrQZFAunddYScfr2nX31. Group B's: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
 Read this first, then `progress.md` (M4.6).
 
 ## Where things stand
