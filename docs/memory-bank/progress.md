@@ -361,7 +361,10 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   screen's `then` and `vsB`; every state screenshotted in both themes at 1280 and 360 px. Found on the way: under
   Playwright's Firefox a second full page load isn't controlled by the already active Service Worker (Chromium's
   is), so a second run there can't start; not checked in real Firefox (`activeContext.md`, Waiting for the owner).
-  Pushed on the owner's "go push": live in about 2 minutes, CI green, checked live in three browsers.
+  Pushed on the owner's "go push": live in about 2 minutes, CI green, checked live in three browsers. Then, on the
+  owner's word: the comparison banners read "Comparison · run A, then B" and "Comparison · run B" (in capitals "Run
+  A of a comparison" read "RUN A OF A"), and every link to another site opens in a new tab with an arrow icon and
+  "(opens in a new tab)" for screen readers, as Visaproof's `ExternalLink` does (`src/ui/layout/ExternalLink.tsx`).
 - 2026-10-23 night: the owner tested live Compare and rejected it (misleading scores and charts, looks like the old
   page). Brief for a real redesign written (`.design-sync/briefs/compare-redo.md`, context only); the owner is taking
   it to Claude Design. Bug fixes half done in the working tree (`activeContext.md`, Next step 2). Nothing else
