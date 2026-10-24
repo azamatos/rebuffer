@@ -95,8 +95,11 @@ Read this first, then `progress.md` (M4.6).
    (4) not drawn: a run whose simulation check failed, A stopped or both stopped, choosing A from scratch; (5) the
    design's sentences name causes ("so it ran dry"); by decision 30 they're written from rules as facts, and "Where
    they differ" needs new core code to find where two runs part ways. A score over the first N s is possible: saved
-   runs keep their whole event log. Recommended to the owner: fix (1)–(4) in the build without another design
-   round. Then: (c) build, with unit tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d)
+   runs keep their whole event log. Recommended fixing (1)–(4) in the build; **the owner chose another Claude
+   Design round instead** ("I like what claude design did, lets ask it to fix"): the brief is
+   `.design-sync/briefs/compare-redo-2.md` (problems and facts only, no fixes: the owner's rule), copied to the
+   clipboard 2026-10-24 for the owner to paste. When the screens come back: export, check the five points again,
+   tell the owner. Then: (c) build, with unit tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d)
    show the owner, ask before pushing. Charts stay on our canvas (the design agrees; decision 15).
 2. **Bugs in the live Compare, to fix with it** (owner's screenshots): over a 6 s stretch A scored 0 and B 100 with a
    green "▲ 100 points higher" under "Too early to tell"; "held back 23 of 17 downloads" (a download late both at its
