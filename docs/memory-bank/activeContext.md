@@ -4,8 +4,10 @@
 2026-10-25), the LinkedIn post after they've tested the site. M4.6 group B (Compare reworked, Change one thing, Inspect
 for big streams) is **live** (pushed 2026-10-23, CI green, checked in three browsers). **But the owner tested Compare
 and rejects it: "they look awful", "a lot of misleading things in the table and graphs", and nothing visibly changed
-from the old page. Compare needs a real redesign; the owner can't test the product while it looks like this.** Next
-session starts there (see "Next step"). Review page of group B: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
+from the old page. Compare needs a real redesign; the owner can't test the product while it looks like this.**
+**2026-10-24 (tenth session): Claude Design's new Compare arrived and was checked against the brief; the owner has
+the gaps and a recommendation, the build waits for their answer** (see "Next step", 1). Review page of group B:
+https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
 Read this first, then `progress.md` (M4.6).
 
 ## Where things stand
@@ -76,15 +78,26 @@ Read this first, then `progress.md` (M4.6).
 
 1. **Compare redesign (the owner's priority, 2026-10-23).** The brief for Claude Design is
    `.design-sync/briefs/compare-redo.md` (context only, no layout orders: the owner said Claude Design has its own
-   skills; it names the live problems, the situations and the limits). The owner copied it to the clipboard and is
-   pasting it into Claude Design (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472); they'll
-   say when the screens are done. Then: (a) export the project archive (Share → Export → Project HTML → Project
-   archive; ask before downloading) and read the new `templates/compare/*`; (b) **check the screens against the
-   brief's problem list point by point and tell the owner what they miss BEFORE building** (the first design missed
-   the brief's "metric cards with bars" and was built anyway: that was the agent's failure); (c) build, with unit
-   tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d) show the owner, ask before pushing.
-   Charts: own canvas today (decision 15); a library (uPlot was the candidate) is an open decision, recommended only
-   if it makes the lane timeline simpler.
+   skills; it names the live problems, the situations and the limits). **The screens arrived 2026-10-23** in
+   Claude Design (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472), template "Compare
+   (redesign)": `templates/compare-2/Compare2.dc.html` (11 states via `?state=worse|better|mixed|same|partway|short|
+   two|streams|pick|one|none&theme=dark|light`) and `Compare2Board.dc.html` (22 frames with notes); the first design
+   in `templates/compare/` is unchanged. Archive downloaded 2026-10-24 on the owner's OK (`~/Downloads/Rebuffer.zip`,
+   844 KB). **(b) done 2026-10-24: checked against the brief and told the owner, waiting for their answer.** It covers
+   all four problem areas and every listed situation: a verdict only with ≥ 30 s in common ("Too short to compare",
+   B "Not scored"), a partway stop compared over the stretch both played ("first 0:41"); "Where the points went"
+   (A's score to B's, part by part, as bars on one 0–100 scale, A ± 2 shaded); tiles only where numbers differ; one
+   timeline row per run (network once when shared), quality on even steps, Mbps when streams differ, numbered markers
+   with a "Where they differ" list; a B picker grouped by how many things differ. Gaps found: (1) the score is clamped
+   to 0–100 (`score.ts`), so the part-by-part walk doesn't land on a clamped score (Rural 3G's parts add to about −6
+   and show 0); (2) the part bars are coloured by part, not by gain or loss: a quality loss is green, close to the
+   accent used for "better"; (3) "partway" at 360 px scrolls sideways 111 px (the header's three buttons don't wrap);
+   (4) not drawn: a run whose simulation check failed, A stopped or both stopped, choosing A from scratch; (5) the
+   design's sentences name causes ("so it ran dry"); by decision 30 they're written from rules as facts, and "Where
+   they differ" needs new core code to find where two runs part ways. A score over the first N s is possible: saved
+   runs keep their whole event log. Recommended to the owner: fix (1)–(4) in the build without another design
+   round. Then: (c) build, with unit tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d)
+   show the owner, ask before pushing. Charts stay on our canvas (the design agrees; decision 15).
 2. **Bugs in the live Compare, to fix with it** (owner's screenshots): over a 6 s stretch A scored 0 and B 100 with a
    green "▲ 100 points higher" under "Too early to tell"; "held back 23 of 17 downloads" (a download late both at its
    start and mid-body counted twice); the run dropdown showed 22/100 for a run the page scored 0, and a run stopped at
