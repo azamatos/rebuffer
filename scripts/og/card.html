@@ -1,5 +1,10 @@
 <!doctype html>
-<!-- The link preview (public/og.png, 1200×630): scripts/og/render.mjs opens this page and takes a picture of it. -->
+<!--
+  The link preview (public/og.png, 1200×630): scripts/og/render.mjs opens this page and takes a picture of it.
+  The chart is a real run, drawn from its data: Tears of Steel on "Train through a tunnel" with hls.js defaults,
+  recorded through the production build on 2026-10-25 (score 57/100, no stall, first frame 0.80 s; its simulation
+  check noted late answers only). The network is the preset's own curve.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -15,96 +20,384 @@
         src: url("../../node_modules/@fontsource/space-mono/files/space-mono-latin-400-normal.woff2")
           format("woff2");
       }
+      :root {
+        --ground: #050607;
+        --surface: #101214;
+        --line: rgb(255 255 255 / 0.09);
+        --fg: #f2f4f5;
+        --fg-2: #a6adb3;
+        --fg-3: #7d858c;
+        --accent: #68edc0;
+        --prompt: #5bc8c0;
+        --net: #3d85d1;
+        --onscreen: #1fae84;
+        --buffer: #9479e8;
+      }
       html,
       body {
         margin: 0;
         width: 1200px;
         height: 630px;
-        background: #050607;
-        color: #f2f4f5;
+        background: var(--ground);
+        color: var(--fg);
         font-family: "Geist", sans-serif;
         overflow: hidden;
       }
       .card {
-        position: relative;
         box-sizing: border-box;
         width: 1200px;
         height: 630px;
-        padding: 64px 72px;
+        padding: 56px 56px 56px 72px;
+        display: grid;
+        grid-template-columns: 468px 1fr;
+        gap: 44px;
+      }
+      .story {
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        gap: 26px;
+        padding-top: 8px;
       }
       .mark {
         font-family: "Space Mono", monospace;
-        font-size: 30px;
+        font-size: 28px;
+        white-space: nowrap;
       }
       .mark .arrow {
-        color: #68edc0;
+        color: var(--accent);
       }
       .mark .tilde {
-        color: #5bc8c0;
+        color: var(--prompt);
       }
       h1 {
-        margin: 12px 0 0;
-        max-width: 760px;
-        font-size: 68px;
-        line-height: 1.04;
-        font-weight: 650;
-        letter-spacing: -0.02em;
+        margin: 18px 0 0;
+        font-size: 56px;
+        line-height: 1.05;
+        font-weight: 640;
+        letter-spacing: -0.022em;
       }
-      p {
+      .answer {
         margin: 0;
-        max-width: 620px;
-        font-size: 26px;
-        line-height: 1.35;
-        color: #a6adb3;
+        font-size: 27px;
+        line-height: 1.32;
+        color: var(--fg-2);
+      }
+      .answer strong {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .foot {
+        margin-top: auto;
+        font-family: "Space Mono", monospace;
+        font-size: 19px;
+        color: var(--fg-3);
+      }
+      .panel {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--surface);
       }
       svg {
-        position: absolute;
-        right: 0;
-        bottom: 0;
+        display: block;
       }
     </style>
   </head>
   <body>
     <div class="card">
-      <div class="mark">
-        <span class="arrow">➜</span> <span class="tilde">~</span> rebuffer.azamatos▊
+      <div class="story">
+        <div class="mark">
+          <span class="arrow">➜</span> <span class="tilde">~</span> rebuffer.azamatos▊
+        </div>
+        <h1>12 seconds with no signal. Does the video stop?</h1>
+        <p class="answer">
+          <strong>Not this time.</strong> The buffer fell from 22&nbsp;s to 10&nbsp;s and the
+          picture kept playing. Try your own network.
+        </p>
+        <p class="foot">a real hls.js player · in your browser</p>
       </div>
-      <h1>See how a video player survives a bad network.</h1>
-      <p>
-        A real hls.js player through a simulated network, in your browser. Live charts, then a
-        scored report.
-      </p>
-      <svg width="560" height="300" viewBox="0 0 560 300" aria-hidden="true">
-        <!-- The network: 6 Mbps, weaker in the tunnel, nothing, and the climb back. -->
-        <path
-          d="M0 70 H160 V118 H230 V150 H300 V300 H370 L420 70 H560 V300 H0 Z"
-          fill="#3d85d1"
-          fill-opacity="0.22"
-        />
-        <path
-          d="M0 70 H160 V118 H230 V150 H300 V300 H370 L420 70 H560"
-          fill="none"
-          stroke="#3d85d1"
-          stroke-width="3"
-        />
-        <!-- The quality on screen: down a step at a time, held through the silence from the buffer, then up. -->
-        <path
-          d="M0 96 H190 V140 H262 V176 H440 V122 H500 V96 H560"
-          fill="none"
-          stroke="#1fae84"
-          stroke-width="5"
-        />
-        <path
-          d="M0 84 H120 L150 108 H250"
-          fill="none"
-          stroke="#c8559a"
-          stroke-width="3"
-          stroke-dasharray="9 7"
-        />
-      </svg>
+      <div class="panel">
+        <svg id="chart" width="606" height="516" viewBox="0 0 606 516" aria-hidden="true"></svg>
+      </div>
     </div>
+    <script>
+      // A real run: when each quality appeared, and the buffer every 2 s.
+      const shown = [
+        [0.8, 3],
+        [4.83, 2],
+        [8.83, 3],
+        [52.83, 2],
+        [56.83, 1],
+        [68.83, 0],
+      ];
+      const ladder = ["240p", "360p", "540p", "720p", "1080p"];
+      const buffer = [
+        [0.3, 0],
+        [3.3, 9.4],
+        [6.3, 10.4],
+        [9.3, 11.4],
+        [12.3, 16.4],
+        [15.3, 17.4],
+        [18.3, 22.4],
+        [21.3, 23.4],
+        [24.3, 20.4],
+        [27.3, 21.4],
+        [30.3, 22.4],
+        [33.3, 19.4],
+        [36.3, 20.4],
+        [39.3, 21.4],
+        [42.3, 22.4],
+        [45.3, 19.4],
+        [48.3, 16.4],
+        [51.3, 13.4],
+        [54.3, 10.4],
+        [57.3, 15.4],
+        [60.3, 24.4],
+        [63.3, 37.4],
+        [66.3, 46.4],
+        [69.3, 55.5],
+        [72.3, 60.5],
+        [75.3, 65.5],
+        [78.3, 74.5],
+        [81.3, 71.5],
+        [84.3, 76.5],
+        [87.3, 77.5],
+        [90, 77.5],
+      ];
+      // "Train through a tunnel", Mbps: jumps at 0:20, 0:30 and 0:42, no signal to 0:54, back to 6 by 1:03.
+      const network = [
+        [0, 6],
+        [20, 6],
+        [20, 2.5],
+        [30, 2.5],
+        [30, 1.2],
+        [42, 1.2],
+        [42, 0],
+        [54, 0],
+        [60, 3],
+        [63, 6],
+        [90, 6],
+      ];
+
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.getElementById("chart");
+      const add = (name, attrs, text) => {
+        const node = document.createElementNS(NS, name);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+        if (text) node.textContent = text;
+        svg.append(node);
+        return node;
+      };
+      const css = (name) =>
+        getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      const left = 112;
+      const right = 578;
+      const x = (t) => left + (t / 90) * (right - left);
+      const tracks = {
+        network: { top: 126, height: 60 },
+        quality: { top: 222, height: 100 },
+        buffer: { top: 352, height: 100 },
+      };
+      const bottom = (track) => track.top + track.height;
+
+      // Title and score.
+      add(
+        "text",
+        { x: 30, y: 52, fill: css("--fg"), "font-size": 23, "font-weight": 600 },
+        "Train through a tunnel",
+      );
+      add(
+        "text",
+        { x: 30, y: 80, fill: css("--fg-3"), "font-size": 17 },
+        "Tears of Steel · hls.js defaults · a real run",
+      );
+      add(
+        "text",
+        {
+          x: 578,
+          y: 58,
+          fill: css("--fg"),
+          "font-size": 46,
+          "font-weight": 620,
+          "text-anchor": "end",
+          "letter-spacing": "-0.02em",
+        },
+        "57",
+      );
+      add(
+        "text",
+        { x: 578, y: 82, fill: css("--fg-3"), "font-size": 16, "text-anchor": "end" },
+        "score / 100",
+      );
+
+      // The 12 s with no signal, across every track.
+      add("rect", {
+        x: x(42),
+        y: tracks.network.top - 8,
+        width: x(54) - x(42),
+        height: bottom(tracks.buffer) - tracks.network.top + 16,
+        rx: 6,
+        fill: css("--fg"),
+        "fill-opacity": 0.05,
+      });
+      for (const t of [42, 54]) {
+        add("line", {
+          x1: x(t),
+          x2: x(t),
+          y1: tracks.network.top - 8,
+          y2: bottom(tracks.buffer) + 8,
+          stroke: css("--fg-3"),
+          "stroke-width": 1.5,
+          "stroke-dasharray": "4 4",
+        });
+      }
+
+      // Track names.
+      const label = (track, text) =>
+        add(
+          "text",
+          {
+            x: 30,
+            y: track.top + track.height / 2 + 6,
+            fill: css("--fg-3"),
+            "font-size": 17,
+            "font-family": "Space Mono",
+          },
+          text,
+        );
+      label(tracks.network, "network");
+      label(tracks.quality, "quality");
+      label(tracks.buffer, "buffer");
+
+      // The network.
+      {
+        const { top, height } = tracks.network;
+        const y = (mbps) => top + height - (mbps / 7) * height;
+        const path = network.map(([t, v], i) => `${i ? "L" : "M"}${x(t)} ${y(v)}`).join(" ");
+        add("path", {
+          d: `${path} L${x(90)} ${bottom(tracks.network)} L${x(0)} ${bottom(tracks.network)} Z`,
+          fill: css("--net"),
+          "fill-opacity": 0.3,
+        });
+        add("path", { d: path, fill: "none", stroke: css("--net"), "stroke-width": 2.5 });
+        add(
+          "text",
+          {
+            x: (x(42) + x(54)) / 2,
+            y: top - 16,
+            fill: css("--fg"),
+            "font-size": 17,
+            "font-weight": 600,
+            "text-anchor": "middle",
+          },
+          "no signal",
+        );
+        add("text", { x: x(1), y: y(6) - 9, fill: css("--fg-3"), "font-size": 15 }, "6 Mbps");
+      }
+
+      // The quality on screen, on even steps of the ladder.
+      {
+        const { top, height } = tracks.quality;
+        const y = (level) => top + height - ((level + 0.5) / ladder.length) * height;
+        ladder.forEach((_, level) =>
+          add("line", {
+            x1: left,
+            x2: right,
+            y1: y(level),
+            y2: y(level),
+            stroke: css("--line"),
+            "stroke-width": 1,
+          }),
+        );
+        let d = "";
+        shown.forEach(([t, level], i) => {
+          const until = shown[i + 1]?.[0] ?? 90;
+          d += `${i ? "L" : "M"}${x(t)} ${y(level)} L${x(until)} ${y(level)} `;
+        });
+        add("path", {
+          d,
+          fill: "none",
+          stroke: css("--onscreen"),
+          "stroke-width": 4,
+          "stroke-linejoin": "round",
+        });
+        add(
+          "text",
+          { x: x(10), y: y(3) - 12, fill: css("--onscreen"), "font-size": 17, "font-weight": 600 },
+          "720p",
+        );
+        add(
+          "text",
+          { x: x(76), y: y(0) - 12, fill: css("--onscreen"), "font-size": 17, "font-weight": 600 },
+          "240p",
+        );
+      }
+
+      // The buffer: seconds of video ahead.
+      {
+        const { top, height } = tracks.buffer;
+        const y = (s) => top + height - (s / 80) * height;
+        const path = buffer.map(([t, v], i) => `${i ? "L" : "M"}${x(t)} ${y(v)}`).join(" ");
+        add("path", {
+          d: `${path} L${x(90)} ${bottom(tracks.buffer)} L${x(0.3)} ${bottom(tracks.buffer)} Z`,
+          fill: css("--buffer"),
+          "fill-opacity": 0.32,
+        });
+        add("path", { d: path, fill: "none", stroke: css("--buffer"), "stroke-width": 2.5 });
+        add("circle", { cx: x(54.3), cy: y(10.4), r: 5.5, fill: css("--fg") });
+        // A halo in the panel's colour keeps the labels clear of the line they sit on.
+        const halo = {
+          stroke: css("--surface"),
+          "stroke-width": 6,
+          "paint-order": "stroke",
+          "stroke-linejoin": "round",
+        };
+        add(
+          "text",
+          {
+            x: x(54.3) + 14,
+            y: y(10.4) + 6,
+            fill: css("--fg"),
+            "font-size": 17,
+            "font-weight": 600,
+            ...halo,
+          },
+          "10 s left, no stall",
+        );
+        add(
+          "text",
+          {
+            x: x(42.3) - 10,
+            y: y(22.4) - 12,
+            fill: css("--fg-2"),
+            "font-size": 15,
+            "text-anchor": "end",
+            ...halo,
+          },
+          "22 s",
+        );
+      }
+
+      // Time.
+      for (const [t, text, anchor] of [
+        [0, "0:00", "start"],
+        [42, "0:42", "middle"],
+        [54, "0:54", "middle"],
+        [90, "1:30", "end"],
+      ]) {
+        add(
+          "text",
+          {
+            x: x(t),
+            y: 486,
+            fill: css("--fg-3"),
+            "font-size": 15,
+            "font-family": "Space Mono",
+            "text-anchor": anchor,
+          },
+          text,
+        );
+      }
+    </script>
   </body>
 </html>

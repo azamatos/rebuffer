@@ -57,7 +57,7 @@ export const PREVIEW_IMAGE = {
   path: "/og.png",
   width: 1200,
   height: 630,
-  alt: "Rebuffer: a network chart dropping into a tunnel, and the quality a video player chose through it.",
+  alt: "Rebuffer: a real run through a train tunnel with 12 seconds of no signal. The quality steps down from 720p, the buffer falls from 22 s to 10 s and the video never stops; score 57 out of 100.",
 };
 
 const escape = (text: string) =>
