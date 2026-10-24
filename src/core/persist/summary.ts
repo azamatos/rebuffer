@@ -1,4 +1,4 @@
-import { computeMetrics, computeScore } from "@/core/metrics";
+import { computeMetrics, computeScore, heldBack } from "@/core/metrics";
 import { playerTitle } from "@/core/player/settings";
 import { playerChanges } from "@/core/run/report";
 import { SUMMARY_VERSION, type RunSummary, type SavedRun } from "./runs";
@@ -19,5 +19,9 @@ export function summarize(run: SavedRun): RunSummary {
     averageBitrate: metrics.averageBitrate,
     firstFrameS: metrics.firstFrameS,
     lengthS: metrics.endS,
+    stopped: run.reason !== "complete",
+    networkLengthS: run.setup.network.curve.lengthS,
+    heldBack: heldBack(metrics.honesty),
+    streamUrl: run.setup.streamUrl,
   };
 }

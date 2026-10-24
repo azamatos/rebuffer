@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunMetrics } from "./metrics";
 import type { NetworkCurve } from "@/core/netsim/curve";
-import { computeScore, scoreTarget } from "./score";
+import { computeScore, partsTotal, scoreTarget } from "./score";
 
 const ladder = [
   { index: 0, bitrate: 400_000 },
@@ -32,6 +32,7 @@ function metrics(overrides: Partial<RunMetrics>): RunMetrics {
       latency: { host: undefined, realMs: undefined, late: 0, typicalLateMs: 0, worstLateMs: 0 },
       bandwidth: { late: 0, typicalLateMs: 0, worstLateMs: 0, realBps: undefined },
       hiddenS: 0,
+      lateRequests: 0,
     },
     ...overrides,
   };
@@ -177,5 +178,20 @@ describe("computeScore", () => {
     );
     // 80 s / 6 s = 13.33 segments × 5 Mbps; a 6 s stall costs 30 → 22.5 points.
     expect(withDefault.stalls).toBeCloseTo((30 / ((80 / 6) * 5)) * 100, 10);
+  });
+});
+
+describe("partsTotal", () => {
+  it("adds up the parts before the score is held between 0 and 100", () => {
+    // A long wait for the first frame on the lowest quality: the losses outweigh the picture.
+    const score = computeScore(
+      metrics({ firstFrameS: 60, averageBitrate: 400_000, shown: [{ t: 60, level: 0 }] }),
+      flat(0.5),
+    );
+    expect(score.score).toBe(0);
+    expect(partsTotal(score)).toBeLessThan(0);
+    expect(partsTotal(score)).toBeCloseTo(
+      score.quality - score.switching - score.stalls - score.startup,
+    );
   });
 });

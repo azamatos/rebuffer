@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Level, RunEvent } from "@/core/run/events";
-import { computeMetrics } from "./metrics";
+import { computeMetrics, heldBack } from "./metrics";
 
 const ladder: Level[] = [
   { index: 0, bitrate: 400_000, name: "240p" },
@@ -199,7 +199,25 @@ describe("honesty", () => {
       latency: { host: undefined, realMs: undefined, late: 0, typicalLateMs: 0, worstLateMs: 0 },
       bandwidth: { late: 0, typicalLateMs: 0, worstLateMs: 0, realBps: undefined },
       hiddenS: 0,
+      lateRequests: 0,
     });
+  });
+
+  it("counts a download late at its start and mid-body once, and calls only late bytes held back", () => {
+    const { honesty } = computeMetrics([
+      request("a", 1, { firstByteLateMs: 300, bodyLateMs: 400 }),
+      request("b", 2, { firstByteLateMs: 300 }),
+      request("c", 3),
+      { type: "end", t: 4, reason: "complete" },
+    ]);
+    expect(honesty.latency.late + honesty.bandwidth.late).toBe(3);
+    expect(honesty.lateRequests).toBe(2);
+    expect(heldBack(honesty)).toBe(true);
+    const slowAnswers = computeMetrics([
+      request("a", 1, { firstByteLateMs: 300 }),
+      { type: "end", t: 2, reason: "complete" },
+    ]).honesty;
+    expect(heldBack(slowAnswers)).toBe(false);
   });
 });
 

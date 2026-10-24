@@ -145,6 +145,7 @@ describe("describeHonesty", () => {
       ...overrides.bandwidth,
     },
     hiddenS: overrides.hiddenS ?? 0,
+    lateRequests: (overrides.latency?.late ?? 0) + (overrides.bandwidth?.late ?? 0),
   });
 
   it("says when every download came from the saved copy", () => {

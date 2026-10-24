@@ -1,5 +1,6 @@
 export {
   computeMetrics,
+  heldBack,
   LATE_FIRST_BYTE_MS,
   LATE_MS,
   topLevel,
@@ -8,4 +9,4 @@ export {
   type RunMetrics,
   type ShownChange,
 } from "./metrics";
-export { computeScore, scoreTarget, type Score } from "./score";
+export { computeScore, partsTotal, scoreTarget, type Score } from "./score";

@@ -68,6 +68,17 @@ export interface Honesty {
   };
   /** Seconds the tab spent in the background, where browsers slow down timers. */
   hiddenS: number;
+  /** Downloads the real network held back either way (started late, arrived late or both), each counted once. */
+  lateRequests: number;
+}
+
+/**
+ * Whether the real network held the run back: bytes arrived later than the simulated network would have sent them,
+ * so the run played on less than the network it was set to (the simulation check's warning). Late starts alone, or a
+ * background tab, don't count: they add a wait, not a slower network.
+ */
+export function heldBack(honesty: Honesty): boolean {
+  return honesty.bandwidth.late > 0;
 }
 
 /** From `t` on, `level` is on screen. */
@@ -152,6 +163,9 @@ function honesty(events: readonly RunEvent[], endS: number): Honesty {
       realBps: realBitrate(requests),
     },
     hiddenS: sum(hiddenIntervals(events, endS).map(length)),
+    lateRequests: requests.filter(
+      (request) => request.firstByteLateMs > LATE_FIRST_BYTE_MS || request.bodyLateMs > LATE_MS,
+    ).length,
   };
 }
 

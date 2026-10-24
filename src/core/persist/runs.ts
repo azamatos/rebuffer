@@ -39,10 +39,11 @@ export interface SavedRun {
 }
 
 /**
- * How summaries are made: 2 since the score is measured against what the run's network could carry (2026-10-21). A
- * summary made otherwise is made again from its run when the list is read.
+ * How summaries are made: 2 since the score is measured against what the run's network could carry (2026-10-21), 3
+ * since they say whether the run was stopped, its network's length, its stream and whether the real network held it
+ * back (2026-10-24). A summary made otherwise is made again from its run when the list is read.
  */
-export const SUMMARY_VERSION = 2;
+export const SUMMARY_VERSION = 3;
 
 /** What the lists show about a run, without loading its log. */
 export interface RunSummary {
@@ -60,6 +61,14 @@ export interface RunSummary {
   averageBitrate: number | undefined;
   firstFrameS: number | undefined;
   lengthS: number;
+  /** It ended before its network did: stopped, or broken off by an error. Older summaries don't say. */
+  stopped?: boolean;
+  /** Its network's length, seconds: what it would have run. Older summaries don't say. */
+  networkLengthS?: number;
+  /** The visitor's real network held downloads back (the simulation check's warning). Older summaries don't say. */
+  heldBack?: boolean;
+  /** Older summaries don't say. */
+  streamUrl?: string;
 }
 
 /** The few key-value calls the run store needs; IndexedDB in the browser, a Map in tests. */

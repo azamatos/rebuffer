@@ -42,6 +42,17 @@ export function scoreTarget(
   return { level: topLevel(fitting) ?? lowest, networkBps };
 }
 
+/**
+ * What the score's parts add up to before the score is held between 0 and 100: below 0 when the losses outweigh the
+ * picture (Rural 3G's 11.7 s wait for the first frame), above 100 when the picture beat the quality the run is
+ * measured against and little was lost.
+ */
+export function partsTotal(
+  score: Pick<Score, "quality" | "switching" | "stalls" | "startup">,
+): number {
+  return score.quality - score.switching - score.stalls - score.startup;
+}
+
 /** Segment length assumed when no segment was downloaded (Apple's recommended 6 s). */
 const DEFAULT_SEGMENT_S = 6;
 
@@ -93,7 +104,7 @@ export function computeScore(metrics: RunMetrics, curve?: NetworkCurve): Score {
   const startup = points(penaltyPerSecond * (metrics.firstFrameS ?? 0));
 
   return {
-    score: Math.min(100, Math.max(0, quality - switching - stalls - startup)),
+    score: Math.min(100, Math.max(0, partsTotal({ quality, switching, stalls, startup }))),
     quality,
     switching,
     stalls,
