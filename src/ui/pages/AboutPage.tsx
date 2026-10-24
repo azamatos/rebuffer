@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { presets } from "@/core/netsim/presets";
 import { recordedTraces, TRACE_CREDIT } from "@/core/netsim/traces";
 import { SAMPLE_STREAMS } from "@/core/samples";
+import { ExternalLink } from "@/ui/layout/ExternalLink";
 
 const REPO = "https://github.com/azamatos/rebuffer";
 
@@ -62,11 +63,14 @@ const libraries: { name: string; href: string; licence: string }[] = [
 
 const thirdParty = SAMPLE_STREAMS.filter((stream) => stream.host === "third-party");
 
-function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
+function Credit({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={href} className="text-accent underline underline-offset-2 hover:text-accent-hover">
+    <ExternalLink
+      href={href}
+      className="text-accent underline underline-offset-2 hover:text-accent-hover"
+    >
       {children}
-    </a>
+    </ExternalLink>
   );
 }
 
@@ -267,19 +271,16 @@ export function AboutPage() {
           <ul className="flex list-disc flex-col gap-2.5 pl-5">
             <li>
               Sample film: <cite>Tears of Steel</cite>, (CC) Blender Foundation |{" "}
-              <ExternalLink href="https://mango.blender.org">mango.blender.org</ExternalLink>,{" "}
-              <ExternalLink href="https://creativecommons.org/licenses/by/3.0/">
-                CC BY 3.0
-              </ExternalLink>
-              . Re-encoded for streaming, never cut. A second copy has a playlist with planted
+              <Credit href="https://mango.blender.org">mango.blender.org</Credit>,{" "}
+              <Credit href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</Credit>.
+              Re-encoded for streaming, never cut. A second copy has a playlist with planted
               mistakes, for the inspector.
             </li>
             <li>
               Recorded networks: {TRACE_CREDIT.authors}, “{TRACE_CREDIT.dataset}”,{" "}
-              {TRACE_CREDIT.citation} (
-              <ExternalLink href={TRACE_CREDIT.sourceUrl}>the dataset</ExternalLink>),{" "}
-              <ExternalLink href={TRACE_CREDIT.licenceUrl}>{TRACE_CREDIT.licence}</ExternalLink>.
-              Changes: {TRACE_CREDIT.changes}
+              {TRACE_CREDIT.citation} (<Credit href={TRACE_CREDIT.sourceUrl}>the dataset</Credit>),{" "}
+              <Credit href={TRACE_CREDIT.licenceUrl}>{TRACE_CREDIT.licence}</Credit>. Changes:{" "}
+              {TRACE_CREDIT.changes}
             </li>
             <li>
               Public test streams, hosted by others and offered as they are:{" "}
@@ -296,17 +297,15 @@ export function AboutPage() {
               {libraries.map((library, index) => (
                 <span key={library.name}>
                   {index > 0 && (index === libraries.length - 1 ? " and " : ", ")}
-                  <ExternalLink href={library.href}>{library.name}</ExternalLink> ({library.licence}
-                  )
+                  <Credit href={library.href}>{library.name}</Credit> ({library.licence})
                 </span>
               ))}
               .
             </li>
           </ul>
           <p>
-            The code is open (MIT) at{" "}
-            <ExternalLink href={REPO}>github.com/azamatos/rebuffer</ExternalLink>. Built by{" "}
-            <ExternalLink href="https://azamatos.com">Azamat Jorayev</ExternalLink>.
+            The code is open (MIT) at <Credit href={REPO}>github.com/azamatos/rebuffer</Credit>.
+            Built by <Credit href="https://azamatos.com">Azamat Jorayev</Credit>.
           </p>
         </Section>
       </article>

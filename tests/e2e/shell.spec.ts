@@ -85,6 +85,16 @@ test("the main navigation works with the keyboard alone", async ({ page, browser
   await expect(inspect).toHaveAttribute("aria-current", "page");
 });
 
+test("links to other sites open in a new tab and say so", async ({ page }) => {
+  await openApp(page, "/about");
+  const author = page.getByRole("contentinfo").getByRole("link", { name: /^Azamat Jorayev\b/ });
+  await expect(author).toHaveAccessibleName("Azamat Jorayev (opens in a new tab)");
+  await expect(author).toHaveAttribute("target", "_blank");
+  await expect(author).toHaveAttribute("href", "https://azamatos.com");
+  const credit = page.getByRole("link", { name: /^github\.com\/azamatos\/rebuffer\b/ });
+  await expect(credit).toHaveAttribute("target", "_blank");
+});
+
 test("unknown paths show a not-found page", async ({ page }) => {
   await page.goto("/no-such-page");
   await expect(page.getByRole("heading", { level: 1, name: "Nothing here" })).toBeVisible();

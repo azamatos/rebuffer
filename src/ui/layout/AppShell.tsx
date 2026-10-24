@@ -1,6 +1,7 @@
 import { HeadContent, Link, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Toaster } from "@/ui/feedback/Toaster";
+import { ExternalLink } from "@/ui/layout/ExternalLink";
 import { ThemeSwitch } from "@/ui/theme/ThemeSwitch";
 import { Wordmark } from "./Logo";
 
@@ -69,9 +70,12 @@ export function AppShell() {
             </p>
             <p>
               Built by{" "}
-              <a href="https://azamatos.com" className="text-accent hover:text-accent-hover">
+              <ExternalLink
+                href="https://azamatos.com"
+                className="text-accent hover:text-accent-hover"
+              >
                 Azamat Jorayev
-              </a>
+              </ExternalLink>
             </p>
           </div>
         </footer>
