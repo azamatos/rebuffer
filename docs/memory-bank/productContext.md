@@ -182,27 +182,42 @@ hls.js defaults. One press starts a run; the charts react within seconds; the re
   comparison (against A, what changed, what happens at the end), with "Run it on its own instead"; at the end,
   stopped or not, it opens Compare with a toast. The run link carries `vs=<A's id>`, so a reload keeps it.
 
-### Compare (built 2026-10-20, `/runs/compare`)
+### Compare (built 2026-10-20, `/runs/compare`; redesigned 2026-10-24)
 
-- Two saved runs side by side: metric tiles with differences, charts overlaid on one time axis.
-- **Reworked (M4.6 group B, built 2026-10-23 from the owner's Claude Design screens):** what changed comes first (a
-  player preset is one change, with the settings it changes listed under it; settings changed by hand count one
-  each), then both scores with the difference, a headline naming the number that moved most (a stall, then
-  switches, then the bitrate; "though" when it runs against the verdict) and the facts under it (stalls, first
-  frame, buffer, and the real network's part when it held downloads back). Differences within the spread measured
-  between repeat runs (2 points, 0.3 s first frame, 0.1 s stall time, 0.1 Mbps) read "≈ within spread"; the same
-  setup reads "no real difference" with a link to How repeatable it is. The numbers come in groups (Overall,
-  Starting, Stalling, Picture, Data) with a tally; on phones they're a list. Each chart has a "Look for" line and a
-  takeaway from the data; with no stalls in either run, one line replaces the lanes. A run that ended early
-  compares over the stretch both covered (the default) or whole runs, where only the first frame compares; "Run B
-  again" finishes it. A warning when the runs differ in more than one thing (with "Run A again on <B's network>"
-  when the network is one of two changes) or in the stream (the quality chart then marks bitrates only).
-- **Built:** two pickers (native selects) and Swap; without a choice, the newest run is B and the one before it A;
-  from a report, the newest other run is B. A card per run with its report; "What changed" (stream, network, player
-  setup, each setting, hls.js version, browser; "the same setup" points to the run-to-run spread on About); every
-  number with B against A in words and a verdict with a shape and a word (▲ better, ▼ worse, = same); three charts
-  (quality on screen with the network, buffer, stall lanes), A as a solid line in the text colour and B dashed in the
-  accent, each with a sentence, and one table for both runs. The Runs page links to it.
+- **Redesigned (built 2026-10-24, not pushed yet) from Claude Design's "Compare (redesign)"** (two rounds:
+  `.design-sync/briefs/compare-redo.md`, then `compare-redo-2.md` for the gaps), after the owner rejected the M4.6
+  page ("misleading things in the table and graphs"). Choosing: nothing is pre-filled. Step 1 lists every saved run
+  grouped by stream and network, each saying how many others differ from it in one thing; step 2 sets A and lists the
+  rest by how many things differ from it (one, nothing, more than one, another stream). Every score in the lists is
+  the one Compare shows: "over its 0:41" for a stopped run, "Too short to compare" under the minimum, "Not compared"
+  for a run the real network held back. One run saved: Run again, or Change one thing (the Report opens with its
+  panel, `#change-one`); none: Try the tunnel.
+- **The comparison:** a title from what changed ("Defaults → Low-memory TV"), the two runs with what changed (a
+  preset's settings behind a disclosure) and what's the same, the simulation check (one line, or each run's banner),
+  a verdict card and "Where the points went", the other numbers, one timeline, "Where they differ". The rules
+  (`src/core/run/compare.ts`, `compare-story.ts`):
+  - A verdict needs both runs to share 30 s, or half a network shorter than a minute (`minComparedS`); under it,
+    "Too short to compare", no points, and only what both reached. When the real network held a run back (late
+    bytes: `heldBack`), "Can't compare these" and that run reads "Not compared"; slow answers or a background tab
+    keep the verdict with the run's banner and a sentence. When a run was stopped, both are read over the stretch
+    both covered ("first 0:41"), as a lead: the 2-point spread wasn't measured over part of a run.
+  - The verdict: better, worse or "no real difference" (within 2 points); "B scored higher/lower" for different
+    streams; a "Though…" line names the biggest part, 3 points or more, pulling the other way. Its facts and the
+    moments are written from the numbers by rules: what happened, when and how much, never why.
+  - "Where the points went" walks from A's score to B's, part by part (quality earned, switches, stalls, the wait
+    for the first frame) on one 0–100 scale; green B gained, red B lost; parts rounded to add up exactly. A score
+    the formula puts below 0 or above 100 shows where it stops, its total runs into a hatched zone, and the subtitle
+    gives the gap. B's row shades A ± 2 over whole runs.
+  - The other numbers (average bitrate, time at the top quality, wasted data): a tile where they differ, one line
+    for the rest.
+  - The timeline (`src/charts/lanes.ts`, our canvas): one row per run on the same scales, the network once when both
+    share it (each run's own when not), quality on even steps of the ladder (Mbps when the streams differ), buffer,
+    stalls across both, numbered markers matching "Where they differ"; faded past the stretch compared, hatched where
+    a run didn't play. A table every few seconds is its text alternative.
+  - Run again: "Run B again" (`vs=A`), "Run A again" (`vsB=B`), "Run both again" (`then=B`: A runs, then B, then
+    Compare opens), and with two changes (network and player) "Run <B's player> on <A's network>".
+- **Before (M4.6 group B, 2026-10-23, replaced):** pickers pre-filled with the newest runs, a table of every number
+  with verdict words, three overlaid charts on a log axis.
 
 ### About (built 2026-10-20)
 

@@ -16,7 +16,7 @@ building and every milestone is shippable on its own.
 | M3 Report, network editor, inspector | Nov 15 | done 2026-10-20, live |
 | M4 Polish; MVP live | Nov 22 | done and live 2026-10-20, except the real Safari check (needs the owner) |
 | M4.5 UI polish | before Dec 6 | **live 2026-10-21** (`1c687b3`): every item below, with its tests; the owner pushed it |
-| M4.6 Fixes from the owner's test | 2026-10-25 | **built, but Compare is being redesigned (owner rejected it 2026-10-23)**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) built from the owner's Claude Design screens and live 2026-10-23, CI green |
+| M4.6 Fixes from the owner's test | 2026-10-25 | **built; Compare redesigned 2026-10-24 (local, waiting for the owner's look and push)**: group A, the score (D1), SEO, HAR import and export and the tables re-measured are live (pushed 2026-10-23, CI green); group B (Compare reworked, Change one thing, Inspect for big streams) live 2026-10-23; the owner rejected that Compare, and the redesign from Claude Design's second round is built |
 | M5 Compare and launch | 2026-10-25 | Compare built 2026-10-20; the case study dropped 2026-10-22; pinning and the LinkedIn post after the owner's test |
 
 ## M0: decisions and setup — done
@@ -194,7 +194,14 @@ edited a network. What they found, and the plan. Nothing here is built. The deci
       range (H.264, HEVC, Dolby Vision, HDR10+), Audio, Subtitles; a select with groups above about 12. Variants that
       share one video playlist are listed once (Apple's 1080p hls290 has three audio pairings). The ladder table
       groups the same way. The layout doesn't leave the Findings column empty beside a long Segments column.
-- [x] **Compare, reworked to answer a question** (built 2026-10-23, `1de8583`; `productContext.md`, Compare and
+- [x] **Compare, redesigned** (built 2026-10-24 from Claude Design's "Compare (redesign)", two rounds; not pushed;
+      `productContext.md`, Compare). The owner rejected the 2026-10-23 page ("misleading things in the table and
+      graphs"). A verdict only on 30 s both runs share and when both got their network; "Where the points went" from
+      A's score to B's, honest about scores held at 0 or 100; one timeline row per run (`src/charts/lanes.ts`);
+      sentences from rules, facts only; Choose A, then B, nothing pre-filled; Run B again, Run A again, Run both again
+      (`then`: A, then B, then Compare). The half-done fixes (late downloads counted once, summaries v3) went in with
+      it.
+- [x] **Compare, reworked to answer a question** (built 2026-10-23, `1de8583`, replaced 2026-10-24; `productContext.md`, Compare and
       Report). The owner: "we need real comparison which will be useful".
   - "Change one thing" from a report: pick another player preset or network, and the lab runs B with only that
     change, then opens Compare.
@@ -346,6 +353,13 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   points; Rural 3G's 0 explained from a run's breakdown) and our film on the tunnel 4× (60, 59, 59, 59); Firefox's
   console error traced to the page cancelling downloads mid-body (not fixable from the worker); the Claude Design
   brief for group B. 513 unit tests, 141 Playwright checks pass in three browsers.
+- 2026-10-24: Claude Design's redesign of Compare checked against the brief (five gaps: scores held at 0, bar
+  colours, a phone screen scrolling sideways, states not drawn, sentences that guessed causes); the owner sent them
+  back as a second brief (`compare-redo-2.md`, problems only), and the second round fixed all five. Built from its
+  source: the core rules and their sentences with 36 new unit tests, the canvas timeline, the pickers, the Run
+  screen's `then` and `vsB`; every state screenshotted in both themes at 1280 and 360 px. Found on the way: under
+  Playwright's Firefox a second full page load isn't controlled by the already active Service Worker (Chromium's
+  is), so a second run there can't start; not checked in real Firefox (`activeContext.md`, Waiting for the owner).
 - 2026-10-23 night: the owner tested live Compare and rejected it (misleading scores and charts, looks like the old
   page). Brief for a real redesign written (`.design-sync/briefs/compare-redo.md`, context only); the owner is taking
   it to Claude Design. Bug fixes half done in the working tree (`activeContext.md`, Next step 2). Nothing else

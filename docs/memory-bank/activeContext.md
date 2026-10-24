@@ -1,13 +1,11 @@
 # Active context
 
-**Updated 2026-10-23 (ninth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
-2026-10-25), the LinkedIn post after they've tested the site. M4.6 group B (Compare reworked, Change one thing, Inspect
-for big streams) is **live** (pushed 2026-10-23, CI green, checked in three browsers). **But the owner tested Compare
-and rejects it: "they look awful", "a lot of misleading things in the table and graphs", and nothing visibly changed
-from the old page. Compare needs a real redesign; the owner can't test the product while it looks like this.**
-**2026-10-24 (tenth session): Claude Design's new Compare arrived and was checked against the brief; the owner has
-the gaps and a recommendation, the build waits for their answer** (see "Next step", 1). Review page of group B:
-https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
+**Updated 2026-10-24 (tenth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
+2026-10-25), the LinkedIn post after they've tested the site. The owner rejected the live Compare on 2026-10-23
+("misleading things in the table and graphs"). **Compare is redesigned and built (2026-10-24, local, not pushed)** from
+Claude Design's second round, which fixed the five gaps the agent found in the first: every state checked in both
+themes at 1280 and 360 px, 554 unit tests and 176 Playwright checks pass. **Next: the owner looks at it, then a
+push on their word** (see "Next step", 1). Review page of group B: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
 Read this first, then `progress.md` (M4.6).
 
 ## Where things stand
@@ -58,12 +56,13 @@ Read this first, then `progress.md` (M4.6).
     numbers and the score, privacy, credits (film, 4G dataset, test streams, libraries with licences).
   - **Light theme (built 2026-10-20, the owner asked for it):** System (default), Light or Dark from three radios in
     the header; no flash (a hashed inline script); charts redraw on a change; axe passes on every screen in both.
-- **Quality bar today (2026-10-23, local):** 534 unit tests; 162 Playwright checks in Chromium, Firefox and WebKit:
-  the full run had 158 pass, 3 keyboard checks skipped in WebKit (which only tabs to text fields) and 1 flaky (the
-  Report's mouse-drag zoom in WebKit under the full load; 3 of 3 alone); the specs changed since pass in all three.
-  axe on every screen in both themes. Home's JavaScript 96.63 of 100 KB and its CSS 7.97 of 9 KB (brotli).
-  Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the Linux container, 1.0 in the rest, CLS 0
-  (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout shift stays under 0.03 on every screen.
+- **Quality bar today (2026-10-24, local):** 554 unit tests; 180 Playwright checks in Chromium, Firefox and WebKit:
+  176 pass, 3 keyboard checks skipped in WebKit (which only tabs to text fields) and Compare's "Run both again" chain
+  skipped in Firefox (a second page load there has no Service Worker under Playwright; see "Waiting for the owner").
+  axe on every screen in both themes, Compare's included. Home's JavaScript 96.73 of 100 KB and its CSS 8.12 of 9 KB
+  (brotli). Lighthouse on Home 0.98–0.99 performance on the Mac and 0.99–1.0 in the Linux container, 1.0 in the rest,
+  CLS 0 (CI fails under 0.95 and opens `/`). With the fonts held back 1.5 s, layout shift stays under 0.03 on every
+  screen.
 - **Repeatability (`pnpm repeat`, measured again 2026-10-22 with the new score):** each preset 5× in Chromium on the
   2:00 synthetic stream: scores within 2 points per network (the 2 is Home fibre's first run in a fresh browser; the
   rest within 1), the same stalls and switches, first frames otherwise within 0.1 s. New scores: Home fibre 89–91,
@@ -76,41 +75,21 @@ Read this first, then `progress.md` (M4.6).
 
 ## Next step (in this order)
 
-1. **Compare redesign (the owner's priority, 2026-10-23).** The brief for Claude Design is
-   `.design-sync/briefs/compare-redo.md` (context only, no layout orders: the owner said Claude Design has its own
-   skills; it names the live problems, the situations and the limits). **The screens arrived 2026-10-23** in
-   Claude Design (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472), template "Compare
-   (redesign)": `templates/compare-2/Compare2.dc.html` (11 states via `?state=worse|better|mixed|same|partway|short|
-   two|streams|pick|one|none&theme=dark|light`) and `Compare2Board.dc.html` (22 frames with notes); the first design
-   in `templates/compare/` is unchanged. Archive downloaded 2026-10-24 on the owner's OK (`~/Downloads/Rebuffer.zip`,
-   844 KB). **(b) done 2026-10-24: checked against the brief and told the owner, waiting for their answer.** It covers
-   all four problem areas and every listed situation: a verdict only with ≥ 30 s in common ("Too short to compare",
-   B "Not scored"), a partway stop compared over the stretch both played ("first 0:41"); "Where the points went"
-   (A's score to B's, part by part, as bars on one 0–100 scale, A ± 2 shaded); tiles only where numbers differ; one
-   timeline row per run (network once when shared), quality on even steps, Mbps when streams differ, numbered markers
-   with a "Where they differ" list; a B picker grouped by how many things differ. Gaps found: (1) the score is clamped
-   to 0–100 (`score.ts`), so the part-by-part walk doesn't land on a clamped score (Rural 3G's parts add to about −6
-   and show 0); (2) the part bars are coloured by part, not by gain or loss: a quality loss is green, close to the
-   accent used for "better"; (3) "partway" at 360 px scrolls sideways 111 px (the header's three buttons don't wrap);
-   (4) not drawn: a run whose simulation check failed, A stopped or both stopped, choosing A from scratch; (5) the
-   design's sentences name causes ("so it ran dry"); by decision 30 they're written from rules as facts, and "Where
-   they differ" needs new core code to find where two runs part ways. A score over the first N s is possible: saved
-   runs keep their whole event log. Recommended fixing (1)–(4) in the build; **the owner chose another Claude
-   Design round instead** ("I like what claude design did, lets ask it to fix"): the brief is
-   `.design-sync/briefs/compare-redo-2.md` (problems and facts only, no fixes: the owner's rule), copied to the
-   clipboard 2026-10-24 for the owner to paste. When the screens come back: export, check the five points again,
-   tell the owner. Then: (c) build, with unit tests, keyboard and axe tests, screenshots in both themes and at 360 px; (d)
-   show the owner, ask before pushing. Charts stay on our canvas (the design agrees; decision 15).
-2. **Bugs in the live Compare, to fix with it** (owner's screenshots): over a 6 s stretch A scored 0 and B 100 with a
-   green "▲ 100 points higher" under "Too early to tell"; "held back 23 of 17 downloads" (a download late both at its
-   start and mid-body counted twice); the run dropdown showed 22/100 for a run the page scored 0, and a run stopped at
-   0:06 showed 100/100 unmarked; the quality chart draws two networks plus two runs on one log axis, A (solid black)
-   and B (dashed green) hard to tell apart. **Half-done fixes are uncommitted in the working tree** (typecheck
-   passes, no tests run): `Honesty.lateRequests` counts each late download once (`metrics.ts`, used by
-   `compare.ts`; test fixtures updated), `SUMMARY_VERSION` 3 with `RunSummary.stopped` (`runs.ts`, `summary.ts`),
-   and in `compare.ts` `longEnough`/`MIN_COMPARED_S` (30 s, or half the shorter network) plus a `tooShortS` option in
-   `compareVerdict` and `tally(rows, over)`. Not yet wired into `ComparePage.tsx`; no tests yet. Keep, test and wire
-   them, or discard with `git checkout`.
+1. **Compare redesign: built 2026-10-24, waiting for the owner's look and a push.** Two Claude Design rounds
+   (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472, template "Compare (redesign)",
+   `templates/compare-2/`, 17 states via `?state=…&theme=dark|light`; archives in `~/Downloads/Rebuffer.zip` and
+   `Rebuffer (1).zip`, downloaded on the owner's OK). The first round missed five things (scores held at 0 or 100
+   broke the walk, bars coloured by part not gain/loss, a phone screen scrolling sideways, states not drawn,
+   sentences guessing causes); the owner sent them back as `.design-sync/briefs/compare-redo-2.md` (problems only, no
+   fixes: the owner's rule) and the second round fixed all five. Built as drawn (`productContext.md`, Compare), with
+   these departures for the owner's eye: times read as the app's clock ("0:00" for 0.38 s); "When" is the app's
+   date ("Today, 22:32") not "6 min ago"; the browser is ours ("Chrome on macOS"); "Run A again" (`vsB`) for a
+   stopped A, which the design didn't draw; a held-back run's score in the run lists reads "Not compared", as
+   Compare shows it (the design's list showed its own score); the timeline's scale labels use the text face so
+   "1.7 Mbps" fits the gutter. **Committed locally; nothing pushed.** Pushing deploys: ask first.
+2. **The bugs the owner found in the live Compare are fixed by the redesign:** a 6 s stretch gets no verdict; late
+   downloads are counted once (`Honesty.lateRequests`); the lists show the score Compare shows and say when a run
+   stopped (summaries v3: stopped, network length, stream, held back); no overlaid chart or log axis.
 2b. **The owner tests the live site** (the LinkedIn post comes after that), including the real Safari check (about 10
    minutes; checklist under "Waiting for the owner"), then LinkedIn's Post Inspector, pinning the repo and the post
    (a draft was given in chat; the owner approves it).
@@ -195,7 +174,14 @@ that needs their eye under "Waiting for the owner".
 - **Plan page:** https://claude.ai/artifact/4B7WoHuWMp3aNKdZkDFpqb. A snapshot from 2026-10-18 (before the domain
   and deploy decisions); this memory bank is the source of truth when they differ.
 
-## Waiting for the owner (raised 2026-10-20 to 2026-10-22)
+## Waiting for the owner (raised 2026-10-20 to 2026-10-24)
+
+- **Firefox and the Service Worker (found 2026-10-24, not checked in real Firefox):** under Playwright's Firefox, a
+  page loaded in full after a run (`page.goto("/about")`, or a plain link click) isn't controlled by the already
+  active network simulator worker, so a run started there fails with "Reload the page normally to start a run";
+  Chromium's page is controlled. Moving within the app keeps the worker, so the flows in the app work. If real
+  Firefox did the same, a returning Firefox visitor couldn't run until a reload. The owner's real-browser check could
+  include: in Firefox, run "Try the tunnel", close the tab, open rebuffer.azamatos.com again and run again.
 
 - **Settled 2026-10-23 (decision 30): group B's departures from the Claude Design screens stand** (review page):
   - "Within spread" applies to every comparison, not only the same setup: a first frame 0.04 s sooner isn't
