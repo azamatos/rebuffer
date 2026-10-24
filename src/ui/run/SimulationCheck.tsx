@@ -7,11 +7,20 @@ import { describeHonesty, honestyWarning } from "@/core/run/describe";
  * headline and the details behind it when it didn't. The Report shows it under its title, the Run screen in its
  * result.
  */
-export function SimulationCheck({ honesty, curve }: { honesty: Honesty; curve: NetworkCurve }) {
+export function SimulationCheck({
+  honesty,
+  curve,
+  label = "Simulation check",
+}: {
+  honesty: Honesty;
+  curve: NetworkCurve;
+  /** The region's name; Compare names each run's ("B’s simulation check"). */
+  label?: string;
+}) {
   const sentences = describeHonesty(honesty, curve);
   const warning = honestyWarning(honesty);
   return (
-    <section aria-label="Simulation check">
+    <section aria-label={label}>
       {warning ? (
         <details className="group rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5">
           <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">

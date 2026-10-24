@@ -28,7 +28,7 @@ import {
 import { setupChanges, type SetupChange } from "@/core/run/compare";
 import { eventsOfType, type RunEvent } from "@/core/run/events";
 import { MAX_NETWORK_NAME } from "@/core/run/links";
-import { playerChanges } from "@/core/run/report";
+import { playerChanges, savedRunSearch } from "@/core/run/report";
 import { CUSTOM_NETWORK_NAME, DEFAULT_NETWORK_ID, DEFAULT_PLAYER_ID } from "@/core/run/setup";
 import { DEFAULT_STREAM, SAMPLE_STREAMS } from "@/core/samples";
 import { toast } from "@/ui/feedback/toast";
@@ -51,6 +51,10 @@ export interface RunSearch {
   start?: string;
   /** The saved run this one is B of a comparison with: Compare opens when it ends ("Change one thing"). */
   vs?: string;
+  /** The saved run this one is A of a comparison with: Compare opens when it ends (Compare's "Run A again"). */
+  vsB?: string;
+  /** This run is A of a comparison; when it ends, the saved run `then` runs again as B (Compare's "Run both again"). */
+  then?: string;
 }
 
 type Phase = "ready" | "starting" | "running" | "finished" | "failed";
@@ -188,25 +192,42 @@ export function RunPage({ search }: { search: RunSearch }) {
       </section>
     );
   }
-  return <RunScreen setup={resolved.setup} autostart={search.start !== undefined} vs={search.vs} />;
+  return (
+    <RunScreen
+      setup={resolved.setup}
+      autostart={search.start !== undefined}
+      vs={search.vs}
+      vsB={search.vsB}
+      then={search.then}
+    />
+  );
 }
 
 function RunScreen({
   setup,
   autostart,
   vs,
+  vsB,
+  then,
 }: {
   setup: ResolvedSetup;
   autostart: boolean;
   vs: string | undefined;
+  vsB: string | undefined;
+  then: string | undefined;
 }) {
   const navigate = useNavigate();
   // Run B of a comparison: A is the saved run the link names. Without it in this browser, this is a run on its own.
   const against = useSavedRun(vs);
   const runA = against?.status === "ready" ? against.run : undefined;
+  // Run A of one: B is saved already (vsB), or runs next (then).
+  const againstB = useSavedRun(vsB ?? then);
+  const runB = againstB?.status === "ready" ? againstB.run : undefined;
   const runARef = useRef<SavedRun | undefined>(undefined);
+  const runBRef = useRef<SavedRun | undefined>(undefined);
   useEffect(() => {
     runARef.current = runA;
+    runBRef.current = runB;
   });
   const videoRef = useRef<HTMLVideoElement>(null);
   const runRef = useRef<Run | undefined>(undefined);
@@ -265,14 +286,22 @@ function RunScreen({
         setSavedId(false);
         return;
       }
-      // Run B of a comparison goes straight to Compare, stopped early or not.
+      // Run B of a comparison goes straight to Compare, stopped early or not; so does a run A against a saved B.
       const a = runARef.current;
+      const b = runBRef.current;
+      const ended = finished.reason === "complete" ? "finished" : "stopped";
       if (a) {
-        toast(
-          `Run B ${finished.reason === "complete" ? "finished" : "stopped"} and saved. Compare reads it against A.`,
-          { showMs: 6000 },
-        );
+        toast(`Run B ${ended} and saved. Compare reads it against A.`, { showMs: 6000 });
         void navigate({ to: "/runs/compare", search: { a: a.id, b: saved.id } });
+      } else if (b && then) {
+        toast(`Run A ${ended} and saved. Run B starts now.`, { showMs: 6000 });
+        void navigate({
+          to: "/run",
+          search: { ...savedRunSearch(b, { start: true }), vs: saved.id },
+        });
+      } else if (b) {
+        toast(`Run A ${ended} and saved. Compare reads B against it.`, { showMs: 6000 });
+        void navigate({ to: "/runs/compare", search: { a: saved.id, b: b.id } });
       }
     } catch (caught) {
       setError(errorMessage(caught));
@@ -286,7 +315,13 @@ function RunScreen({
     void start();
   });
   useEffect(() => {
-    if (!autostart || autostarted.current) return;
+    // `start` is dropped once the run starts, and may come again on this screen: Compare's "Run both again" opens
+    // run B here when run A ends.
+    if (!autostart) {
+      autostarted.current = false;
+      return;
+    }
+    if (autostarted.current) return;
     autostarted.current = true;
     startNow();
     void navigate({
@@ -346,6 +381,8 @@ function RunScreen({
       search: (previous) => {
         const next = { ...previous };
         delete next.vs;
+        delete next.vsB;
+        delete next.then;
         return next;
       },
       replace: true,
@@ -355,6 +392,7 @@ function RunScreen({
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-4 px-4 py-5 sm:px-8">
       {runA && <ComparingBanner a={runA} b={savedSetup(setup)} onAlone={alone} />}
+      {!runA && runB && <RunABanner b={runB} next={then !== undefined} onAlone={alone} />}
       <section
         aria-label="Run status"
         className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-[18px] py-3.5"
@@ -573,6 +611,34 @@ function ComparingBanner({
         <p className="text-sm text-fg-2">
           When this run ends, Compare opens with A and B. Stop it early and Compare opens anyway,
           with a note.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onAlone}
+        className="text-sm text-fg-2 underline underline-offset-2 hover:text-fg"
+      >
+        Run it on its own instead
+      </button>
+    </section>
+  );
+}
+
+/** Run A of a comparison: run again to compare with a saved B, or before B runs again. */
+function RunABanner({ b, next, onAlone }: { b: SavedRun; next: boolean; onAlone: () => void }) {
+  return (
+    <section
+      aria-labelledby="comparing-h"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-accent/35 bg-accent/6 px-[18px] py-3"
+    >
+      <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-1">
+        <h2 id="comparing-h" className="font-mono text-xs tracking-[0.06em] text-accent uppercase">
+          Run A of a comparison
+        </h2>
+        <p className="text-sm text-fg-2">
+          {next
+            ? `When this run ends, B runs again (${b.setup.network.name} · ${playerTitle(b.setup.player.name, playerChanges(b))}), then Compare opens with both.`
+            : `When this run ends, Compare opens with it as A and the saved B (${b.setup.network.name} · ${playerTitle(b.setup.player.name, playerChanges(b))}).`}
         </p>
       </div>
       <button

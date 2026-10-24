@@ -97,7 +97,10 @@ function Report({ run }: { run: SavedRun }) {
   const timelineRef = useRef<HTMLElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
   const scoreRef = useRef<HTMLDetailsElement>(null);
-  const [changing, setChanging] = useState(false);
+  // Compare's "Change one thing" links here with the panel open.
+  const [changing, setChanging] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#change-one",
+  );
   const changeButton = useRef<HTMLButtonElement>(null);
   const closeChange = () => {
     setChanging(false);

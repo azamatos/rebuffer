@@ -1,9 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { openApp, settle, tabTo } from "./helpers";
+import { openApp, settle, switchTheme, tabTo } from "./helpers";
 
-// Two saved runs written straight into the app's IndexedDB (src/core/persist/runs.ts), so this needs no video
-// decoding: A on hls.js defaults stalls for 2 s; B, with Fast start, starts sooner on 240p and never stalls.
+// Saved runs written straight into the app's IndexedDB (src/core/persist/runs.ts), so this needs no video
+// decoding: A on hls.js defaults stalls for 2 s; B, with Fast start, starts sooner on 240p and never stalls. Their
+// summaries are left for the app to make again from the runs, as it does for summaries from an older version.
 const levels = [
   { index: 0, bitrate: 400_000, name: "240p" },
   { index: 1, bitrate: 2_800_000, name: "720p" },
@@ -25,47 +26,57 @@ const sample = (t: number, bufferS: number) => ({
   droppedFrames: 0,
   position: 0,
 });
+const request = (i: number, late: boolean) => ({
+  type: "request",
+  t: 1 + i,
+  id: `r${i}`,
+  url: `https://media.example/seg${i}.m4s`,
+  phase: "end",
+  bytes: 100_000,
+  firstByteLateMs: 0,
+  bodyLateMs: late ? 600 : 0,
+});
 
 interface RunOptions {
   fast?: boolean;
   network?: { id: string; name: string };
   /** Stopped at this time, seconds. */
   stopAt?: number;
+  /** The real network held back some of its downloads. */
+  heldBack?: boolean;
 }
 
 function savedRun(
   id: string,
   savedAt: number,
-  { fast = false, network = { id: "lift", name: "Lift" }, stopAt }: RunOptions,
+  { fast = false, network = { id: "lift", name: "Lift" }, stopAt, heldBack = false }: RunOptions,
 ) {
-  const all = fast
-    ? [
-        { type: "levels", t: 0.1, levels },
-        { type: "level-shown", t: 0.5, level: 0 },
-        { type: "first-frame", t: 0.6 },
-        sample(5, 12),
-        sample(15, 20),
-        { type: "end", t: 20, reason: "complete" },
-      ]
-    : [
-        { type: "levels", t: 0.1, levels },
-        { type: "level-shown", t: 0.9, level: 1 },
-        { type: "first-frame", t: 1 },
-        sample(5, 8),
-        { type: "level-shown", t: 10, level: 0 },
-        sample(11, 0.5),
-        { type: "stall-start", t: 12 },
-        { type: "stall-end", t: 14 },
-        sample(15, 4),
-        { type: "end", t: 20, reason: "complete" },
-      ];
-  const events =
-    stopAt === undefined
-      ? all
+  const all = [
+    ...(fast
+      ? [
+          { type: "levels", t: 0.1, levels },
+          { type: "level-shown", t: 0.5, level: 0 },
+          { type: "first-frame", t: 0.6 },
+          sample(5, 12),
+          sample(15, 20),
+        ]
       : [
-          ...all.filter((event) => event.t <= stopAt && event.type !== "end"),
-          { type: "end", t: stopAt, reason: "stopped" },
-        ];
+          { type: "levels", t: 0.1, levels },
+          { type: "level-shown", t: 0.9, level: 1 },
+          { type: "first-frame", t: 1 },
+          sample(5, 8),
+          { type: "level-shown", t: 10, level: 0 },
+          sample(11, 0.5),
+          { type: "stall-start", t: 12 },
+          { type: "stall-end", t: 14 },
+          sample(15, 4),
+        ]),
+    ...Array.from({ length: 6 }, (_, i) => request(i, heldBack && i < 3)),
+  ].sort((x, y) => x.t - y.t);
+  const events = [
+    ...all.filter((event) => stopAt === undefined || event.t <= stopAt),
+    { type: "end", t: stopAt ?? 20, reason: stopAt === undefined ? "complete" : "stopped" },
+  ];
   const player = fast
     ? { presetId: "fast-start", name: "Fast start", settings: { startLevel: 0 } }
     : { presetId: "defaults", name: "Defaults", settings: {} };
@@ -93,24 +104,28 @@ function savedRun(
       streamName: "Test stream",
       networkName: network.name,
       playerName: player.name,
-      playerTitle: fast ? "fast start" : "defaults",
       score: 0,
-      stalls: fast ? { count: 0, totalS: 0 } : { count: 1, totalS: 2 },
-      averageBitrate: fast ? 400_000 : 1_670_000,
-      firstFrameS: fast ? 0.6 : 1,
+      stalls: { count: 0, totalS: 0 },
+      averageBitrate: undefined,
+      firstFrameS: undefined,
       lengthS: stopAt ?? 20,
     },
   };
 }
 
-/** Saves A (hls.js defaults, a 2 s stall) and B (Fast start, no stall) in this browser; `b` changes B. */
-async function seed(page: Page, b: RunOptions = {}): Promise<void> {
+/** Saves A (hls.js defaults, a 2 s stall) and B (Fast start, no stall) in this browser; `a` and `b` change them. */
+async function seed(
+  page: Page,
+  b: RunOptions = {},
+  a: RunOptions = {},
+  { count = 2 }: { count?: number } = {},
+): Promise<void> {
   await openApp(page, "/runs");
   const now = Date.now();
   const records = [
-    savedRun("aaaa1111", now - 60_000, {}),
+    savedRun("aaaa1111", now - 60_000, a),
     savedRun("bbbb2222", now, { fast: true, ...b }),
-  ];
+  ].slice(0, count);
   await page.evaluate(async (entries) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("rebuffer");
@@ -137,172 +152,204 @@ async function seed(page: Page, b: RunOptions = {}): Promise<void> {
   }, records);
   await page.reload();
   // The app has read them (and finished loading: navigating while it starts aborts in Firefox and WebKit).
-  await expect(page.getByRole("link", { name: "Compare two runs" })).toBeVisible();
+  await expect(page.getByRole("table")).toBeVisible();
 }
 
-test("two runs compare: what changed, a verdict, the numbers and the charts, by keyboard", async ({
-  page,
-  browserName,
-}) => {
+const searchOf = (href: string | null) =>
+  Object.fromEntries(new URL(href ?? "", "http://localhost").searchParams);
+
+test("choose A, then B, then read B against A: by keyboard", async ({ page, browserName }) => {
   await seed(page);
 
-  // The Runs page offers the comparison; it starts with the newest run as B and the one before as A.
-  const compare = page.getByRole("link", { name: "Compare two runs" });
-  await tabTo(page, browserName, compare);
+  // Nothing is chosen for you: A first.
+  await tabTo(page, browserName, page.getByRole("link", { name: "Compare two runs" }));
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111&b=bbbb2222$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Compare two runs" })).toBeVisible();
-
-  // What changed comes first: the preset, one change, with the setting it changes. Then the verdict.
-  const verdict = page.getByRole("region", { name: /^B did worse/ });
-  await expect(verdict).toContainText("What changed · 1 thing");
-  await expect(verdict).toContainText("The preset changes 1 setting: start level auto → 0.");
-  await expect(verdict.getByRole("heading", { level: 2, name: /^B did/ })).toHaveText(
-    "B did worse: 19 points lower, though it never stalled.",
-  );
-  await expect(verdict).toContainText("▼ 19 points lower");
-  await expect(verdict).toContainText("B never stalled. A stalled once, for 2 s from 0:12.");
-  await expect(page.getByRole("note")).toHaveCount(0);
-
-  // The numbers in groups, B against A in words.
-  const numbers = page.getByRole("region", { name: "The numbers" });
-  await expect(numbers).toContainText("5 better · 3 worse · 1 the same");
-  await expect(numbers.getByRole("rowheader", { name: "Stalling" })).toBeVisible();
-  await expect(numbers.getByRole("row", { name: /First frame/ })).toContainText(
-    /0\.40 s sooner▲ better/,
-  );
-  await expect(numbers.getByRole("row", { name: /Stall time/ })).toContainText(/2 s less▲ better/);
-  await expect(numbers.getByRole("row", { name: /Average bitrate/ })).toContainText("worse");
-
-  // Each chart says what to look for and what it shows.
-  await expect(
-    page.getByRole("img", { name: /^Both ran on the same network, between 500 kbps and 4 Mbps\./ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: "B never stalled. A stalled once, for 2 s from 0:12." }),
-  ).toBeVisible();
-  await expect(page.getByText("Look for how low each line gets.", { exact: false })).toBeVisible();
-  await expect(
-    page.getByText(
-      "B's buffer held up to 20 s and never ran dry. A's held up to 8 s and ran dry at 0:12.",
-    ),
-  ).toBeVisible();
-
-  // Swap: A becomes B. (Keyboard steps go top to bottom: Firefox only Tabs forward.)
-  await tabTo(page, browserName, page.getByRole("button", { name: "Swap A and B" }));
+  await expect(page).toHaveURL(/\/runs\/compare$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Choose two runs");
+  await expect(page.getByRole("list", { name: "Steps" })).toContainText("1 · Choose A");
+  await expect(page.getByRole("heading", { level: 2, name: "Test stream · Lift" })).toBeVisible();
+  await expect(page.getByText("1 run differs from it in one thing")).toHaveCount(2);
+  await tabTo(page, browserName, page.getByRole("button", { name: /^Use as A\b.*Defaults,/ }));
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/runs\/compare\?a=bbbb2222&b=aaaa1111$/);
-  await expect(numbers.getByRole("row", { name: /First frame/ })).toContainText(
-    /0\.40 s later▼ worse/,
-  );
 
-  // The charts as one table, in their place.
+  // Then B, by how it differs from A.
+  await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111$/);
+  await expect(page.getByRole("heading", { level: 3, name: "One thing different" })).toBeVisible();
   await tabTo(
     page,
     browserName,
-    page.getByRole("group", { name: "Both runs: show as" }).getByRole("button", { name: "Table" }),
+    page.getByRole("button", { name: /^Compare\b.*Player setup: Fast start,/ }),
+  );
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111&b=bbbb2222$/);
+
+  // What changed, the verdict, and where the points went.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Defaults → Fast start");
+  const runs = page.getByRole("region", { name: "The two runs" });
+  await expect(runs).toContainText(/Player setup\s*Defaults\s*→\s*changed to\s*Fast start/);
+  await expect(runs).toContainText("The same in both: Test stream, Lift, Chrome on macOS.");
+  const verdict = page.getByRole("region", { name: /^B did / });
+  await expect(verdict.getByRole("heading", { level: 2 })).toHaveText(/^B did (better|worse)$/);
+  await expect(verdict).toContainText("A stalled once, for 2 s at 0:12; B didn’t stall.");
+  const walk = page.getByRole("list", { name: "From A’s score to B’s, part by part" });
+  await expect(walk.getByRole("listitem")).toHaveCount(6);
+  await expect(walk.getByRole("listitem").nth(3)).toContainText("Stalls");
+  await expect(walk.getByRole("listitem").nth(3)).toContainText("A 1 stall, 2.0 s");
+
+  // Where they part ways, numbered as on the timeline.
+  const differ = page.getByRole("region", { name: "Where they differ" });
+  await expect(differ).toContainText("A stalled for 2 s");
+
+  // The timeline as a table, in its place.
+  await tabTo(
+    page,
+    browserName,
+    page.getByRole("group", { name: "Timeline: show as" }).getByRole("button", { name: "Table" }),
   );
   await page.keyboard.press("Enter");
   const table = page.getByRole("region", { name: "Both runs as a table" });
   await settle(table);
   await expect(table.getByRole("row", { name: /^0:12 / })).toContainText("Stalled");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
+  // Swap: A becomes B. (Afresh from the top: Firefox only Tabs forward.)
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Defaults → Fast start");
+  await tabTo(page, browserName, page.getByRole("button", { name: "Swap A and B" }));
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/runs\/compare\?a=bbbb2222&b=aaaa1111$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fast start → Defaults");
+});
+
+test("every Compare screen passes axe in both themes", async ({ page }) => {
+  await seed(page);
+  for (const path of [
+    "/runs/compare",
+    "/runs/compare?a=aaaa1111",
+    "/runs/compare?a=aaaa1111&b=bbbb2222",
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    for (const theme of ["dark", "light"] as const) {
+      await switchTheme(page, theme);
+      expect((await new AxeBuilder({ page }).analyze()).violations, `${path}, ${theme}`).toEqual(
+        [],
+      );
+    }
+  }
+});
+
+test("a run stopped partway compares over the stretch both covered, as a lead", async ({
+  page,
+}) => {
+  await seed(page, { stopAt: 15 });
+  await page.goto("/runs/compare?a=aaaa1111&b=bbbb2222");
+  await expect(page.getByRole("note")).toContainText(
+    "Note: B was stopped at 0:15 of 0:20. Everything below covers the first 0:15 of both runs, so like is compared with like.",
+  );
+  await expect(page.getByRole("heading", { level: 2, name: /over the first 0:15$/ })).toBeVisible();
+  await expect(page.getByText(/over the first 0:15 nobody has measured it/)).toBeVisible();
+  expect(
+    searchOf(await page.getByRole("link", { name: "Run B again" }).getAttribute("href")),
+  ).toMatchObject({ player: "fast-start", network: "lift", start: "now", vs: "aaaa1111" });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
-test("a run stopped early compares over the stretch both covered, or whole by choice", async ({
-  page,
-  browserName,
-}) => {
-  await seed(page, { stopAt: 9 });
+test("a stretch too short to score gets no verdict", async ({ page }) => {
+  await seed(page, { stopAt: 4 });
   await page.goto("/runs/compare?a=aaaa1111&b=bbbb2222");
-  const note = page.getByRole("note");
-  await expect(note).toContainText(
-    "Note: B was stopped at 0:09 of 0:20. Numbers and charts cover the first 0:09 of both runs.",
-  );
-  const over = note.getByRole("group", { name: "Compare over" });
-  await expect(over.getByRole("button", { name: "First 0:09 of both" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await expect(page.getByRole("heading", { level: 2, name: /^Too early/ })).toHaveText(
-    "Too early to tell: B was stopped at 0:09 of 0:20.",
-  );
-  await expect(page.getByText("No stalls in either run, up to 0:09.")).toBeVisible();
-  const again = await page.getByRole("link", { name: "Run B again" }).getAttribute("href");
-  expect(Object.fromEntries(new URL(again ?? "", "http://localhost").searchParams)).toMatchObject({
-    player: "fast-start",
+  await expect(page.getByRole("heading", { level: 2, name: "Too short to compare" })).toBeVisible();
+  await expect(page.getByText("Played 0:04 of the 0:10 needed", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "What 0:04 can tell" })).toBeVisible();
+  await expect(page.getByText(/points? (higher|lower)/)).toHaveCount(0);
+  expect(
+    searchOf(
+      await page.getByRole("link", { name: "Run B again, to the end" }).getAttribute("href"),
+    ),
+  ).toMatchObject({ player: "fast-start", start: "now", vs: "aaaa1111" });
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("both stopped: run both again, A first", async ({ page }) => {
+  await seed(page, { stopAt: 15 }, { stopAt: 12 });
+  await page.goto("/runs/compare?a=aaaa1111&b=bbbb2222");
+  const again = page.getByRole("link", { name: "Run both again" });
+  expect(searchOf(await again.getAttribute("href"))).toEqual({
+    stream: "https://media.example/master.m3u8",
     network: "lift",
     start: "now",
-    vs: "aaaa1111",
+    then: "bbbb2222",
   });
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-
-  // Whole runs: only the first frame compares.
-  await tabTo(page, browserName, over.getByRole("button", { name: "Whole runs" }));
-  await page.keyboard.press("Enter");
-  const numbers = page.getByRole("region", { name: "The numbers" });
-  await expect(numbers).toContainText("Over whole runs, only the first frame compares fairly.");
-  await expect(numbers.getByRole("row", { name: /Stall time/ })).toContainText("not comparable");
-  await expect(page.getByText("not comparable: B didn't finish")).toBeVisible();
 });
 
-test("two changes are flagged, with the run that tells them apart", async ({ page }) => {
+test("a run the real network held back isn't compared", async ({ page }) => {
+  await seed(page, { heldBack: true });
+  await page.goto("/runs/compare?a=aaaa1111&b=bbbb2222");
+  await expect(page.getByRole("heading", { level: 2, name: "Can’t compare these" })).toBeVisible();
+  await expect(page.getByText("Held back by your network", { exact: true })).toHaveCount(2);
+  await expect(page.getByRole("region", { name: /^[AB]’s simulation check$/ })).toHaveCount(2);
+  await expect(page.getByText(/^Not listed: part of B’s run/)).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("two changes are flagged, with the run that changes one", async ({ page }) => {
   await seed(page, { network: { id: "cafe-wifi", name: "Busy café Wi-Fi" } });
   await page.goto("/runs/compare?a=aaaa1111&b=bbbb2222");
   const warning = page.getByRole("note");
-  await expect(warning.getByRole("heading")).toHaveText("Warning: A and B differ in 2 things");
-  await expect(warning).toContainText(
-    "The network and player setup both changed, so these numbers can't say which change made the difference.",
-  );
-  const run = await warning
-    .getByRole("link", { name: "Run A again on Busy café Wi-Fi" })
-    .getAttribute("href");
-  expect(Object.fromEntries(new URL(run ?? "", "http://localhost").searchParams)).toEqual({
+  await expect(warning.getByRole("heading")).toHaveText("A and B differ in 2 things");
+  const run = warning.getByRole("link", { name: "Run Fast start on Lift" });
+  expect(searchOf(await run.getAttribute("href"))).toEqual({
     stream: "https://media.example/master.m3u8",
-    network: "cafe-wifi",
+    network: "lift",
+    player: "fast-start",
     start: "now",
     vs: "aaaa1111",
   });
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
-test("the same setup reads as no real difference, on a phone", async ({ page }) => {
+test("on a phone nothing scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
-  await openApp(page, "/runs");
-  // Two runs of B's setup.
-  await seed(page);
-  await page.goto("/runs/compare?a=bbbb2222&b=bbbb2222");
-  await expect(page.getByRole("heading", { level: 2, name: /^The same setup/ })).toHaveText(
-    "The same setup, and no real difference.",
-  );
-  await expect(
-    page.getByText("Nothing. Both ran Test stream on Lift with fast start."),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: "How repeatable runs are" })).toBeVisible();
-  // On a phone the numbers are a list.
-  const numbers = page.getByRole("region", { name: "The numbers" });
-  await expect(numbers.getByRole("table")).toBeHidden();
-  await expect(numbers.getByText("A 0.60 s · B 0.60 s")).toBeVisible();
-  await expect(page.getByText("No stalls in either run.")).toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await seed(page, { stopAt: 15 });
+  for (const path of ["/runs/compare", "/runs/compare?a=aaaa1111&b=bbbb2222"]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+      path,
+    ).toBeLessThanOrEqual(360);
+  }
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
-test("a report compares its run with the newest other one", async ({ page, browserName }) => {
+test("a report's Compare with… sets A and asks for B", async ({ page, browserName }) => {
   await seed(page);
   await page.goto("/runs/aaaa1111");
-  const compare = page.getByRole("link", { name: "Compare with…" });
-  await tabTo(page, browserName, compare);
+  await tabTo(page, browserName, page.getByRole("link", { name: "Compare with…" }));
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111&b=bbbb2222$/);
-  await expect(page.getByRole("combobox", { name: "Run B" })).toHaveValue("bbbb2222");
+  await expect(page).toHaveURL(/\/runs\/compare\?a=aaaa1111$/);
+  await expect(page.getByRole("region", { name: "A" })).toContainText("Defaults · Lift");
+  await expect(page.getByRole("heading", { level: 2, name: "Choose B" })).toBeVisible();
 });
 
-test("comparing needs two runs", async ({ page }) => {
+test("with one run, two ways to a second", async ({ page }) => {
+  await seed(page, {}, {}, { count: 1 });
   await page.goto("/runs/compare");
-  await expect(
-    page.getByText("Comparing needs two saved runs; this browser has none."),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Compare needs two runs");
+  const again = page.getByRole("link", { name: "Run again" });
+  expect(searchOf(await again.getAttribute("href"))).toMatchObject({
+    start: "now",
+    vs: "aaaa1111",
+  });
+  await expect(page.getByRole("link", { name: "Change one thing" })).toHaveAttribute(
+    "href",
+    /\/runs\/aaaa1111#change-one$/,
+  );
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("with no runs, a way to the first", async ({ page }) => {
+  await openApp(page, "/runs/compare");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("No runs to compare yet");
+  await expect(page.getByRole("link", { name: "Try the tunnel" })).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

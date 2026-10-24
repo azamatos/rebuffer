@@ -1,48 +1,55 @@
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { mountCompareCharts, type CompareCharts } from "@/charts/compare";
-import { formatClock, formatDuration, formatWhen } from "@/core/format/time";
-import type { RunSummary, SavedRun } from "@/core/persist/runs";
-import { playerTitle } from "@/core/player/settings";
+import { useMemo } from "react";
+import { formatClock, formatWhen } from "@/core/format/time";
+import type { SavedRun } from "@/core/persist/runs";
 import {
-  bufferTakeaway,
-  compared,
-  compareMetrics,
-  compareRows,
-  compareVerdict,
-  describeCompareQuality,
-  endedEarly,
-  qualityTakeaway,
-  setupChanges,
-  sharedSpanS,
-  stallsTakeaway,
-  tally,
-  type ComparedRun,
-  type MetricComparison,
-  type SetupChange,
-  type Verdict,
+  compareRuns,
+  compareSubtitle,
+  compareTitle,
+  compareWarning,
+  otherNumbers,
+  runAgain,
+  runStatus,
+  sameInBoth,
+  scoreWalk,
+  setupLine,
+  type Again,
+  type Comparison,
+  type CompareSide,
 } from "@/core/run/compare";
-import { playerChanges, runSearchWithNetwork, savedRunSearch } from "@/core/run/report";
+import {
+  compareVerdict,
+  heldBackText,
+  lookFor,
+  moments,
+  noMoments,
+  shortRows,
+} from "@/core/run/compare-story";
+import { honestyWarning } from "@/core/run/describe";
+import { runSearchWithNetwork, savedRunSearch } from "@/core/run/report";
+import {
+  ChooseA,
+  ChooseB,
+  NoRuns,
+  OneRun,
+  PlayIcon,
+  primaryButton,
+  secondaryButton,
+  textLink,
+} from "@/ui/compare/ChooseRuns";
+import { CompareTimeline } from "@/ui/compare/CompareTimeline";
+import { WalkCard } from "@/ui/compare/Walk";
 import { SeverityIcon } from "@/ui/inspect/SeverityIcon";
-import { ChartOrTable, Key, ShowAs, Td, Th } from "@/ui/run/chart-parts";
+import { SimulationCheck } from "@/ui/run/SimulationCheck";
 import { RunSwatch } from "@/ui/runs/RunSwatch";
 import { useNow } from "@/ui/runs/useNow";
 import { useSavedRun } from "@/ui/runs/useSavedRun";
 import { useSavedRuns } from "@/ui/runs/useSavedRuns";
-import { useTheme } from "@/ui/theme/useTheme";
 
 export interface CompareSearch {
   a?: string;
   b?: string;
 }
-
-const titleOf = (summary: RunSummary) => summary.playerTitle ?? summary.playerName;
-
-/** The search params for a pair, leaving out a side that has no run. */
-const pair = (a: string | undefined, b: string | undefined): CompareSearch => ({
-  ...(a && { a }),
-  ...(b && { b }),
-});
 
 const compareRoute = getRouteApi("/runs/compare");
 
@@ -51,741 +58,547 @@ export function CompareRoute() {
   return <ComparePage search={compareRoute.useSearch()} />;
 }
 
-/** Two runs saved in this browser, side by side: B read against A. */
+const card = "rounded-xl border border-line bg-surface";
+
+/**
+ * Two runs saved in this browser, B read against A. Without both chosen: choose A, then B. With one run saved, two
+ * ways to a second; with none, a way to the first.
+ */
 export function ComparePage({ search }: { search: CompareSearch }) {
-  const navigate = useNavigate();
   const runs = useSavedRuns();
   const now = useNow();
   const a = useSavedRun(search.a);
   const b = useSavedRun(search.b);
 
-  // Without a choice, compare the newest run (B) with the one before it (A); from a report, with the newest other.
-  useEffect(() => {
-    if (!Array.isArray(runs) || runs.length < 2 || (search.a && search.b)) return;
-    const newestOther = (id: string | undefined) => runs.find((run) => run.id !== id)?.id;
-    const next = search.a
-      ? pair(search.a, newestOther(search.a))
-      : search.b
-        ? pair(newestOther(search.b), search.b)
-        : pair(runs[1]?.id, runs[0]?.id);
-    void navigate({ to: "/runs/compare", search: next, replace: true });
-  }, [runs, search.a, search.b, navigate]);
-
-  const choose = (side: "a" | "b", id: string) => {
-    void navigate({
-      to: "/runs/compare",
-      search: (previous) => (side === "a" ? pair(id, previous.b) : pair(previous.a, id)),
-      replace: true,
-    });
-  };
-  const swap = () => {
-    void navigate({ to: "/runs/compare", search: pair(search.b, search.a), replace: true });
-  };
+  let body;
+  if (runs === undefined) body = <p className="text-fg-2">Loading the runs…</p>;
+  else if (runs === "unavailable") {
+    body = (
+      <p className="text-warning-text">
+        This browser doesn&apos;t let the lab keep runs (private browsing can block it).
+      </p>
+    );
+  } else if (search.a && search.b) {
+    if (a?.status === "ready" && b?.status === "ready") {
+      body = <ComparisonView key={`${a.run.id}-${b.run.id}`} a={a.run} b={b.run} now={now} />;
+    } else if (a?.status === "missing" || b?.status === "missing") {
+      body = (
+        <Missing
+          which={
+            a?.status === "missing" && b?.status === "missing"
+              ? "both"
+              : a?.status === "missing"
+                ? "A"
+                : "B"
+          }
+        />
+      );
+    } else body = <p className="text-fg-2">Loading the runs…</p>;
+  } else if (runs.length === 0) body = <NoRuns />;
+  else if (runs.length === 1 && runs[0]) body = <OneRun only={runs[0]} now={now} />;
+  else {
+    const chosen = search.a ? runs.find((run) => run.id === search.a) : undefined;
+    body = chosen ? (
+      <ChooseB a={chosen} runs={runs} now={now} />
+    ) : (
+      <>
+        {search.a && <Missing which="A" />}
+        <ChooseA runs={runs} now={now} />
+      </>
+    );
+  }
 
   return (
-    <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:px-8">
-      <header className="flex flex-col gap-1">
-        <p className="font-mono text-[13px] tracking-[0.06em] text-accent">COMPARE</p>
-        <h1 className="text-[28px] font-semibold tracking-tight sm:text-[32px]">
-          Compare two runs
-        </h1>
-        <p className="text-fg-2">Runs saved in this browser. B is read against A.</p>
-      </header>
-
-      {runs === undefined && <p className="text-fg-2">Loading the runs…</p>}
-      {runs === "unavailable" && (
-        <p className="text-warning-text">
-          This browser doesn&apos;t let the lab keep runs (private browsing can block it).
-        </p>
-      )}
-      {Array.isArray(runs) && runs.length < 2 && (
-        <p className="text-fg-2">
-          Comparing needs two saved runs; this browser has {runs.length === 0 ? "none" : "one"}.{" "}
-          <Link
-            to="/"
-            hash="setup"
-            className="text-accent underline underline-offset-2 hover:text-accent-hover"
-          >
-            Set up a run on Home
-          </Link>
-          .
-        </p>
-      )}
-
-      {Array.isArray(runs) && runs.length >= 2 && (
-        <section
-          aria-label="Runs to compare"
-          className="flex flex-wrap items-end gap-x-4 gap-y-3 rounded-[14px] border border-line bg-surface p-5"
-        >
-          <RunPicker
-            side="a"
-            runs={runs}
-            now={now}
-            value={search.a}
-            onChange={(id) => {
-              choose("a", id);
-            }}
-          />
-          <button
-            type="button"
-            onClick={swap}
-            className="min-h-11 rounded-[10px] border border-line-strong px-4 hover:border-fg-3"
-          >
-            Swap A and B
-          </button>
-          <RunPicker
-            side="b"
-            runs={runs}
-            now={now}
-            value={search.b}
-            onChange={(id) => {
-              choose("b", id);
-            }}
-          />
-        </section>
-      )}
-
-      {(a?.status === "missing" || b?.status === "missing") && (
-        <p className="text-fg-2">
-          This browser has no run{" "}
-          {a?.status === "missing" && b?.status === "missing"
-            ? "at either address"
-            : `for ${a?.status === "missing" ? "A" : "B"}`}
-          ; runs are kept only in the browser that ran them. Pick another above.
-        </p>
-      )}
-      {a?.status === "ready" && b?.status === "ready" && (
-        <Comparison key={`${a.run.id}-${b.run.id}`} a={a.run} b={b.run} />
-      )}
-    </div>
+    <div className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 pt-6 pb-12 sm:px-8">{body}</div>
   );
 }
 
-function RunPicker({
-  side,
-  runs,
-  now,
-  value,
-  onChange,
-}: {
-  side: "a" | "b";
-  runs: RunSummary[];
-  now: number;
-  value: string | undefined;
-  onChange: (id: string) => void;
-}) {
-  const id = useId();
-  // A run that isn't saved here (deleted, or from another browser) shows as no choice, not as the first run.
-  const known = runs.some((run) => run.id === value);
+function Missing({ which }: { which: "A" | "B" | "both" }) {
   return (
-    <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
-      <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium">
-        <RunSwatch side={side} />
-        Run {side.toUpperCase()}
-      </label>
-      <select
-        id={id}
-        value={known ? value : ""}
-        onChange={(event) => {
-          onChange(event.target.value);
-        }}
-        className="min-h-11 w-full rounded-[10px] border border-line-strong bg-ground px-3"
+    <p role="note" className="text-fg-2">
+      This browser has no run {which === "both" ? "at either address" : `for ${which}`}; runs are
+      kept only in the browser that ran them.{" "}
+      <Link
+        to="/runs/compare"
+        className="text-accent underline underline-offset-2 hover:text-accent-hover"
       >
-        {!known && <option value="">Choose a run</option>}
-        {runs.map((run) => (
-          <option key={run.id} value={run.id}>
-            {run.networkName} · {titleOf(run)} · {Math.round(run.score)}/100 ·{" "}
-            {formatWhen(run.savedAt, now)}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-const card = "rounded-2xl border border-line bg-surface";
-const textLink = "text-accent underline underline-offset-2 hover:text-accent-hover";
-
-const verdicts: Record<Verdict, { text: string; icon?: string; className: string }> = {
-  better: { text: "better", icon: "▲", className: "text-accent" },
-  worse: { text: "worse", icon: "▼", className: "text-error-text" },
-  same: { text: "same", icon: "=", className: "text-fg-3" },
-  spread: { text: "within spread", icon: "≈", className: "text-fg-3" },
-  "not-comparable": { text: "not comparable", className: "text-fg-3" },
-};
-
-function VerdictWord({ verdict }: { verdict: Verdict }) {
-  const { text, icon, className } = verdicts[verdict];
-  return (
-    <span className={`text-sm ${className}`}>
-      {icon && <span aria-hidden="true">{icon} </span>}
-      {text}
-    </span>
-  );
-}
-
-/** A run's setup in a line: the network and the player, and the stream when the two runs' streams differ. */
-function setupLine(run: SavedRun, withStream: boolean): string {
-  const player = playerTitle(run.setup.player.name, playerChanges(run));
-  return `${withStream ? `${run.setup.streamName} · ` : ""}${run.setup.network.name} · ${player}`;
-}
-
-function Comparison({ a: runA, b: runB }: { a: SavedRun; b: SavedRun }) {
-  const ended = useMemo(() => endedEarly(runA, runB), [runA, runB]);
-  const sharedS = useMemo(() => sharedSpanS(runA, runB), [runA, runB]);
-  // When a run ended early, the stretch both covered compares; whole runs on request.
-  const [whole, setWhole] = useState(false);
-  const untilS = whole ? undefined : sharedS;
-  const a = useMemo(() => compared(runA, untilS), [runA, untilS]);
-  const b = useMemo(() => compared(runB, untilS), [runB, untilS]);
-  const firstFrameOnly = whole && ended.length > 0;
-  const rows = compareMetrics(a, b, { firstFrameOnly });
-  const changes = setupChanges(runA, runB);
-  const verdict = compareVerdict(a, b, changes, rows, { ended, whole });
-  const otherStream = runA.setup.streamUrl !== runB.setup.streamUrl;
-  const stoppedB = ended.find((end) => end.side === "B");
-
-  return (
-    <>
-      <Warning a={runA} b={runB} changes={changes} />
-      {sharedS !== undefined && ended[0] && (
-        <section
-          role="note"
-          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[10px] border border-line-strong bg-note/10 px-3.5 py-3"
-        >
-          <p className="flex min-w-0 flex-[1_1_360px] items-start gap-2 text-sm">
-            <span className="flex h-5 items-center">
-              <SeverityIcon severity="note" size={12} />
-            </span>
-            <span>
-              <strong className="font-semibold text-note-text">Note:</strong>{" "}
-              {ended
-                .map(
-                  (end) =>
-                    `${end.side} ${end.reason === "stopped" ? "was stopped" : "broke off"} at ${formatClock(end.atS)} of ${formatClock(end.lengthS)}.`,
-                )
-                .join(" ")}{" "}
-              {whole
-                ? `Numbers cover all of each run, so most don't compare.`
-                : `Numbers and charts cover the first ${formatClock(sharedS)} of both runs.`}
-            </span>
-          </p>
-          <span
-            role="group"
-            aria-label="Compare over"
-            className="inline-flex flex-none rounded-lg bg-fg/6 p-0.5 text-sm"
-          >
-            {[false, true].map((option) => (
-              <button
-                key={String(option)}
-                type="button"
-                aria-pressed={whole === option}
-                onClick={() => {
-                  setWhole(option);
-                }}
-                className="rounded-md px-2.5 py-1 text-fg-2 transition-colors duration-200 hover:text-fg aria-pressed:bg-segment aria-pressed:text-fg aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/0.14)]"
-              >
-                {option ? "Whole runs" : `First ${formatClock(sharedS)} of both`}
-              </button>
-            ))}
-          </span>
-        </section>
-      )}
-
-      <section aria-labelledby="verdict-h" className={`${card} flex flex-col`}>
-        <div className="flex flex-col gap-2 px-5 py-4">
-          <h2 className="font-mono text-xs tracking-[0.06em] text-fg-3 uppercase">
-            What changed
-            {changes.length > 0 &&
-              ` · ${changes.length === 1 ? "1 thing" : `${changes.length} things`}`}
-          </h2>
-          <Changes a={runA} changes={changes} />
-        </div>
-        <div className="flex flex-col gap-4 border-t border-line p-5">
-          <div className="flex flex-wrap items-end gap-x-7 gap-y-4">
-            {[
-              { side: "a" as const, run: a },
-              { side: "b" as const, run: b },
-            ].map(({ side, run }) => {
-              const end = ended.find((candidate) => candidate.side === side.toUpperCase());
-              return (
-                <div key={side} className="flex min-w-0 flex-col gap-1.5">
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                    <span className="flex items-center gap-2 font-semibold">
-                      <RunSwatch side={side} />
-                      {side.toUpperCase()}
-                    </span>
-                    <span className="text-fg-2">{setupLine(run.run, otherStream)}</span>
-                    {end && (
-                      <span className="rounded-full bg-fg/6 px-2 py-0.5 text-xs text-fg-2">
-                        Stopped at {formatClock(end.atS)}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-5xl leading-none font-semibold tabular-nums">
-                    {Math.round(run.score.score)}
-                    <span className="text-lg font-medium text-fg-3"> / 100</span>
-                  </p>
-                </div>
-              );
-            })}
-            <ScoreDifference {...verdict.difference} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <h2 id="verdict-h" className="text-xl font-semibold text-balance">
-              {verdict.headline}
-            </h2>
-            <p className="max-w-[880px] text-fg-2">
-              {verdict.detail}
-              {verdict.spread && (
-                <>
-                  {" "}
-                  <Link to="/about" hash="repeatable" className="underline underline-offset-2">
-                    How repeatable runs are
-                  </Link>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            {stoppedB && (
-              <Link
-                to="/run"
-                search={{ ...savedRunSearch(runB, { start: true }), vs: runA.id }}
-                className="inline-flex min-h-10 items-center gap-2 rounded-[10px] bg-accent px-4 font-semibold text-accent-ink hover:bg-accent-hover"
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                  <path d="M2.5 1.5 L10.5 6 L2.5 10.5 Z" fill="currentColor" />
-                </svg>
-                Run B again
-              </Link>
-            )}
-            <Link to="/runs/$runId" params={{ runId: runA.id }} className={textLink}>
-              Open A&apos;s report
-            </Link>
-            <Link to="/runs/$runId" params={{ runId: runB.id }} className={textLink}>
-              Open B&apos;s report
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <Numbers rows={rows} />
-      <CompareChartsView a={a} b={b} mbps={otherStream} cutS={untilS} ended={whole ? ended : []} />
-    </>
-  );
-}
-
-/** When A and B differ in more than one thing, or in the stream: what the numbers can't say. */
-function Warning({ a, b, changes }: { a: SavedRun; b: SavedRun; changes: SetupChange[] }) {
-  const stream = changes.find((change) => change.label === "Stream");
-  if (!stream && changes.length < 2) return null;
-  const others = changes.filter((change) => change.label !== "Stream");
-  const network = changes.find((change) => change.label === "Network");
-  const named = changes.map((change) => change.label.toLowerCase());
-  const several =
-    changes.length < 2
-      ? ""
-      : `The ${named.slice(0, -1).join(", ")} and ${named.at(-1) ?? ""} ${changes.length === 2 ? "both" : "all"} changed, so these numbers can't say which change made the difference. To find out, change one thing at a time.`;
-  return (
-    <section
-      role="note"
-      aria-labelledby="warning-h"
-      className="flex flex-col gap-2 rounded-[10px] border border-warning/50 bg-warning/6 px-3.5 py-3"
-    >
-      <h2 id="warning-h" className="flex items-center gap-2 font-semibold text-warning-text">
-        <SeverityIcon severity="warning" size={12} />
-        {stream && others.length === 0
-          ? "Warning: different streams"
-          : `Warning: A and B differ in ${changes.length} things`}
-      </h2>
-      <p className="max-w-[880px] text-sm text-fg-2">
-        {stream &&
-          `${stream.a} and ${stream.b} have different qualities, so the quality chart shows Mbps instead of quality names, and “At top quality” means each stream's own top. `}
-        {several}
-      </p>
-      {network && others.length === 2 && (
-        <div className="flex">
-          {/* A's setup on B's network differs from B in the player alone, and from A in the network alone. */}
-          <Link
-            to="/run"
-            search={{ ...runSearchWithNetwork(a, b.setup.network, { start: true }), vs: a.id }}
-            className="inline-flex min-h-10 items-center rounded-[10px] border border-line-strong px-4 text-sm font-medium text-fg hover:border-fg-3"
-          >
-            Run A again on {b.setup.network.name}
-          </Link>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function Changes({ a, changes }: { a: SavedRun; changes: SetupChange[] }) {
-  if (changes.length === 0) {
-    return (
-      <p className="text-fg-2">
-        Nothing. Both ran {a.setup.streamName} on {a.setup.network.name} with{" "}
-        {playerTitle(a.setup.player.name, playerChanges(a))}.
-      </p>
-    );
-  }
-  return (
-    <dl className="grid gap-x-7 gap-y-2 sm:grid-cols-[max-content_1fr]">
-      {changes.map((change) => (
-        <div key={change.label} className="contents">
-          <dt className="font-medium">{change.label}</dt>
-          <dd className="flex flex-col gap-0.5">
-            <span className="flex flex-wrap items-center gap-x-2">
-              <span className="text-fg-2">{change.a}</span>
-              <span aria-hidden="true" className="text-fg-3">
-                →
-              </span>
-              <span className="sr-only">changed to</span>
-              <span className="font-semibold">{change.b}</span>
-            </span>
-            {change.detail && <span className="text-sm text-fg-2">{change.detail}</span>}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function ScoreDifference({ text, verdict }: { text: string; verdict: Verdict }) {
-  if (verdict === "better" || verdict === "worse") {
-    const { icon, className } = verdicts[verdict];
-    return (
-      <p className={`pb-1 text-lg font-semibold ${className}`}>
-        <span aria-hidden="true">{icon} </span>
-        {text}
-      </p>
-    );
-  }
-  return (
-    <p className="pb-1 text-lg font-medium text-fg-2">
-      {verdict === "not-comparable" ? "" : <span aria-hidden="true">≈ </span>}
-      {text}
+        Choose two runs
+      </Link>
     </p>
   );
 }
 
-/** The numbers in groups: a table on wide screens, a list on phones. */
-function Numbers({ rows }: { rows: MetricComparison[] }) {
-  const groups: { name: string; rows: MetricComparison[] }[] = [];
-  for (const row of rows) {
-    const group = groups.find((candidate) => candidate.name === row.group);
-    if (group) group.rows.push(row);
-    else groups.push({ name: row.group, rows: [row] });
-  }
+/** Where "Run … again" goes: B against A, A against B, or A then B. */
+function againSearch(again: Again, a: SavedRun, b: SavedRun) {
+  const [first] = again.sides;
+  if (again.sides.length === 2) return { ...savedRunSearch(a, { start: true }), then: b.id };
+  return first === "a"
+    ? { ...savedRunSearch(a, { start: true }), vsB: b.id }
+    : { ...savedRunSearch(b, { start: true }), vs: a.id };
+}
+
+function AgainLink({ again, a, b }: { again: Again; a: SavedRun; b: SavedRun }) {
   return (
-    <section aria-labelledby="numbers-h" className={`${card} p-5`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="numbers-h" className="text-lg font-semibold">
-          The numbers
-        </h2>
-        <p className="text-sm text-fg-2">{tally(rows)}</p>
-      </div>
-      <table className="w-full text-left text-[15px] tabular-nums max-sm:hidden">
-        <thead>
-          <tr>
-            <Th>Metric</Th>
-            <Th>A</Th>
-            <Th>B</Th>
-            <Th>B against A</Th>
-          </tr>
-        </thead>
-        {groups.map((group) => (
-          <tbody key={group.name}>
-            <tr>
-              <th
-                scope="rowgroup"
-                colSpan={4}
-                className="pt-4 pb-1 font-mono text-xs font-normal tracking-[0.06em] text-fg-3 uppercase"
-              >
-                {group.name}
-              </th>
-            </tr>
-            {group.rows.map((row) => (
-              <tr key={row.label} className="border-t border-fg/6">
-                <th scope="row" className="py-2 pr-4 font-medium">
-                  {row.label}
-                </th>
-                <Td>{row.a}</Td>
-                <Td>{row.b}</Td>
-                <Td>
-                  <span className="inline-flex flex-wrap items-baseline gap-x-2">
-                    {row.difference && <span>{row.difference}</span>}
-                    <VerdictWord verdict={row.verdict} />
-                  </span>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        ))}
-      </table>
-      <div className="flex flex-col sm:hidden">
-        {groups.map((group) => (
-          <div key={group.name}>
-            <h3 className="pt-4 pb-1 font-mono text-xs tracking-[0.06em] text-fg-3 uppercase">
-              {group.name}
-            </h3>
-            <ul>
-              {group.rows.map((row) => (
-                <li key={row.label} className="flex flex-col gap-0.5 border-t border-fg/6 py-2">
-                  <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className="font-medium">{row.label}</span>
-                    <VerdictWord verdict={row.verdict} />
-                  </span>
-                  <span className="text-sm text-fg-2 tabular-nums">
-                    A {row.a} · B {row.b}
-                    {row.difference && ` · ${row.difference}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+    <Link to="/run" search={againSearch(again, a, b)} className={primaryButton}>
+      <PlayIcon />
+      {again.label}
+    </Link>
+  );
+}
+
+function ComparisonView({ a, b, now }: { a: SavedRun; b: SavedRun; now: number }) {
+  const navigate = useNavigate();
+  const c = useMemo(() => compareRuns(a, b), [a, b]);
+  const verdict = useMemo(() => compareVerdict(c), [c]);
+  const found = useMemo(() => moments(c), [c]);
+  const warning = compareWarning(c);
+  const again = runAgain(c);
+  const look = lookFor(c, found);
+  const swap = () => {
+    void navigate({ to: "/runs/compare", search: { a: b.id, b: a.id }, replace: true });
+  };
+  const stoppedNote = c.state === "compared" && c.untilS !== undefined ? stoppedText(c) : undefined;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <section className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <p className="mb-0.5 font-mono text-xs tracking-[0.06em] text-accent">COMPARE</p>
+          <h1 className="text-[28px] font-semibold tracking-tight text-balance">
+            {compareTitle(c)}
+          </h1>
+          <p className="mt-0.5 text-fg-2">{compareSubtitle(c)}</p>
+        </div>
+        <div className="flex max-w-full flex-wrap gap-2">
+          {again && c.state !== "too-short" && <AgainLink again={again} a={a} b={b} />}
+          <Link to="/runs/compare" search={{ a: a.id }} className={secondaryButton}>
+            Choose other runs
+          </Link>
+          <button type="button" onClick={swap} className={secondaryButton}>
+            Swap A and B
+          </button>
+        </div>
+      </section>
+
+      {warning && (
+        <section
+          role="note"
+          aria-labelledby="warning-h"
+          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[10px] border border-warning/50 bg-warning/6 px-3.5 py-3"
+        >
+          <div className="flex min-w-0 flex-[1_1_360px] flex-col gap-1">
+            <h2 id="warning-h" className="flex items-center gap-2 font-semibold text-warning-text">
+              <SeverityIcon severity="warning" size={12} />
+              {warning.title}
+            </h2>
+            <p className="max-w-[880px] text-sm text-fg-2">{warning.body}</p>
           </div>
-        ))}
+          {warning.oneChange && (
+            <Link
+              to="/run"
+              search={{ ...runSearchWithNetwork(b, a.setup.network, { start: true }), vs: a.id }}
+              className={`${secondaryButton} flex-none text-sm font-medium`}
+            >
+              <PlayIcon />
+              {warning.oneChange}
+            </Link>
+          )}
+        </section>
+      )}
+
+      {stoppedNote && (
+        <section
+          role="note"
+          className="flex items-start gap-2 rounded-[10px] border border-line-strong bg-note/10 px-3.5 py-3 text-sm"
+        >
+          <span className="flex h-5 flex-none items-center">
+            <SeverityIcon severity="note" size={12} />
+          </span>
+          <p className="max-w-[880px]">
+            <strong className="font-semibold text-note-text">Note:</strong> {stoppedNote}
+          </p>
+        </section>
+      )}
+
+      <Runs c={c} now={now} />
+      <Checks c={c} />
+
+      <section aria-labelledby="verdict-h" className="flex flex-wrap items-stretch gap-3">
+        <VerdictCard c={c} verdict={verdict} />
+        <div className={`${card} flex min-w-0 flex-[999_1_560px] flex-col gap-2 px-[18px] py-4`}>
+          {c.state === "compared" && <WalkCard walk={scoreWalk(c)} />}
+          {c.state === "too-short" && <ShortCard c={c} again={again} a={a} b={b} />}
+          {c.state === "held-back" && <HeldCard c={c} again={again} a={a} b={b} />}
+        </div>
+      </section>
+
+      {c.state === "compared" && <OtherNumbers c={c} />}
+
+      <CompareTimeline c={c} found={found} look={look} />
+
+      <section aria-labelledby="differ-h" className={`${card} px-[18px] pt-3.5 pb-2`}>
+        <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 id="differ-h" className="text-lg font-semibold">
+            Where they differ
+          </h3>
+          <p className="text-[13px] text-fg-3">
+            {found.length > 0
+              ? "The numbers match the markers on the timeline."
+              : "Moments where the two runs part ways."}
+          </p>
+        </div>
+        {found.length > 0 ? (
+          <ol>
+            {found.map((moment, i) => (
+              <li
+                key={`${moment.side}-${moment.t}-${i}`}
+                className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 border-t border-fg/6 py-2.5 sm:grid-cols-[22px_92px_minmax(0,1fr)_auto]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-[22px] items-center justify-center rounded-full bg-fg text-xs font-semibold text-ground"
+                >
+                  {i + 1}
+                </span>
+                <span className="pt-1 font-mono text-xs text-fg-3 tabular-nums">
+                  {formatClock(moment.t)}
+                </span>
+                <span className="col-span-2 col-start-2 max-sm:row-start-2 sm:col-span-1 sm:col-start-3">
+                  {moment.text}
+                </span>
+                <span className="col-start-3 row-start-1 flex items-center gap-1.5 pt-0.5 text-[13px] text-fg-2 sm:col-start-4">
+                  <RunSwatch side={moment.side} />
+                  {moment.side.toUpperCase()}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="border-t border-fg/6 py-2.5">{noMoments(c)}</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/** The note when a run was stopped: everything covers the stretch both ran. */
+function stoppedText(c: Comparison): string {
+  const { a, b, untilS } = c;
+  const until = formatClock(untilS ?? 0);
+  if (a.stopped && b.stopped) {
+    return `A was stopped at ${formatClock(a.endS)} and B at ${formatClock(b.endS)}, of ${formatClock(Math.max(a.lengthS, b.lengthS))}. Everything below covers the first ${until} of both, so like is compared with like.`;
+  }
+  const stopped = a.stopped ? a : b;
+  const going = a.stopped ? b : a;
+  return `${stopped.name} was stopped at ${until} of ${formatClock(stopped.lengthS)}. Everything below covers the first ${until} of both runs, so like is compared with like. ${going.name}’s whole-run score is ${Math.round(going.whole.score.score)}.`;
+}
+
+function RunRow({ c, s, now }: { c: Comparison; s: CompareSide; now: number }) {
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-x-4 gap-y-0.5 ${s.key === "a" ? "pb-2" : "border-t border-fg/6 pt-2"}`}
+    >
+      <p className="flex min-w-0 flex-auto items-center gap-2.5">
+        <span className="flex flex-none items-center gap-2 font-semibold">
+          <RunSwatch side={s.key} />
+          {s.name}
+        </span>
+        <span className="min-w-0">{setupLine(c, s)}</span>
+      </p>
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-2">
+        <span>{formatWhen(s.run.savedAt, now)}</span>
+        <span aria-hidden="true">·</span>
+        {s.stopped ? (
+          <span className="rounded-full bg-fg/7 px-2 py-0.5 text-xs font-medium text-fg">
+            {runStatus(s)}
+          </span>
+        ) : (
+          <span>{runStatus(s)}</span>
+        )}
+        {s.held && (
+          <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning-text">
+            Held back by your network
+          </span>
+        )}
+      </p>
+      <Link to="/runs/$runId" params={{ runId: s.run.id }} className={textLink}>
+        {s.name}’s report<span aria-hidden="true"> ↗</span>
+      </Link>
+    </div>
+  );
+}
+
+function Runs({ c, now }: { c: Comparison; now: number }) {
+  const same = sameInBoth(c.a.run, c.changes);
+  return (
+    <section aria-labelledby="runs-h" className={`${card} px-[18px] py-3.5`}>
+      <h2 id="runs-h" className="sr-only">
+        The two runs
+      </h2>
+      <RunRow c={c} s={c.a} now={now} />
+      <RunRow c={c} s={c.b} now={now} />
+      <div className="mt-2.5 flex flex-col gap-2 border-t border-fg/6 pt-2">
+        {c.changes.length > 0 ? (
+          <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr]">
+            {c.changes.map((change) => (
+              <div key={change.label} className="contents">
+                <dt className="text-sm text-fg-2">{change.label}</dt>
+                <dd className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-x-2">
+                    <span className="text-fg-2">{change.a}</span>
+                    <span aria-hidden="true" className="text-fg-3">
+                      →
+                    </span>
+                    <span className="sr-only">changed to</span>
+                    <span className="font-semibold">{change.b}</span>
+                  </span>
+                  {change.settings && (
+                    <details>
+                      <summary className="w-fit cursor-pointer text-sm text-fg-2 hover:text-fg">
+                        What the preset changes: {change.settings.length}{" "}
+                        {change.settings.length === 1 ? "setting" : "settings"}
+                      </summary>
+                      <p className="mt-1 font-mono text-[13px] leading-relaxed text-fg-2">
+                        {change.settings.join(" · ")}
+                      </p>
+                    </details>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p>
+            <span className="font-semibold">Nothing changed.</span>{" "}
+            <span className="text-fg-2">
+              Both ran the same setup, so this shows how much runs differ on their own.
+            </span>
+          </p>
+        )}
+        {same && <p className="text-sm text-fg-3">{same}</p>}
       </div>
     </section>
   );
 }
 
-function ChartFigure({
-  title,
-  unit,
-  keys,
-  lookFor,
-  takeaway,
-  children,
-}: {
-  title: string;
-  unit: string;
-  keys?: ReactNode;
-  lookFor?: string;
-  takeaway?: string;
-  children: ReactNode;
-}) {
-  return (
-    <figure className="rounded-xl border border-line bg-surface px-4 pt-3 pb-2.5">
-      <figcaption className="mb-1.5 flex flex-wrap justify-between gap-x-3.5 gap-y-2">
-        <span className="text-sm font-semibold">
-          {title} <span className="font-normal text-fg-3">· {unit}</span>
+/** One line when both runs got their network; otherwise each run's own simulation check, labelled. */
+function Checks({ c }: { c: Comparison }) {
+  const warned = [c.a, c.b].some((s) => honestyWarning(s.whole.metrics.honesty));
+  if (!warned) {
+    return (
+      <p className="flex items-start gap-2 text-sm text-fg-2">
+        <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true" className="flex-none">
+          <circle cx="9" cy="9" r="8" fill="none" strokeWidth="1.6" className="stroke-accent" />
+          <path
+            d="M5.5 9.2 L8 11.6 L12.6 6.6"
+            fill="none"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="stroke-accent"
+          />
+        </svg>
+        <span>
+          <span className="font-medium text-fg">Simulation check:</span> both runs got the network
+          they were set to.
         </span>
-        {keys && <span className="flex flex-wrap gap-3 text-xs text-fg-2">{keys}</span>}
-      </figcaption>
-      {lookFor && <p className="mb-3 text-sm text-fg-2">{lookFor}</p>}
-      {children}
-      {/* The chart's label says the same, so it's read once. */}
-      {takeaway && (
-        <p aria-hidden="true" className="mt-2.5 border-t border-fg/6 pt-2 text-[15px]">
-          {takeaway}
-        </p>
-      )}
-    </figure>
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {[c.a, c.b].map((s) => (
+        <div key={s.key} className="flex min-w-0 items-start gap-3">
+          <span
+            className={`flex w-10 flex-none items-center gap-2 font-semibold ${honestyWarning(s.whole.metrics.honesty) ? "pt-2" : "text-sm"}`}
+          >
+            <RunSwatch side={s.key} />
+            {s.name}
+          </span>
+          <div className="min-w-0 flex-auto">
+            <SimulationCheck
+              honesty={s.whole.metrics.honesty}
+              curve={s.run.setup.network.curve}
+              label={`${s.name}’s simulation check`}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
-const lineA = <path d="M0 5 H16" strokeWidth="2.5" className="stroke-fg" />;
-const lineB = (
-  <path d="M0 5 H16" strokeWidth="2.5" strokeDasharray="5 3" className="stroke-accent" />
-);
+function VerdictCard({
+  c,
+  verdict,
+}: {
+  c: Comparison;
+  verdict: ReturnType<typeof compareVerdict>;
+}) {
+  const { direction } = verdict;
+  return (
+    <div
+      className={`${card} flex max-w-full flex-[1_1_300px] flex-col gap-3 px-[18px] py-4 sm:max-w-[360px]`}
+    >
+      <p className="text-[13px] text-fg-2">B against A</p>
+      <div className="flex flex-col gap-1">
+        <h2 id="verdict-h" className="text-[28px] font-semibold tracking-tight text-balance">
+          {verdict.title}
+        </h2>
+        {direction === "worse" && (
+          <p className="text-lg font-semibold text-error-text">
+            <span aria-hidden="true">▼ </span>
+            {verdict.difference}
+          </p>
+        )}
+        {direction === "better" && (
+          <p className="text-lg font-semibold text-accent">
+            <span aria-hidden="true">▲ </span>
+            {verdict.difference}
+          </p>
+        )}
+        {direction === "same" && (
+          <p className="text-lg font-medium text-fg-2">
+            <span aria-hidden="true">≈ </span>
+            {verdict.difference}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-7 gap-y-3">
+        {verdict.cells.map((cell) => (
+          <div key={cell.side} className="flex flex-col gap-1">
+            <p className="flex items-center gap-2 text-[13px] whitespace-nowrap text-fg-2">
+              <RunSwatch side={cell.side} />
+              {cell.side.toUpperCase()} · {cell.label}
+            </p>
+            {cell.score === undefined ? (
+              <>
+                <p className="text-xl font-semibold">Not compared</p>
+                <p className="text-[13px] text-fg-2">{cell.why}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-5xl leading-none font-semibold tracking-tight tabular-nums">
+                  {cell.score}
+                  <span className="text-lg font-medium tracking-normal text-fg-3"> / 100</span>
+                </p>
+                {cell.limit && <p className="text-[13px] text-fg-2">{cell.limit}</p>}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+      {verdict.though && <p className="text-[15px] font-medium">{verdict.though}</p>}
+      <p className="text-[15px]">{verdict.facts}</p>
+      {verdict.note && (
+        <p className="border-t border-fg/6 pt-2 text-[13px] text-fg-2">
+          {verdict.note}{" "}
+          {c.state === "compared" && (
+            <Link to="/about" hash="repeatable" className="underline underline-offset-2">
+              How repeatable runs are
+            </Link>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
 
-function CompareChartsView({
+function ShortCard({
+  c,
+  again,
   a,
   b,
-  mbps,
-  cutS,
-  ended,
 }: {
-  a: ComparedRun;
-  b: ComparedRun;
-  mbps: boolean;
-  /** Where both runs were cut, when only the stretch both covered compares. */
-  cutS: number | undefined;
-  /** Runs that ended early when whole runs are compared: their ends are marked. */
-  ended: ReturnType<typeof endedEarly>;
+  c: Comparison;
+  again: Again | undefined;
+  a: SavedRun;
+  b: SavedRun;
 }) {
-  const qualityRef = useRef<HTMLCanvasElement>(null);
-  const bufferRef = useRef<HTMLCanvasElement>(null);
-  const stallsRef = useRef<HTMLCanvasElement>(null);
-  const chartsRef = useRef<CompareCharts>(undefined);
-  const theme = useTheme();
-  const curveA = a.run.setup.network.curve;
-  const curveB = b.run.setup.network.curve;
-  const sameNetwork = JSON.stringify(curveA) === JSON.stringify(curveB);
-  const [table, setTable] = useState(false);
-  const stalled = a.metrics.stalls.count + b.metrics.stalls.count > 0;
-  const stop = ended[0];
-
-  useEffect(() => {
-    const quality = qualityRef.current;
-    const buffer = bufferRef.current;
-    if (!quality || !buffer) return;
-    const charts = mountCompareCharts(
-      { quality, buffer, stalls: stallsRef.current },
-      {
-        a: a.timeline,
-        b: b.timeline,
-        curveA,
-        curveB,
-        lengthS: Math.max(a.timeline.endS ?? 0, b.timeline.endS ?? 0, 1),
-        mbps,
-        ...(stop && {
-          stop: { atS: stop.atS, label: `${stop.side} stopped, ${formatClock(stop.atS)}` },
-        }),
-      },
-    );
-    chartsRef.current = charts;
-    return () => {
-      charts.destroy();
-      chartsRef.current = undefined;
-    };
-  }, [a, b, curveA, curveB, mbps, stop, stalled, table]);
-
-  useEffect(() => {
-    chartsRef.current?.retheme();
-  }, [theme]);
-
-  const keysAB = (
-    <>
-      <Key swatch={lineA} label="A" />
-      <Key swatch={lineB} label="B" />
-    </>
-  );
-  const quality = qualityTakeaway(a, b, { mbps });
-  const buffer = bufferTakeaway(a, b);
-  const stalls = stallsTakeaway(a, b, cutS);
-
   return (
-    <section aria-labelledby="charts-h" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="charts-h" className="text-lg font-semibold">
-          On one time axis
-        </h2>
-        <ShowAs name="Both runs" table={table} onChange={setTable} />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h3 className="text-lg font-semibold">What {formatClock(c.sharedS)} can tell</h3>
+        <p className="text-[13px] text-fg-3">Only what both runs got to.</p>
       </div>
-      <ChartOrTable
-        table={table}
-        label="Both runs as a table"
-        minHeight={360}
-        renderTable={() => (
-          <table className="w-full bg-surface text-left">
-            <thead>
-              <tr>
-                <Th>Time</Th>
-                <Th>A on screen</Th>
-                <Th>B on screen</Th>
-                <Th>A&apos;s buffer</Th>
-                <Th>B&apos;s buffer</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {compareRows(a, b).map((row) => (
-                <tr key={row.t} className="border-t border-fg/6">
-                  <Td mono>{formatClock(row.t)}</Td>
-                  <Td>{row.a.stalled ? "Stalled" : (row.a.shown ?? "—")}</Td>
-                  <Td>{row.b.stalled ? "Stalled" : (row.b.shown ?? "—")}</Td>
-                  <Td>{row.a.bufferS === undefined ? "—" : formatDuration(row.a.bufferS)}</Td>
-                  <Td>{row.b.bufferS === undefined ? "—" : formatDuration(row.b.bufferS)}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      >
-        <div className="flex flex-col gap-3">
-          <ChartFigure
-            title="Quality on screen"
-            unit={mbps ? "Mbps, log scale" : "quality, log scale"}
-            lookFor="Look for where each line steps down, and how far it sits below the network."
-            takeaway={quality}
-            keys={
-              <>
-                <Key
-                  swatch={<rect width="14" height="10" rx="2" className="fill-net/45" />}
-                  label={sameNetwork ? "Network" : "A's network"}
-                />
-                {!sameNetwork && (
-                  <Key
-                    swatch={
-                      <path
-                        d="M0 5 H16"
-                        strokeWidth="1.5"
-                        strokeDasharray="2 3"
-                        className="stroke-net"
-                      />
-                    }
-                    label="B's network"
-                  />
-                )}
-                {keysAB}
-              </>
-            }
-          >
-            <canvas
-              ref={qualityRef}
-              role="img"
-              aria-label={`${describeCompareQuality(a, b)} ${quality}`}
-              className="block h-[200px] w-full"
-            />
-          </ChartFigure>
-          <ChartFigure
-            title="Buffer"
-            unit="seconds of video ahead"
-            keys={keysAB}
-            lookFor="Look for how low each line gets. At zero, the picture stops."
-            takeaway={buffer}
-          >
-            <canvas
-              ref={bufferRef}
-              role="img"
-              aria-label={buffer}
-              className="block h-[140px] w-full"
-            />
-          </ChartFigure>
-          {stalled ? (
-            <ChartFigure
-              title="Stalls"
-              unit="A above, B below"
-              lookFor="Red bands are time with no picture."
-              takeaway={stalls}
-              keys={
-                <Key
-                  swatch={<rect width="12" height="10" rx="2" className="fill-error" />}
-                  label="Stall"
-                />
-              }
-            >
-              <canvas
-                ref={stallsRef}
-                role="img"
-                aria-label={stalls}
-                className="block h-[64px] w-full"
-              />
-            </ChartFigure>
-          ) : (
-            <ChartFigure title="Stalls" unit="A above, B below">
-              <p className="flex items-center gap-2 py-1.5 text-[15px]">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  aria-hidden="true"
-                  className="flex-none"
-                >
-                  <path
-                    d="M2.5 7.5 L5.5 10.5 L11.5 3.5"
-                    fill="none"
-                    strokeWidth="2"
-                    className="stroke-accent"
-                  />
-                </svg>
-                {stalls}
-              </p>
-            </ChartFigure>
-          )}
+      <dl className="flex flex-col">
+        {shortRows(c).map((row) => (
+          <div key={row.label} className="flex flex-col gap-0.5 border-t border-fg/6 py-2.5">
+            <dt className="font-medium">{row.label}</dt>
+            <dd className="flex flex-col gap-0.5">
+              <span className="tabular-nums">{row.value}</span>
+              <span className="text-[13px] text-fg-2">{row.note}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {again && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <AgainLink again={again} a={a} b={b} />
+          <p className="text-[13px] text-fg-2">{again.note}</p>
         </div>
-      </ChartOrTable>
+      )}
+    </div>
+  );
+}
+
+function HeldCard({
+  c,
+  again,
+  a,
+  b,
+}: {
+  c: Comparison;
+  again: Again | undefined;
+  a: SavedRun;
+  b: SavedRun;
+}) {
+  const { text, note } = heldBackText(c);
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-lg font-semibold">To compare them</h3>
+      <p className="max-w-[880px]">{text}</p>
+      <p className="max-w-[880px] text-sm text-fg-2">{note}</p>
+      {again && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <AgainLink again={again} a={a} b={b} />
+          <p className="text-[13px] text-fg-2">{again.note}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OtherNumbers({ c }: { c: Comparison }) {
+  const { tiles, same } = otherNumbers(c);
+  return (
+    <section aria-labelledby="other-h" className="flex flex-col gap-2.5">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 id="other-h" className="text-lg font-semibold">
+          Other numbers
+        </h2>
+        <p className="text-[13px] text-fg-3">
+          Not part of the score.
+          {c.untilS !== undefined && ` Over the first ${formatClock(c.untilS)}.`}
+        </p>
+      </div>
+      {tiles.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {tiles.map((tile) => (
+            <div
+              key={tile.label}
+              className="rounded-[10px] border border-line bg-surface px-3 py-2.5"
+            >
+              <p className="text-xs text-fg-2">{tile.label}</p>
+              <p className="mt-0.5 text-[22px] font-semibold tracking-tight tabular-nums">
+                {tile.value}
+              </p>
+              <p className="text-xs text-fg-3">{tile.note}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {same && <p className="text-sm text-fg-2">{same}</p>}
     </section>
   );
 }

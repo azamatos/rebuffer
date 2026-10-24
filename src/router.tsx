@@ -48,6 +48,8 @@ function runSearch(search: Record<string, unknown>): RunSearch {
     "set",
     "start",
     "vs",
+    "vsB",
+    "then",
   ] as const) {
     const value = search[key];
     if (typeof value === "string" && value !== "") result[key] = value;

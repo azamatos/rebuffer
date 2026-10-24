@@ -209,9 +209,39 @@ test("change one thing runs B with that change, then opens Compare", async ({
     },
   );
   await expect(page.locator("#toasts")).toContainText("Run B finished and saved.");
-  const verdict = page.getByRole("region", { name: /did|difference/ });
-  await expect(verdict).toContainText("What changed · 1 thing");
-  await expect(verdict).toContainText(/Player setup\s*Defaults\s*→\s*changed to\s*Low-memory TV/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Defaults → Low-memory TV");
+  await expect(page.getByRole("region", { name: "The two runs" })).toContainText(
+    /Player setup\s*Defaults\s*→\s*changed to\s*Low-memory TV/,
+  );
+});
+
+test("Compare's Run both again runs A, then B, then opens Compare", async ({
+  page,
+  browserName,
+}) => {
+  // Playwright's Firefox loads a second page outside the Service Worker once it's active (2026-10-24: /about after a
+  // run had no controller there, in Chromium it had), so a second run there can't start. Compare's button is a link
+  // within the app, which keeps the worker.
+  test.skip(browserName === "firefox", "a second page load has no Service Worker under Playwright");
+  test.setTimeout(120_000);
+  const reportUrl = await runAndOpenReport(page, browserName);
+  const runId = /\/runs\/([0-9a-f]{8})$/.exec(reportUrl)?.[1] ?? "";
+  // A with Fast start, then the saved run's setup again as B.
+  await page.goto(
+    `/run?stream=${encodeURIComponent(STREAM)}&curve=${encodeURIComponent(CURVE)}&player=fast-start&start=now&then=${runId}`,
+  );
+  await expect(page.getByRole("region", { name: "Run A of a comparison" })).toContainText(
+    "When this run ends, B runs again",
+  );
+  await expect(page).toHaveURL(/vs=(%22)?[0-9a-f]{8}/, { timeout: 40_000 });
+  await expect(page.locator("#toasts")).toContainText(
+    "Run A finished and saved. Run B starts now.",
+  );
+  await expect(page).toHaveURL(
+    /\/runs\/compare\?a=(%22)?[0-9a-f]{8}(%22)?&b=(%22)?[0-9a-f]{8}(%22)?$/,
+    { timeout: 40_000 },
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fast start → Defaults");
 });
 
 test("a run started as B of a comparison can run on its own instead", async ({

@@ -29,6 +29,7 @@ export interface ChartTheme {
   fg: string;
   fgMuted: string;
   ground: string;
+  surface: string;
   accent: string;
   line: string;
   lineStrong: string;
@@ -48,6 +49,7 @@ export function readTheme(element: Element): ChartTheme {
     fg: token("fg"),
     fgMuted: token("fg-3"),
     ground: token("ground"),
+    surface: token("surface"),
     accent: token("accent"),
     line: token("line"),
     lineStrong: token("line-strong"),
