@@ -2,10 +2,10 @@
 
 **Updated 2026-10-24 (tenth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
 2026-10-25), the LinkedIn post after they've tested the site. The owner rejected the live Compare on 2026-10-23
-("misleading things in the table and graphs"). **Compare is redesigned and built (2026-10-24, local, not pushed)** from
-Claude Design's second round, which fixed the five gaps the agent found in the first: every state checked in both
-themes at 1280 and 360 px, 554 unit tests and 176 Playwright checks pass. **Next: the owner looks at it, then a
-push on their word** (see "Next step", 1). Review page of the redesign (screens of every state, departures, the
+("misleading things in the table and graphs"). **The redesigned Compare is live (pushed 2026-10-24 on the owner's "go
+push", `main` at `02e8904`, CI green, checked live in Chromium, Firefox and WebKit).** Built from Claude Design's
+second round, which fixed the five gaps the agent found in the first. **Next: the owner tests the live site**, then
+the LinkedIn post (see "Next step"). Review page of the redesign (screens of every state, departures, the
 Firefox finding): https://claude.ai/artifact/8tZrQZFAunddYScfr2nX31. Group B's: https://claude.ai/artifact/HvkGNXGbPeb3on9X1NvDpN.
 Read this first, then `progress.md` (M4.6).
 
@@ -16,7 +16,7 @@ Read this first, then `progress.md` (M4.6).
   the run. No backend. It replaced a Smart TV app plan on 2026-10-18 (too much hardware work for a portfolio piece).
 - **Live:** https://rebuffer.azamatos.com (Cloudflare Pages). **Media:** https://media.azamatos.com (R2 behind
   Cloudflare's cache) serves our *Tears of Steel* encodes. **Code:** https://github.com/azamatos/rebuffer (public).
-- **Live site = `main` at `9ffe308`** (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
+- **Live site = `main` at `02e8904`** (the Compare redesign, pushed 2026-10-24, CI green). Before it: `9ffe308` (pushed 2026-10-23 on the owner's "go with push and checks"; deployed in 30 s;
   CI green on a re-run, after the first try hung 32 minutes installing browsers). **Every push to `main` deploys on
   its own.** Pushing is outward-facing: ask the owner before each push.
 - **Group B, live since 2026-10-23** (`main` at the README commit `0dfff96` and this memory bank): Compare reworked
@@ -76,7 +76,8 @@ Read this first, then `progress.md` (M4.6).
 
 ## Next step (in this order)
 
-1. **Compare redesign: built 2026-10-24, waiting for the owner's look and a push.** Two Claude Design rounds
+1. **Compare redesign: built and live 2026-10-24** (pushed on the owner's "go push"; CI green; live check with seeded
+   runs in three browsers: every verdict, the timeline, Choose two runs). Two Claude Design rounds
    (project https://claude.ai/design/p/c7a57a4f-af89-43e4-a225-59c326219472, template "Compare (redesign)",
    `templates/compare-2/`, 17 states via `?state=…&theme=dark|light`; archives in `~/Downloads/Rebuffer.zip` and
    `Rebuffer (1).zip`, downloaded on the owner's OK). The first round missed five things (scores held at 0 or 100
@@ -87,7 +88,7 @@ Read this first, then `progress.md` (M4.6).
    date ("Today, 22:32") not "6 min ago"; the browser is ours ("Chrome on macOS"); "Run A again" (`vsB`) for a
    stopped A, which the design didn't draw; a held-back run's score in the run lists reads "Not compared", as
    Compare shows it (the design's list showed its own score); the timeline's scale labels use the text face so
-   "1.7 Mbps" fits the gutter. **Committed locally; nothing pushed.** Pushing deploys: ask first.
+   "1.7 Mbps" fits the gutter.
 2. **The bugs the owner found in the live Compare are fixed by the redesign:** a 6 s stretch gets no verdict; late
    downloads are counted once (`Honesty.lateRequests`); the lists show the score Compare shows and say when a run
    stopped (summaries v3: stopped, network length, stream, held back); no overlaid chart or log axis.
