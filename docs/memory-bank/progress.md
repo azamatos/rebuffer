@@ -253,6 +253,13 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   (score 57, no stall, the buffer from 22 s to 10 s), drawn from its data in `scripts/og/card.html`. A second real run
   agreed (58, no stall). The brief written for Claude Design (`.design-sync/briefs/og-image.md`) wasn't used.
   Telegram and LinkedIn keep old previews until asked: @WebpageBot, and LinkedIn's Post Inspector.
+  **Replaced 2026-10-27** by the owner's own design from Claude Design (one set for all their sites): the same run
+  and question, a cleaner card with an "HLS network lab" kicker and an azamatos.com badge. Its HTML is now
+  `scripts/og/card.html` (local fonts instead of Google's), so `render.mjs` makes the same picture.
+- [x] **New icons** (2026-10-27, the owner's Claude Design set): the favicon is a stepped quality line and a mint
+  cursor block on near-black, the family's mark (azamatos.com's is an "a", pass.azamatos.com's an asterisk);
+  `favicon.ico` (16, 32, 48), a 96 px PNG, a 180 px Apple touch icon and a web app manifest with 192 and 512 px
+  icons.
 
 - Shaka Player adapter: "player vs player" on the same network.
 - Segment probing in a worker (keyframes at segment starts, real codec vs declared).
@@ -367,6 +374,13 @@ blocker or a filtering DNS refused it; the agent's sandbox can't reach it either
   owner's word: the comparison banners read "Comparison · run A, then B" and "Comparison · run B" (in capitals "Run
   A of a comparison" read "RUN A OF A"), and every link to another site opens in a new tab with an arrow icon and
   "(opens in a new tab)" for screen readers, as Visaproof's `ExternalLink` does (`src/ui/layout/ExternalLink.tsx`).
+- 2026-10-27: the owner's icons and link preview from Claude Design (`~/Downloads/azamatos-icons-og/`, one folder
+  per site) put in: the new favicon set and a web app manifest (`start_url` `/` added, so an install from a report
+  opens Home), `og:image:type` and `twitter:image` in every page's head, the design's card as
+  `scripts/og/card.html` (its render matches the design's PNG; the PNG shipped is the design's own), and
+  `render.mjs` no longer makes the Apple icon. Kept: our longer `og:image:alt`, which also names the quality steps
+  and the score. The e2e head test checks the manifest and that each icon is an image, not the app's page. Pushed on
+  the owner's word ("push and publish if no questions or blockers").
 - 2026-10-23 night: the owner tested live Compare and rejected it (misleading scores and charts, looks like the old
   page). Brief for a real redesign written (`.design-sync/briefs/compare-redo.md`, context only); the owner is taking
   it to Claude Design. Bug fixes half done in the working tree (`activeContext.md`, Next step 2). Nothing else

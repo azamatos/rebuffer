@@ -1,6 +1,6 @@
 # Active context
 
-**Updated 2026-10-24 (tenth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
+**Updated 2026-10-27 (eleventh session).** New icons and link preview from the owner's Claude Design set, pushed on the owner's word (`progress.md`, done log). Before that, **updated 2026-10-24 (tenth session, night).** The owner's goal since 2026-10-22: **finish this week** (by Sunday
 2026-10-25), the LinkedIn post after they've tested the site. The owner rejected the live Compare on 2026-10-23
 ("misleading things in the table and graphs"). **The redesigned Compare is live (pushed 2026-10-24 on the owner's "go
 push", `main` at `02e8904`, CI green, checked live in Chromium, Firefox and WebKit).** Built from Claude Design's
@@ -96,9 +96,9 @@ Read this first, then `progress.md` (M4.6).
 2b. **The owner tests the live site** (the LinkedIn post comes after that), including the real Safari check (about 10
    minutes; checklist under "Waiting for the owner"), then LinkedIn's Post Inspector, pinning the repo and the post
    (a draft was given in chat; the owner approves it).
-3. Whatever else the owner's test finds: fix, show, ask before each push. The owner's other note: **a new link preview
-   image** (`public/og.png` looks odd; clearer, smoother, more charming), a later task: design it in Claude Design,
-   then `scripts/og/card.html` and `node scripts/og/render.mjs` (`progress.md`, Later).
+3. Whatever else the owner's test finds: fix, show, ask before each push. The link preview and the icons are done
+   (2026-10-27, the owner's Claude Design set; `progress.md`, Later). After the push, LinkedIn's Post Inspector and
+   Telegram's @WebpageBot refresh their cached previews.
 4. **At the next `/design-sync` (the owner starts it):** Claude Design's check lists 4 `--tw-*` variables set inside
    component classes and 13 variables without a category (`--animate-cursor` is ours; the rest are Tailwind's and
    Lightning CSS's). They don't change the designs, and they stay: the converter has no option to skip variables,
@@ -128,7 +128,7 @@ that needs their eye under "Waiting for the owner".
 |---|---|---|
 | 1 | Name | **Rebuffer** |
 | 2 | Domains | App at **rebuffer.azamatos.com**; **media.azamatos.com** only serves media files (R2 bucket `azamatos-media`). `*.pages.dev` addresses send `noindex` |
-| 3 | Brand | The **family wordmark** shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊` in Space Mono, the cursor blinks at pass.azamatos.com's pace for 4.4 s, then stays solid (the owner first asked for endless blinking, then chose this on 2026-10-20 for WCAG 2.2.2). The favicon keeps the prompt arrow plus a stepped quality line |
+| 3 | Brand | The **family wordmark** shared with azamatos.com and pass.azamatos.com: `➜ ~ rebuffer.azamatos▊` in Space Mono, the cursor blinks at pass.azamatos.com's pace for 4.4 s, then stays solid (the owner first asked for endless blinking, then chose this on 2026-10-20 for WCAG 2.2.2). The favicon (the owner's Claude Design set, 2026-10-27): a stepped quality line and a mint cursor block on near-black, the family's mark; `favicon.ico`, a 96 px PNG, the Apple touch icon and a web app manifest |
 | 4 | Design | The dark "instrument panel" look on the design canvas, accepted 2026-10-18 |
 | 5 | Score | Normalised linear QoE (Yin et al., 2015) out of 100, formula shown |
 | 6 | Network shaping | A Service Worker shapes the player's own requests, every origin except the app's own; a custom hls.js loader is the fallback |
@@ -146,7 +146,7 @@ that needs their eye under "Waiting for the owner".
 | 17 | First paint | Home rendered at build time and hydrated, the app's code after the first paint: the agent's call on 2026-10-20 (`techContext.md`, "Themes and the first paint") |
 | 19 | Score target (D1, reopens 5) | A run is measured against the best rendition at or under its network's mean bandwidth over the run, not the ladder's top; Yin et al.'s formula otherwise. Approved 2026-10-21 ("Go with recommendations"), built (`84d99d3`) |
 | 20 | CSP (D2) | `media-src` allows `data:` for hls.js's empty subtitle track. Approved and built 2026-10-21 (`214d582`) |
-| 21 | Preview image (D3) | `public/og.png` is committed, made by `scripts/og/render.mjs`. Approved and built 2026-10-21 (`3853f75`) |
+| 21 | Preview image (D3) | `public/og.png` is committed, made by `scripts/og/render.mjs`. Approved and built 2026-10-21 (`3853f75`); since 2026-10-27 the card is the owner's Claude Design one (`scripts/og/card.html`) |
 | 22 | HAR (D4) | Import (a curve from DevTools' Export HAR, with a note on what it can't tell) and export (a run's downloads). Approved 2026-10-21; built 2026-10-22 (`6907809`, `4325691`) |
 | 23 | Compare (D5) | "Change one thing": from a report, run B with one setting changed, then compare. Approved 2026-10-21; designed in Claude Design |
 | 24 | Analytics (D6) | Cloudflare injects its beacon; a blocked beacon costs only the count. Approved 2026-10-21 |
