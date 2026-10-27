@@ -1,13 +1,15 @@
 <!doctype html>
 <!--
-  The link preview (public/og.png, 1200×630): scripts/og/render.mjs opens this page and takes a picture of it.
-  The chart is a real run, drawn from its data: Tears of Steel on "Train through a tunnel" with hls.js defaults,
-  recorded through the production build on 2026-10-25 (score 57/100, no stall, first frame 0.80 s; its simulation
-  check noted late answers only). The network is the preset's own curve.
+  The link preview (public/og.png, 1200×630), designed in Claude Design (2026-10-27): scripts/og/render.mjs opens this
+  page and takes a picture of it. Plain HTML with inline styles and flexbox, so it can move into a build-time
+  generator. The chart is a real run, drawn from its data: Tears of Steel on "Train through a tunnel" with hls.js
+  defaults, recorded through the production build on 2026-10-25 (score 57/100, no stall, the buffer falling from
+  22 s to 10 s). The network is the preset's own curve.
 -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <title>Rebuffer OG image, 1200x630</title>
     <style>
       @font-face {
         font-family: "Geist";
@@ -19,385 +21,459 @@
         font-family: "Space Mono";
         src: url("../../node_modules/@fontsource/space-mono/files/space-mono-latin-400-normal.woff2")
           format("woff2");
+        font-weight: 400;
       }
-      :root {
-        --ground: #050607;
-        --surface: #101214;
-        --line: rgb(255 255 255 / 0.09);
-        --fg: #f2f4f5;
-        --fg-2: #a6adb3;
-        --fg-3: #7d858c;
-        --accent: #68edc0;
-        --prompt: #5bc8c0;
-        --net: #3d85d1;
-        --onscreen: #1fae84;
-        --buffer: #9479e8;
+      @font-face {
+        font-family: "Space Mono";
+        src: url("../../node_modules/@fontsource/space-mono/files/space-mono-latin-700-normal.woff2")
+          format("woff2");
+        font-weight: 700;
       }
-      html,
+    </style>
+    <style>
       body {
         margin: 0;
-        width: 1200px;
-        height: 630px;
-        background: var(--ground);
-        color: var(--fg);
-        font-family: "Geist", sans-serif;
-        overflow: hidden;
-      }
-      .card {
-        box-sizing: border-box;
-        width: 1200px;
-        height: 630px;
-        padding: 56px 56px 56px 72px;
-        display: grid;
-        grid-template-columns: 468px 1fr;
-        gap: 44px;
-      }
-      .story {
-        display: flex;
-        flex-direction: column;
-        gap: 26px;
-        padding-top: 8px;
-      }
-      .mark {
-        font-family: "Space Mono", monospace;
-        font-size: 28px;
-        white-space: nowrap;
-      }
-      .mark .arrow {
-        color: var(--accent);
-      }
-      .mark .tilde {
-        color: var(--prompt);
-      }
-      h1 {
-        margin: 18px 0 0;
-        font-size: 56px;
-        line-height: 1.05;
-        font-weight: 640;
-        letter-spacing: -0.022em;
-      }
-      .answer {
-        margin: 0;
-        font-size: 27px;
-        line-height: 1.32;
-        color: var(--fg-2);
-      }
-      .answer strong {
-        color: var(--accent);
-        font-weight: 600;
-      }
-      .foot {
-        margin-top: auto;
-        font-family: "Space Mono", monospace;
-        font-size: 19px;
-        color: var(--fg-3);
-      }
-      .panel {
-        position: relative;
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        background: var(--surface);
-      }
-      svg {
-        display: block;
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <div class="story">
-        <div class="mark">
-          <span class="arrow">➜</span> <span class="tilde">~</span> rebuffer.azamatos▊
+    <div
+      style="
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #050607;
+        color: #f2f4f5;
+        font-family: &quot;Geist&quot;, system-ui, sans-serif;
+      "
+    >
+      <div
+        style="
+          position: absolute;
+          left: 604px;
+          top: 122px;
+          width: 532px;
+          height: 458px;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          padding: 24px 24px 18px;
+          border: 1px solid rgba(255, 255, 255, 0.11);
+          border-radius: 24px;
+          background: #0e1012;
+        "
+      >
+        <div style="display: flex; align-items: flex-start; justify-content: space-between">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: #f2f4f5"
+              >Train through a tunnel</span
+            >
+            <span style="font-size: 14px; color: #9ba3a8"
+              >Tears of Steel · hls.js defaults · a real run</span
+            >
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+            <span
+              style="
+                font-size: 44px;
+                font-weight: 600;
+                line-height: 0.9;
+                letter-spacing: -0.04em;
+                color: #f2f4f5;
+              "
+              >57</span
+            >
+            <span style="font-size: 13px; color: #9ba3a8">score / 100</span>
+          </div>
         </div>
-        <h1>12 seconds with no signal. Does the video stop?</h1>
-        <p class="answer">
-          <strong>Not this time.</strong> The buffer fell from 22&nbsp;s to 10&nbsp;s and the
-          picture kept playing. Try your own network.
-        </p>
-        <p class="foot">a real hls.js player · in your browser</p>
+        <svg
+          width="484"
+          height="330"
+          viewBox="0 0 484 330"
+          aria-hidden="true"
+          style="display: block"
+        >
+          <rect x="274.5" y="20" width="51.4" height="286" fill="rgba(255,255,255,0.07)"></rect>
+          <line
+            x1="274.5"
+            y1="20"
+            x2="274.5"
+            y2="306"
+            stroke="rgba(255,255,255,0.35)"
+            stroke-dasharray="3 4"
+          ></line>
+          <line
+            x1="325.9"
+            y1="20"
+            x2="325.9"
+            y2="306"
+            stroke="rgba(255,255,255,0.35)"
+            stroke-dasharray="3 4"
+          ></line>
+          <text
+            x="300.2"
+            y="13"
+            text-anchor="middle"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 14px;
+              font-weight: 600;
+              fill: #ffffff;
+            "
+          >
+            no signal
+          </text>
+          <text
+            x="0"
+            y="68"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            network
+          </text>
+          <path
+            d="M92.0 38.0 L178.6 38.0 L178.6 70.7 L222.4 70.7 L222.4 84.2 L274.5 84.2 L274.5 94.0 L325.9 94.0 L352.8 66.0 L365.4 38.0 L484.0 38.0 L484.0 94 L92.0 94 Z"
+            fill="rgba(91, 157, 255, 0.22)"
+          ></path>
+          <path
+            d="M92.0 38.0 L178.6 38.0 L178.6 70.7 L222.4 70.7 L222.4 84.2 L274.5 84.2 L274.5 94.0 L325.9 94.0 L352.8 66.0 L365.4 38.0 L484.0 38.0"
+            fill="none"
+            stroke="#5b9dff"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+          ></path>
+          <text
+            x="96"
+            y="29"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 13px;
+              fill: #9ba3a8;
+            "
+          >
+            6 Mbps
+          </text>
+          <text
+            x="0"
+            y="163"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            quality
+          </text>
+          <line
+            x1="92"
+            y1="126"
+            x2="484"
+            y2="126"
+            stroke="rgba(255,255,255,0.07)"
+            stroke-width="1"
+          ></line>
+          <line
+            x1="92"
+            y1="142"
+            x2="484"
+            y2="142"
+            stroke="rgba(255,255,255,0.07)"
+            stroke-width="1"
+          ></line>
+          <line
+            x1="92"
+            y1="158"
+            x2="484"
+            y2="158"
+            stroke="rgba(255,255,255,0.07)"
+            stroke-width="1"
+          ></line>
+          <line
+            x1="92"
+            y1="174"
+            x2="484"
+            y2="174"
+            stroke="rgba(255,255,255,0.07)"
+            stroke-width="1"
+          ></line>
+          <line
+            x1="92"
+            y1="190"
+            x2="484"
+            y2="190"
+            stroke="rgba(255,255,255,0.07)"
+            stroke-width="1"
+          ></line>
+          <path
+            d="M92.0 142 L112.2 142 L112.2 158 L129.0 158 L129.0 142 L321.6 142 L321.6 158 L339.3 158 L339.3 174 L391.5 174 L391.5 190 L484.0 190"
+            fill="none"
+            stroke="#68edc0"
+            stroke-width="3"
+            stroke-linejoin="round"
+          ></path>
+          <text
+            x="138"
+            y="134"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 15px;
+              font-weight: 600;
+              fill: #68edc0;
+            "
+          >
+            720p
+          </text>
+          <text
+            x="484"
+            y="182"
+            text-anchor="end"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 15px;
+              font-weight: 600;
+              fill: #68edc0;
+            "
+          >
+            240p
+          </text>
+          <text
+            x="0"
+            y="262"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            buffer
+          </text>
+          <path
+            d="M92.0 294.0 L105.5 284.1 L132.4 282.0 L146.7 278.4 L157.6 277.7 L172.8 273.5 L183.7 272.8 L197.2 275.6 L222.4 274.2 L237.5 277.0 L274.5 274.2 L301.5 279.1 L328.4 284.1 L346.9 275.6 L369.6 259.4 L394.8 243.1 L418.4 236.0 L433.5 226.1 L446.1 231.1 L464.7 224.7 L484.0 224.0 L484.0 294 L92.0 294 Z"
+            fill="rgba(164, 139, 255, 0.26)"
+          ></path>
+          <path
+            d="M92.0 294.0 L105.5 284.1 L132.4 282.0 L146.7 278.4 L157.6 277.7 L172.8 273.5 L183.7 272.8 L197.2 275.6 L222.4 274.2 L237.5 277.0 L274.5 274.2 L301.5 279.1 L328.4 284.1 L346.9 275.6 L369.6 259.4 L394.8 243.1 L418.4 236.0 L433.5 226.1 L446.1 231.1 L464.7 224.7 L484.0 224.0"
+            fill="none"
+            stroke="#a48bff"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+          ></path>
+          <text
+            x="266.5"
+            y="264.2"
+            text-anchor="end"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 14px;
+              font-weight: 600;
+              fill: #d9d3ff;
+            "
+          >
+            22 s
+          </text>
+          <circle
+            cx="328.4"
+            cy="284.1"
+            r="5.5"
+            fill="#ffffff"
+            stroke="#050607"
+            stroke-width="2"
+          ></circle>
+          <text
+            x="340.4"
+            y="306.1"
+            style="
+              font-family: &quot;Geist&quot;, system-ui, sans-serif;
+              font-size: 14px;
+              font-weight: 600;
+              fill: #ffffff;
+            "
+          >
+            10 s left, no stall
+          </text>
+          <text
+            x="92"
+            y="327"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            0:00
+          </text>
+          <text
+            x="274.5"
+            y="327"
+            text-anchor="end"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            0:42
+          </text>
+          <text
+            x="329.9"
+            y="327"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            0:54
+          </text>
+          <text
+            x="484"
+            y="327"
+            text-anchor="end"
+            style="
+              font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+              font-size: 13px;
+              fill: #8c959b;
+            "
+          >
+            1:30
+          </text>
+        </svg>
       </div>
-      <div class="panel">
-        <svg id="chart" width="606" height="516" viewBox="0 0 606 516" aria-hidden="true"></svg>
+      <div
+        style="
+          position: absolute;
+          left: 64px;
+          top: 50px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+          font-size: 28px;
+          line-height: 1;
+          letter-spacing: -0.01em;
+        "
+      >
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 32 32"
+          aria-hidden="true"
+          style="display: block; flex: none"
+        >
+          <path
+            d="M5 16h19M17 9l7 7-7 7"
+            fill="none"
+            stroke="#68edc0"
+            stroke-width="3.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path></svg
+        ><span style="color: #5bc8c0">~</span><span style="color: #f2f4f5">rebuffer.azamatos</span
+        ><span style="width: 16px; height: 32px; margin-left: -10px; background: #68edc0"></span>
+      </div>
+      <div
+        style="
+          position: absolute;
+          right: 64px;
+          top: 47px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+          font-size: 17px;
+          color: #9ba3a8;
+        "
+      >
+        <span
+          style="display: flex; border-radius: 8px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14)"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 32 32"
+            width="34"
+            height="34"
+            aria-hidden="true"
+            style="display: block; flex: none"
+          >
+            <rect width="32" height="32" rx="7" fill="#010101"></rect>
+            <path
+              fill="#f0f4f3"
+              stroke="#f0f4f3"
+              stroke-width="44"
+              stroke-linejoin="round"
+              transform="translate(6.06 22.5) scale(.02 -.02)"
+              d="M279 -14Q214 -14 161.5 15.5Q109 45 78 101.5Q47 158 47 240L47 256Q47 337 78 394Q109 451 161.5 480.5Q214 510 277 510Q328 510 369.5 487.5Q411 465 435 418L447 418L447 496L525 496L525 102Q525 72 552 72L577 72L577 0L524 0Q493 0 470 20Q447 40 447 84L435 84Q411 35 368.5 10.5Q326 -14 279 -14ZM287 60Q357 60 402 110Q447 160 447 242L447 254Q447 307 426 348Q405 389 369 412.5Q333 436 287 436Q241 436 205 413.5Q169 391 148 350.5Q127 310 127 256L127 240Q127 156 172 108Q217 60 287 60Z"
+            ></path>
+            <rect x="19" y="9" width="6" height="14" fill="#68edc0"></rect></svg></span
+        ><span>azamatos.com</span>
+      </div>
+      <div
+        style="
+          position: absolute;
+          left: 64px;
+          top: 150px;
+          width: 496px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        "
+      >
+        <p
+          style="
+            margin: 0;
+            font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+            font-size: 16px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #68edc0;
+          "
+        >
+          HLS network lab
+        </p>
+        <h1
+          style="
+            margin: 0;
+            font-size: 56px;
+            font-weight: 600;
+            line-height: 1.02;
+            letter-spacing: -0.045em;
+            color: #f2f4f5;
+          "
+        >
+          12 seconds with no signal. Does the video stop?
+        </h1>
+        <p
+          style="
+            margin: 0;
+            font-size: 24px;
+            line-height: 1.38;
+            letter-spacing: -0.015em;
+            color: #9ba3a8;
+          "
+        >
+          <span style="color: #68edc0; font-weight: 600">Not this time.</span> The buffer fell from
+          22 s to 10 s and the picture kept playing.
+        </p>
+      </div>
+      <div
+        style="
+          position: absolute;
+          left: 64px;
+          bottom: 50px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          font-family: &quot;Space Mono&quot;, ui-monospace, monospace;
+          font-size: 16px;
+          color: #9ba3a8;
+        "
+      >
+        a real hls.js player<span style="color: #3a4045">·</span>in your browser
       </div>
     </div>
-    <script>
-      // A real run: when each quality appeared, and the buffer every 2 s.
-      const shown = [
-        [0.8, 3],
-        [4.83, 2],
-        [8.83, 3],
-        [52.83, 2],
-        [56.83, 1],
-        [68.83, 0],
-      ];
-      const ladder = ["240p", "360p", "540p", "720p", "1080p"];
-      const buffer = [
-        [0.3, 0],
-        [3.3, 9.4],
-        [6.3, 10.4],
-        [9.3, 11.4],
-        [12.3, 16.4],
-        [15.3, 17.4],
-        [18.3, 22.4],
-        [21.3, 23.4],
-        [24.3, 20.4],
-        [27.3, 21.4],
-        [30.3, 22.4],
-        [33.3, 19.4],
-        [36.3, 20.4],
-        [39.3, 21.4],
-        [42.3, 22.4],
-        [45.3, 19.4],
-        [48.3, 16.4],
-        [51.3, 13.4],
-        [54.3, 10.4],
-        [57.3, 15.4],
-        [60.3, 24.4],
-        [63.3, 37.4],
-        [66.3, 46.4],
-        [69.3, 55.5],
-        [72.3, 60.5],
-        [75.3, 65.5],
-        [78.3, 74.5],
-        [81.3, 71.5],
-        [84.3, 76.5],
-        [87.3, 77.5],
-        [90, 77.5],
-      ];
-      // "Train through a tunnel", Mbps: jumps at 0:20, 0:30 and 0:42, no signal to 0:54, back to 6 by 1:03.
-      const network = [
-        [0, 6],
-        [20, 6],
-        [20, 2.5],
-        [30, 2.5],
-        [30, 1.2],
-        [42, 1.2],
-        [42, 0],
-        [54, 0],
-        [60, 3],
-        [63, 6],
-        [90, 6],
-      ];
-
-      const NS = "http://www.w3.org/2000/svg";
-      const svg = document.getElementById("chart");
-      const add = (name, attrs, text) => {
-        const node = document.createElementNS(NS, name);
-        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
-        if (text) node.textContent = text;
-        svg.append(node);
-        return node;
-      };
-      const css = (name) =>
-        getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      const left = 112;
-      const right = 578;
-      const x = (t) => left + (t / 90) * (right - left);
-      const tracks = {
-        network: { top: 126, height: 60 },
-        quality: { top: 222, height: 100 },
-        buffer: { top: 352, height: 100 },
-      };
-      const bottom = (track) => track.top + track.height;
-
-      // Title and score.
-      add(
-        "text",
-        { x: 30, y: 52, fill: css("--fg"), "font-size": 23, "font-weight": 600 },
-        "Train through a tunnel",
-      );
-      add(
-        "text",
-        { x: 30, y: 80, fill: css("--fg-3"), "font-size": 17 },
-        "Tears of Steel · hls.js defaults · a real run",
-      );
-      add(
-        "text",
-        {
-          x: 578,
-          y: 58,
-          fill: css("--fg"),
-          "font-size": 46,
-          "font-weight": 620,
-          "text-anchor": "end",
-          "letter-spacing": "-0.02em",
-        },
-        "57",
-      );
-      add(
-        "text",
-        { x: 578, y: 82, fill: css("--fg-3"), "font-size": 16, "text-anchor": "end" },
-        "score / 100",
-      );
-
-      // The 12 s with no signal, across every track.
-      add("rect", {
-        x: x(42),
-        y: tracks.network.top - 8,
-        width: x(54) - x(42),
-        height: bottom(tracks.buffer) - tracks.network.top + 16,
-        rx: 6,
-        fill: css("--fg"),
-        "fill-opacity": 0.05,
-      });
-      for (const t of [42, 54]) {
-        add("line", {
-          x1: x(t),
-          x2: x(t),
-          y1: tracks.network.top - 8,
-          y2: bottom(tracks.buffer) + 8,
-          stroke: css("--fg-3"),
-          "stroke-width": 1.5,
-          "stroke-dasharray": "4 4",
-        });
-      }
-
-      // Track names.
-      const label = (track, text) =>
-        add(
-          "text",
-          {
-            x: 30,
-            y: track.top + track.height / 2 + 6,
-            fill: css("--fg-3"),
-            "font-size": 17,
-            "font-family": "Space Mono",
-          },
-          text,
-        );
-      label(tracks.network, "network");
-      label(tracks.quality, "quality");
-      label(tracks.buffer, "buffer");
-
-      // The network.
-      {
-        const { top, height } = tracks.network;
-        const y = (mbps) => top + height - (mbps / 7) * height;
-        const path = network.map(([t, v], i) => `${i ? "L" : "M"}${x(t)} ${y(v)}`).join(" ");
-        add("path", {
-          d: `${path} L${x(90)} ${bottom(tracks.network)} L${x(0)} ${bottom(tracks.network)} Z`,
-          fill: css("--net"),
-          "fill-opacity": 0.3,
-        });
-        add("path", { d: path, fill: "none", stroke: css("--net"), "stroke-width": 2.5 });
-        add(
-          "text",
-          {
-            x: (x(42) + x(54)) / 2,
-            y: top - 16,
-            fill: css("--fg"),
-            "font-size": 17,
-            "font-weight": 600,
-            "text-anchor": "middle",
-          },
-          "no signal",
-        );
-        add("text", { x: x(1), y: y(6) - 9, fill: css("--fg-3"), "font-size": 15 }, "6 Mbps");
-      }
-
-      // The quality on screen, on even steps of the ladder.
-      {
-        const { top, height } = tracks.quality;
-        const y = (level) => top + height - ((level + 0.5) / ladder.length) * height;
-        ladder.forEach((_, level) =>
-          add("line", {
-            x1: left,
-            x2: right,
-            y1: y(level),
-            y2: y(level),
-            stroke: css("--line"),
-            "stroke-width": 1,
-          }),
-        );
-        let d = "";
-        shown.forEach(([t, level], i) => {
-          const until = shown[i + 1]?.[0] ?? 90;
-          d += `${i ? "L" : "M"}${x(t)} ${y(level)} L${x(until)} ${y(level)} `;
-        });
-        add("path", {
-          d,
-          fill: "none",
-          stroke: css("--onscreen"),
-          "stroke-width": 4,
-          "stroke-linejoin": "round",
-        });
-        add(
-          "text",
-          { x: x(10), y: y(3) - 12, fill: css("--onscreen"), "font-size": 17, "font-weight": 600 },
-          "720p",
-        );
-        add(
-          "text",
-          { x: x(76), y: y(0) - 12, fill: css("--onscreen"), "font-size": 17, "font-weight": 600 },
-          "240p",
-        );
-      }
-
-      // The buffer: seconds of video ahead.
-      {
-        const { top, height } = tracks.buffer;
-        const y = (s) => top + height - (s / 80) * height;
-        const path = buffer.map(([t, v], i) => `${i ? "L" : "M"}${x(t)} ${y(v)}`).join(" ");
-        add("path", {
-          d: `${path} L${x(90)} ${bottom(tracks.buffer)} L${x(0.3)} ${bottom(tracks.buffer)} Z`,
-          fill: css("--buffer"),
-          "fill-opacity": 0.32,
-        });
-        add("path", { d: path, fill: "none", stroke: css("--buffer"), "stroke-width": 2.5 });
-        add("circle", { cx: x(54.3), cy: y(10.4), r: 5.5, fill: css("--fg") });
-        // A halo in the panel's colour keeps the labels clear of the line they sit on.
-        const halo = {
-          stroke: css("--surface"),
-          "stroke-width": 6,
-          "paint-order": "stroke",
-          "stroke-linejoin": "round",
-        };
-        add(
-          "text",
-          {
-            x: x(54.3) + 14,
-            y: y(10.4) + 6,
-            fill: css("--fg"),
-            "font-size": 17,
-            "font-weight": 600,
-            ...halo,
-          },
-          "10 s left, no stall",
-        );
-        add(
-          "text",
-          {
-            x: x(42.3) - 10,
-            y: y(22.4) - 12,
-            fill: css("--fg-2"),
-            "font-size": 15,
-            "text-anchor": "end",
-            ...halo,
-          },
-          "22 s",
-        );
-      }
-
-      // Time.
-      for (const [t, text, anchor] of [
-        [0, "0:00", "start"],
-        [42, "0:42", "middle"],
-        [54, "0:54", "middle"],
-        [90, "1:30", "end"],
-      ]) {
-        add(
-          "text",
-          {
-            x: x(t),
-            y: 486,
-            fill: css("--fg-3"),
-            "font-size": 15,
-            "font-family": "Space Mono",
-            "text-anchor": anchor,
-          },
-          text,
-        );
-      }
-    </script>
   </body>
 </html>

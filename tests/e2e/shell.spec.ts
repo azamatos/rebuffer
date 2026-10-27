@@ -114,6 +114,10 @@ test("each page's HTML carries its own title, description and link preview", asy
     '<meta property="og:image" content="https://rebuffer.azamatos.com/og.png" />',
   );
   expect(home).toContain('<meta name="twitter:card" content="summary_large_image" />');
+  expect(home).toContain(
+    '<meta name="twitter:image" content="https://rebuffer.azamatos.com/og.png" />',
+  );
+  expect(home).toContain('<link rel="manifest" href="/site.webmanifest" />');
   expect(home).toContain('<link rel="canonical" href="https://rebuffer.azamatos.com/" />');
   expect(home).toContain('"@type":"WebApplication"');
   const inspect = await head("/inspect");
@@ -128,6 +132,22 @@ test("each page's HTML carries its own title, description and link preview", asy
   expect(image.headers()["content-type"]).toBe("image/png");
   const bytes = await image.body();
   expect([bytes.readUInt32BE(16), bytes.readUInt32BE(20)]).toEqual([1200, 630]);
+
+  // The icons the head and the manifest name are all there (images, not the app's page in their place).
+  const manifest = (await (await request.get("/site.webmanifest")).json()) as {
+    icons: { src: string }[];
+  };
+  const icons = [
+    "/favicon.ico",
+    "/favicon.svg",
+    "/favicon-96x96.png",
+    "/apple-touch-icon.png",
+    ...manifest.icons.map((icon) => icon.src),
+  ];
+  expect(icons).toHaveLength(6);
+  for (const icon of icons) {
+    expect((await request.get(icon)).headers()["content-type"], icon).toMatch(/^image\//);
+  }
   expect(await (await request.get("/sitemap.xml")).text()).toContain(
     "<loc>https://rebuffer.azamatos.com/networks</loc>",
   );
